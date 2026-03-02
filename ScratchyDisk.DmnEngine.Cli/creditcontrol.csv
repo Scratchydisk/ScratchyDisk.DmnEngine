@@ -1,0 +1,4 @@
+Name,Type,Value,Notes
+Number_of_Years_Incorporated,integer,3,Number of Years Incorporated; expr: yearsIncorporated; Years Incorporated
+Entity_Type,string,"Ltd","Entity Type; expr: entityType; allowed: Ltd, Club, Charity, LLP"
+Product,string,"Water","expr: product; allowed: Water, Waste"

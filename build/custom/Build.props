@@ -1,0 +1,19 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<Project>
+  <!--
+      ======================================================================================= 
+      Customizable common properties to be shared between the projects within the solution
+      =======================================================================================
+    -->
+  <PropertyGroup>
+    <Authors>Stewart McSporran</Authors>
+    <Company>ScratchyDisk</Company>
+    <Copyright>Stewart McSporran 2024-2026</Copyright>
+    <Description>DMN Engine is a rule engine allowing to execute and evaluate the decisions defined in a DMN model. It supports decision tables and expression decisions with a full FEEL evaluator built with ANTLR4.</Description>
+    <PackageLicenseExpression>MIT</PackageLicenseExpression>
+    <RepositoryType>git</RepositoryType>
+    <PackageProjectUrl>https://github.com/Scratchydisk/ScratchyDisk.DmnEngine</PackageProjectUrl>
+    <RepositoryUrl>https://github.com/Scratchydisk/ScratchyDisk.DmnEngine.git</RepositoryUrl>
+    <PushPackagesToVstsFeed>false</PushPackagesToVstsFeed>
+  </PropertyGroup>
+</Project>

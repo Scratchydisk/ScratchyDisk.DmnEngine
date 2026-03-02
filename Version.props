@@ -1,0 +1,12 @@
+<Project>
+  <!--
+      Version information shared between the projects within the solution.
+      Starting at v2.0.0 to reflect the complete rewrite of the expression engine
+      and separation from the original Common.DMN.Engine project.
+    -->
+  <PropertyGroup>
+    <Version>2.0.1</Version>
+    <AssemblyVersion>2.0.1.0</AssemblyVersion>
+    <FileVersion>2.0.1.0</FileVersion>
+  </PropertyGroup>
+</Project>

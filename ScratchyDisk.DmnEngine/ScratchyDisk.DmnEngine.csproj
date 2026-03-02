@@ -1,0 +1,38 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <TargetFramework>net10.0</TargetFramework>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <Nullable>disable</Nullable>
+    <GeneratePackageOnBuild>true</GeneratePackageOnBuild>
+    <Product>ScratchyDisk.DmnEngine</Product>
+    <PackageTags>ScratchyDisk DmnEngine dmn dmn-engine rule-engine decision-engine feel</PackageTags>
+    <PackageReadmeFile>nuget.md</PackageReadmeFile>
+    <IsPackable>true</IsPackable>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <None Include="..\nuget.md" Pack="true" PackagePath="\" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <PackageReference Include="Antlr4.Runtime.Standard" Version="4.13.1" />
+    <PackageReference Include="Antlr4BuildTasks" Version="12.8" PrivateAssets="all" />
+    <!-- Pin transitive dep from Antlr4BuildTasks to fix GHSA-w3q9-fxm7-j8fq -->
+    <PackageReference Include="Microsoft.Build.Utilities.Core" Version="17.8.43" PrivateAssets="all" ExcludeAssets="runtime" />
+
+    <PackageReference Include="NLog" Version="5.3.4" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <Antlr4 Include="feel\grammar\FeelLexer.g4">
+      <Visitor>true</Visitor>
+      <Listener>false</Listener>
+    </Antlr4>
+    <Antlr4 Include="feel\grammar\FeelParser.g4">
+      <Visitor>true</Visitor>
+      <Listener>false</Listener>
+    </Antlr4>
+  </ItemGroup>
+
+</Project>

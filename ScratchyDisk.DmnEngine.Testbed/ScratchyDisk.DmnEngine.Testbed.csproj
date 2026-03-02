@@ -1,0 +1,33 @@
+<Project Sdk="Microsoft.NET.Sdk.Web">
+
+  <PropertyGroup>
+    <TargetFramework>net10.0</TargetFramework>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <Nullable>disable</Nullable>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\ScratchyDisk.DmnEngine\ScratchyDisk.DmnEngine.csproj" />
+  </ItemGroup>
+
+  <!-- Exclude Nuxt build artifacts from the Web SDK's default content globbing -->
+  <ItemGroup>
+    <Content Remove="client/**" />
+  </ItemGroup>
+  <ItemGroup>
+    <PackageReference Include="CsvHelper" Version="33.1.0" />
+  </ItemGroup>
+
+  <!-- Build the Nuxt client into wwwroot/ before the .NET build -->
+  <Target Name="BuildClient" BeforeTargets="BeforeBuild" Condition="!Exists('wwwroot/index.html')">
+    <Message Importance="high" Text="Installing client dependencies..." />
+    <Exec Command="npm install" WorkingDirectory="client" />
+    <Message Importance="high" Text="Building client (nuxt generate)..." />
+    <Exec Command="npm run generate" WorkingDirectory="client" />
+    <ItemGroup>
+      <ClientOutputFiles Include="client/.output/public/**/*" />
+    </ItemGroup>
+    <Copy SourceFiles="@(ClientOutputFiles)" DestinationFolder="wwwroot/%(RecursiveDir)" />
+  </Target>
+
+</Project>

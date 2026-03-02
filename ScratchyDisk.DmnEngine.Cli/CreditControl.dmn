@@ -1,0 +1,282 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<definitions xmlns="https://www.omg.org/spec/DMN/20191111/MODEL/" xmlns:dmndi="https://www.omg.org/spec/DMN/20191111/DMNDI/" xmlns:dc="http://www.omg.org/spec/DMN/20180521/DC/" xmlns:di="http://www.omg.org/spec/DMN/20180521/DI/" xmlns:biodi="http://bpmn.io/schema/dmn/biodi/2.0" xmlns:modeler="http://camunda.org/schema/modeler/1.0" xmlns:camunda="http://camunda.org/schema/1.0/dmn" id="creditDecisionDrd" name="Credit Decision DRD" namespace="http://camunda.org/schema/1.0/dmn" exporter="Camunda Modeler" exporterVersion="5.43.1" modeler:executionPlatform="Camunda Cloud" modeler:executionPlatformVersion="8.1.0" camunda:diagramRelationId="20eab128-3bc5-4cff-8bff-f1a2d0b26e23">
+  <decision id="Decision_0lbu39o" name="Incorporation Score">
+    <informationRequirement id="InformationRequirement_0wweswm">
+      <requiredInput href="#InputData_1hgx1vg" />
+    </informationRequirement>
+    <decisionTable id="DecisionTable_1rzy0v4" hitPolicy="FIRST">
+      <input id="InputClause_0ofouh5" label="Years Incorporated">
+        <inputExpression id="LiteralExpression_1x67qlo" typeRef="integer">
+          <text>yearsIncorporated</text>
+        </inputExpression>
+      </input>
+      <output id="OutputClause_16n312d" label="Incorporation Score" name="incorporationScore" typeRef="number" />
+      <rule id="DecisionRule_1uudafi">
+        <inputEntry id="UnaryTests_1bksdhq">
+          <text>&lt;=1</text>
+        </inputEntry>
+        <outputEntry id="LiteralExpression_1rhpul3">
+          <text>0</text>
+        </outputEntry>
+      </rule>
+      <rule id="DecisionRule_1enmk2y">
+        <inputEntry id="UnaryTests_1alnw09">
+          <text>2</text>
+        </inputEntry>
+        <outputEntry id="LiteralExpression_0k8a9af">
+          <text>0.5</text>
+        </outputEntry>
+      </rule>
+      <rule id="DecisionRule_1pftym2">
+        <inputEntry id="UnaryTests_1iqcs1u">
+          <text>&lt;=4</text>
+        </inputEntry>
+        <outputEntry id="LiteralExpression_0qyuzoq">
+          <text>0.7</text>
+        </outputEntry>
+      </rule>
+      <rule id="DecisionRule_1120byd">
+        <inputEntry id="UnaryTests_01chh8b">
+          <text>&lt;=9</text>
+        </inputEntry>
+        <outputEntry id="LiteralExpression_11hmdxq">
+          <text>0.8</text>
+        </outputEntry>
+      </rule>
+      <rule id="DecisionRule_1kq38xw">
+        <inputEntry id="UnaryTests_02xco5a">
+          <text>&lt;=21</text>
+        </inputEntry>
+        <outputEntry id="LiteralExpression_11moqyl">
+          <text>0.9</text>
+        </outputEntry>
+      </rule>
+      <rule id="DecisionRule_0stq0c3">
+        <inputEntry id="UnaryTests_0tq42t9">
+          <text></text>
+        </inputEntry>
+        <outputEntry id="LiteralExpression_1x3i6c1">
+          <text>1</text>
+        </outputEntry>
+      </rule>
+    </decisionTable>
+  </decision>
+  <inputData id="InputData_1hgx1vg" name="Number of Years Incorporated" />
+  <decision id="Decision_0euym73" name="Weighted Incorporation Score">
+    <informationRequirement id="InformationRequirement_0equu16">
+      <requiredDecision href="#Decision_0lbu39o" />
+    </informationRequirement>
+    <decisionTable id="DecisionTable_1gd9216" hitPolicy="FIRST">
+      <input id="InputClause_0g4m674" label="Incorporation Score">
+        <inputExpression id="LiteralExpression_1ezbmf7" typeRef="number">
+          <text>incorporationScore</text>
+        </inputExpression>
+      </input>
+      <output id="OutputClause_17dixwo" label="Weighted Incorporation Score" name="weightedIncorporationScore" typeRef="number" biodi:width="192" />
+      <rule id="DecisionRule_05i4na9">
+        <inputEntry id="UnaryTests_141vdiz">
+          <text></text>
+        </inputEntry>
+        <outputEntry id="LiteralExpression_1e8goyp">
+          <text>incorporationScore * 0.25</text>
+        </outputEntry>
+      </rule>
+      <rule id="DecisionRule_086u9ij">
+        <inputEntry id="UnaryTests_144oo9f">
+          <text></text>
+        </inputEntry>
+        <outputEntry id="LiteralExpression_02vkbdg">
+          <text></text>
+        </outputEntry>
+      </rule>
+      <rule id="DecisionRule_173ezfj">
+        <inputEntry id="UnaryTests_1l6k4a5">
+          <text></text>
+        </inputEntry>
+        <outputEntry id="LiteralExpression_17l0awk">
+          <text></text>
+        </outputEntry>
+      </rule>
+    </decisionTable>
+  </decision>
+  <decision id="Decision_0n1cbn5" name="Entity Type Score">
+    <informationRequirement id="InformationRequirement_0wmzmqm">
+      <requiredInput href="#InputData_0q6v1x7" />
+    </informationRequirement>
+    <decisionTable id="DecisionTable_0j5ys0x">
+      <input id="InputClause_0mjnw26" label="Entity Type">
+        <inputExpression id="LiteralExpression_0cbbsru" typeRef="string">
+          <text>entityType</text>
+        </inputExpression>
+        <inputValues id="UnaryTests_1h9uncu">
+          <text>"Ltd","Club","Charity","LLP"</text>
+        </inputValues>
+      </input>
+      <output id="OutputClause_14f17i8" label="Entity Score" name="entityScore" typeRef="number" />
+      <rule id="DecisionRule_1j7d87z">
+        <inputEntry id="UnaryTests_10gdy5w">
+          <text>"Ltd"</text>
+        </inputEntry>
+        <outputEntry id="LiteralExpression_0vny63l">
+          <text>0.9</text>
+        </outputEntry>
+      </rule>
+      <rule id="DecisionRule_0zkvrkj">
+        <inputEntry id="UnaryTests_0ko7t7o">
+          <text>"Club"</text>
+        </inputEntry>
+        <outputEntry id="LiteralExpression_0s5vbvo">
+          <text>1</text>
+        </outputEntry>
+      </rule>
+      <rule id="DecisionRule_1vgabah">
+        <inputEntry id="UnaryTests_1dr8v3l">
+          <text>"Charity"</text>
+        </inputEntry>
+        <outputEntry id="LiteralExpression_0ylctwx">
+          <text>1</text>
+        </outputEntry>
+      </rule>
+      <rule id="DecisionRule_02rflec">
+        <inputEntry id="UnaryTests_0lelwaz">
+          <text>"LLP"</text>
+        </inputEntry>
+        <outputEntry id="LiteralExpression_0v2bv20">
+          <text>0.8</text>
+        </outputEntry>
+      </rule>
+    </decisionTable>
+  </decision>
+  <inputData id="InputData_0q6v1x7" name="Entity Type" />
+  <inputData id="InputData_131j395" name="Product" />
+  <decision id="Decision_18ogqco" name="Weighted Entity Type Score">
+    <informationRequirement id="InformationRequirement_11ygof7">
+      <requiredDecision href="#Decision_0n1cbn5" />
+    </informationRequirement>
+    <informationRequirement id="InformationRequirement_0ls5l3j">
+      <requiredInput href="#InputData_131j395" />
+    </informationRequirement>
+    <decisionTable id="DecisionTable_0izo0me" hitPolicy="FIRST">
+      <input id="InputClause_1fatbqw" label="Product">
+        <inputExpression id="LiteralExpression_12f84wv" typeRef="string">
+          <text>product</text>
+        </inputExpression>
+        <inputValues id="UnaryTests_0x35d4o">
+          <text>"Water","Waste"</text>
+        </inputValues>
+      </input>
+      <output id="OutputClause_11y04ug" label="Weighted Entity Score" name="weightedEntityScore" typeRef="number" />
+      <rule id="DecisionRule_15jarf4">
+        <inputEntry id="UnaryTests_1dtnelh">
+          <text>"Water"</text>
+        </inputEntry>
+        <outputEntry id="LiteralExpression_096109r">
+          <text>entityScore * 0.05</text>
+        </outputEntry>
+      </rule>
+      <rule id="DecisionRule_1b53owd">
+        <inputEntry id="UnaryTests_16cgtg7">
+          <text>"Waste"</text>
+        </inputEntry>
+        <outputEntry id="LiteralExpression_1vficoo">
+          <text>entityScore * 0.15</text>
+        </outputEntry>
+      </rule>
+      <rule id="DecisionRule_11vmux9">
+        <inputEntry id="UnaryTests_1k5a02u">
+          <text></text>
+        </inputEntry>
+        <outputEntry id="LiteralExpression_0lkunym">
+          <text></text>
+        </outputEntry>
+      </rule>
+    </decisionTable>
+  </decision>
+  <decision id="Decision_0xs3wkx" name="Risk Score">
+    <informationRequirement id="InformationRequirement_0sfo7wl">
+      <requiredDecision href="#Decision_18ogqco" />
+    </informationRequirement>
+    <informationRequirement id="InformationRequirement_021rhbu">
+      <requiredDecision href="#Decision_0euym73" />
+    </informationRequirement>
+    <decisionTable id="DecisionTable_1led76w">
+      <input id="InputClause_0sh5i7b" label="SIC Risk">
+        <inputExpression id="LiteralExpression_14e1mx7" typeRef="string">
+          <text>sic-risk</text>
+        </inputExpression>
+      </input>
+      <output id="OutputClause_1yd8a3n" label="Risk Score" name="riskScore" typeRef="number" />
+      <rule id="DecisionRule_0f9mgwg">
+        <inputEntry id="UnaryTests_1lvuksn">
+          <text></text>
+        </inputEntry>
+        <outputEntry id="LiteralExpression_0xyn0mw">
+          <text>weightedIncorporationScore + weightedEntityScore</text>
+        </outputEntry>
+      </rule>
+    </decisionTable>
+  </decision>
+  <dmndi:DMNDI>
+    <dmndi:DMNDiagram>
+      <dmndi:DMNShape id="DMNShape_0uw77kt" dmnElementRef="Decision_0lbu39o">
+        <dc:Bounds height="80" width="180" x="500" y="500" />
+      </dmndi:DMNShape>
+      <dmndi:DMNShape id="DMNShape_12i25ma" dmnElementRef="InputData_1hgx1vg">
+        <dc:Bounds height="45" width="125" x="527" y="637" />
+      </dmndi:DMNShape>
+      <dmndi:DMNEdge id="DMNEdge_092a0sl" dmnElementRef="InformationRequirement_0wweswm">
+        <di:waypoint x="590" y="637" />
+        <di:waypoint x="590" y="600" />
+        <di:waypoint x="590" y="580" />
+      </dmndi:DMNEdge>
+      <dmndi:DMNEdge id="DMNEdge_143mirk" dmnElementRef="InformationRequirement_0equu16">
+        <di:waypoint x="590" y="500" />
+        <di:waypoint x="590" y="490" />
+        <di:waypoint x="590" y="470" />
+      </dmndi:DMNEdge>
+      <dmndi:DMNShape id="DMNShape_1banask" dmnElementRef="Decision_0euym73">
+        <dc:Bounds height="80" width="180" x="500" y="390" />
+      </dmndi:DMNShape>
+      <dmndi:DMNShape id="DMNShape_0so9z18" dmnElementRef="Decision_0n1cbn5">
+        <dc:Bounds height="80" width="180" x="260" y="500" />
+      </dmndi:DMNShape>
+      <dmndi:DMNShape id="DMNShape_08n11fl" dmnElementRef="InputData_0q6v1x7">
+        <dc:Bounds height="45" width="125" x="287" y="637" />
+      </dmndi:DMNShape>
+      <dmndi:DMNEdge id="DMNEdge_0ll0jd0" dmnElementRef="InformationRequirement_0wmzmqm">
+        <di:waypoint x="350" y="637" />
+        <di:waypoint x="350" y="600" />
+        <di:waypoint x="350" y="580" />
+      </dmndi:DMNEdge>
+      <dmndi:DMNEdge id="DMNEdge_055xxm3" dmnElementRef="InformationRequirement_11ygof7">
+        <di:waypoint x="350" y="500" />
+        <di:waypoint x="350" y="490" />
+        <di:waypoint x="350" y="470" />
+      </dmndi:DMNEdge>
+      <dmndi:DMNShape id="DMNShape_16dklic" dmnElementRef="InputData_131j395">
+        <dc:Bounds height="45" width="125" x="58" y="408" />
+      </dmndi:DMNShape>
+      <dmndi:DMNEdge id="DMNEdge_141ngvz" dmnElementRef="InformationRequirement_0ls5l3j">
+        <di:waypoint x="183" y="431" />
+        <di:waypoint x="240" y="430" />
+        <di:waypoint x="260" y="430" />
+      </dmndi:DMNEdge>
+      <dmndi:DMNShape id="DMNShape_07s1p9q" dmnElementRef="Decision_18ogqco">
+        <dc:Bounds height="80" width="180" x="260" y="390" />
+      </dmndi:DMNShape>
+      <dmndi:DMNShape id="DMNShape_1t2rb02" dmnElementRef="Decision_0xs3wkx">
+        <dc:Bounds height="80" width="180" x="380" y="280" />
+      </dmndi:DMNShape>
+      <dmndi:DMNEdge id="DMNEdge_0o4zecx" dmnElementRef="InformationRequirement_0sfo7wl">
+        <di:waypoint x="350" y="390" />
+        <di:waypoint x="440" y="380" />
+        <di:waypoint x="440" y="360" />
+      </dmndi:DMNEdge>
+      <dmndi:DMNEdge id="DMNEdge_0ymaq6b" dmnElementRef="InformationRequirement_021rhbu">
+        <di:waypoint x="590" y="390" />
+        <di:waypoint x="500" y="380" />
+        <di:waypoint x="500" y="360" />
+      </dmndi:DMNEdge>
+    </dmndi:DMNDiagram>
+  </dmndi:DMNDI>
+</definitions>
