@@ -446,7 +446,7 @@ namespace ScratchyDisk.DmnEngine.Engine.Execution.Context
             if (aliases == null) return;
             foreach (var alias in aliases)
             {
-                if (Variables.TryGetValue(alias.Value, out var source))
+                if (TryResolveAliasTarget(alias.Value, out var source))
                 {
                     evalContext.SetVariable(alias.Key, FeelTypeCoercion.CoerceToFeel(source.Value));
                 }
@@ -459,6 +459,29 @@ namespace ScratchyDisk.DmnEngine.Engine.Execution.Context
                     evalContext.SetVariable(alias.Key, CreateDecisionServiceFunction(service));
                 }
             }
+        }
+
+        /// <summary>
+        /// Resolves the target of an import alias. Alias targets are written as they
+        /// appear in the model, so a name with spaces ("A Person") has to be matched
+        /// against the normalized variable name and the variable label as well.
+        /// </summary>
+        private bool TryResolveAliasTarget(string name, out DmnExecutionVariable variable)
+        {
+            variable = null;
+            if (string.IsNullOrWhiteSpace(name)) return false;
+            if (Variables.TryGetValue(name, out variable)) return true;
+
+            // Names with spaces or operator characters are stored under their
+            // normalized form; import-qualified names are not normalizable, so the
+            // conversion is attempted only when it is valid.
+            if (DmnVariableDefinition.CanNormalizeVariableName(name, out var normalized, out _)
+                && Variables.TryGetValue(normalized, out variable))
+                return true;
+
+            variable = Variables.Values.FirstOrDefault(v =>
+                string.Equals(v.Label, name, StringComparison.Ordinal));
+            return variable != null;
         }
 
         protected virtual FeelScope BuildFeelScope()
