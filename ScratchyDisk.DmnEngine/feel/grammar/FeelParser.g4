@@ -238,6 +238,11 @@ feelType
     : qualifiedName                                         # typeNamed
     | NULL                                                  # typeNull
     | NAME LT feelType GT                                   # typeList
+    | NAME LT contextTypeField (COMMA contextTypeField)* GT # typeStructuredContext
     | FUNCTION LT (feelType (COMMA feelType)*)? GT ARROW feelType  # typeFunction
     | LBRACKET feelType RBRACKET                            # typeContext
+    ;
+
+contextTypeField
+    : NAME COLON feelType
     ;

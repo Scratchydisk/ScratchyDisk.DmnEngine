@@ -681,6 +681,23 @@ namespace ScratchyDisk.DmnEngine.Feel.Eval
             }
         }
 
+        private static string TypeName(object value)
+        {
+            if (value == null) return "null";
+            if (value is string) return "string";
+            if (value is bool) return "boolean";
+            if (value is DateOnly or FeelExpandedDate) return "date";
+            if (value is DateTimeOffset or FeelDateTime or FeelExpandedDateTime) return "date and time";
+            if (value is FeelTime) return "time";
+            if (value is TimeSpan) return "days and time duration";
+            if (value is FeelYmDuration) return "years and months duration";
+            if (value is FeelRange) return "range";
+            if (value is FeelContext) return "context";
+            if (value is FeelFunction) return "function";
+            if (value is List<object>) return "list";
+            return FeelValueComparer.IsNumeric(value) ? "number" : null;
+        }
+
         private object EvalInstanceOf(InstanceOf io)
         {
             var value = Evaluate(io.Value);
@@ -688,28 +705,60 @@ namespace ScratchyDisk.DmnEngine.Feel.Eval
 
             if (value == null) return typeName == "null";
 
-            if (typeName.StartsWith("list<", StringComparison.Ordinal)) return value is List<object>;
-            if (typeName.StartsWith("range<", StringComparison.Ordinal)) return value is FeelRange;
-            if (typeName.StartsWith("context<", StringComparison.Ordinal)) return value is FeelContext;
+            return MatchesFeelType(value, typeName);
+        }
 
-            return typeName switch
+        private bool MatchesFeelType(object value, string typeName)
+        {
+            if (context.TypeAliases != null && context.TypeAliases.TryGetValue(typeName, out var aliasedType))
+                typeName = aliasedType;
+
+            if (string.Equals(typeName, "any", StringComparison.OrdinalIgnoreCase)) return true;
+            if (value == null) return true;
+
+            if (typeName.StartsWith("list<", StringComparison.Ordinal))
             {
-                "number" => FeelValueComparer.IsNumeric(value),
-                "string" => value is string,
-                "boolean" => value is bool,
-                "date" => value is DateOnly or FeelExpandedDate,
-                "time" => value is FeelTime,
-                "date and time" or "dateandtime" => value is DateTimeOffset or FeelDateTime or FeelExpandedDateTime,
-                "years and months duration" or "yearsandmonthsduration" => value is FeelYmDuration,
-                "days and time duration" or "daysandtimeduration" => value is TimeSpan,
-                "list" => value is List<object>,
-                "context" => value is FeelContext,
-                "range" => value is FeelRange,
-                "function" => value is FeelFunction,
-                "null" => false, // value is not null if we got here
-                "Any" or "any" => true,
-                _ => false
-            };
+                if (value is not List<object> list) return false;
+                var inner = typeName[5..^1];
+                return list.All(item => MatchesFeelType(item, inner));
+            }
+
+            if (typeName.StartsWith("context<", StringComparison.Ordinal))
+            {
+                if (value is not FeelContext contextValue) return false;
+                var inner = typeName[8..^1];
+                foreach (var field in SplitTypeFields(inner))
+                {
+                    var separator = field.IndexOf(':');
+                    if (separator <= 0) return false;
+                    var key = field[..separator];
+                    var fieldType = field[(separator + 1)..];
+                    if (!contextValue.ContainsKey(key)) return false;
+                    if (!MatchesFeelType(contextValue[key], fieldType)) return false;
+                }
+                return true;
+            }
+
+            if (typeName.StartsWith("range<", StringComparison.Ordinal)) return value is FeelRange;
+
+            return TypeName(value) == typeName;
+        }
+
+        private static IEnumerable<string> SplitTypeFields(string text)
+        {
+            var depth = 0;
+            var start = 0;
+            for (var i = 0; i < text.Length; i++)
+            {
+                if (text[i] == '<') depth++;
+                else if (text[i] == '>') depth--;
+                else if (text[i] == ',' && depth == 0)
+                {
+                    yield return text[start..i];
+                    start = i + 1;
+                }
+            }
+            if (start < text.Length) yield return text[start..];
         }
 
         // ==================== Logic ====================
@@ -872,6 +921,7 @@ namespace ScratchyDisk.DmnEngine.Feel.Eval
 
             foreach (var entry in ctx.Entries)
             {
+                if (result.ContainsKey(entry.Key)) return null;
                 var value = childEval.Evaluate(entry.Value);
                 result.Put(entry.Key, value);
                 // Context entries are visible to subsequent entries

@@ -1,25 +1,25 @@
 {
   "schemaVersion": 1,
-  "generatedUtc": "2026-11-23T13:20:59.0318496Z",
+  "generatedUtc": "2026-11-23T14:05:49.8706700Z",
   "tck": {
     "root": "artifacts/tck/TestCases",
     "commit": "a428da2f9c5ff2a4b8566ab511144e9022d743fe"
   },
   "engine": {
-    "version": "2.0.1\u002B5d15393fb119d9dc509b243e2790b804e4e8cac6"
+    "version": "2.0.1\u002Bc2d47d8fe2ee648fc7e72f01124826b46d3b30da"
   },
   "totals": {
     "total": 3437,
-    "pass": 3100,
-    "fail": 180,
+    "pass": 3180,
+    "fail": 100,
     "parseFail": 30,
     "notFound": 19,
     "unsupported": 108,
     "fixtureError": 0,
     "blocked": 157,
     "executed": 3280,
-    "passRate": 0.9019493744544661,
-    "executedPassRate": 0.9451219512195121
+    "passRate": 0.9252254873436137,
+    "executedPassRate": 0.9695121951219512
   },
   "cases": {
     "compliance-level-3/0002-string-functions/0002-string-functions-test-01.xml/001": {
@@ -194,39 +194,11 @@
       "status": "FAIL",
       "reason": "expected a value, got null"
     },
-    "compliance-level-3/0057-feel-context/0057-feel-context-test-01.xml/008": {
-      "status": "FAIL",
-      "reason": "expected an error but a value was returned"
-    },
     "compliance-level-3/0059-feel-all-function/0059-feel-all-function-test-01.xml/014": {
       "status": "FAIL",
       "reason": "expected an error but a value was returned"
     },
     "compliance-level-3/0060-feel-any-function/0060-feel-any-function-test-01.xml/014": {
-      "status": "FAIL",
-      "reason": "expected an error but a value was returned"
-    },
-    "compliance-level-3/0062-feel-mode-function/0062-feel-mode-function-test-01.xml/002": {
-      "status": "FAIL",
-      "reason": "item 0: number 1 vs 3"
-    },
-    "compliance-level-3/0062-feel-mode-function/0062-feel-mode-function-test-01.xml/003": {
-      "status": "FAIL",
-      "reason": "expected an error but a value was returned"
-    },
-    "compliance-level-3/0062-feel-mode-function/0062-feel-mode-function-test-01.xml/003_a": {
-      "status": "FAIL",
-      "reason": "expected an error but a value was returned"
-    },
-    "compliance-level-3/0062-feel-mode-function/0062-feel-mode-function-test-01.xml/004": {
-      "status": "FAIL",
-      "reason": "expected an error but a value was returned"
-    },
-    "compliance-level-3/0062-feel-mode-function/0062-feel-mode-function-test-01.xml/005": {
-      "status": "FAIL",
-      "reason": "expected an error but a value was returned"
-    },
-    "compliance-level-3/0062-feel-mode-function/0062-feel-mode-function-test-01.xml/012": {
       "status": "FAIL",
       "reason": "expected an error but a value was returned"
     },
@@ -271,70 +243,6 @@
       "reason": "expected a value, got null"
     },
     "compliance-level-3/0068-feel-equality/0068-feel-equality-test-01.xml/range_012": {
-      "status": "FAIL",
-      "reason": "expected a value, got null"
-    },
-    "compliance-level-3/0070-feel-instance-of/0070-feel-instance-of-test-01.xml/number_013": {
-      "status": "FAIL",
-      "reason": "true vs false"
-    },
-    "compliance-level-3/0070-feel-instance-of/0070-feel-instance-of-test-01.xml/string_013": {
-      "status": "FAIL",
-      "reason": "true vs false"
-    },
-    "compliance-level-3/0070-feel-instance-of/0070-feel-instance-of-test-01.xml/list_013": {
-      "status": "FAIL",
-      "reason": "true vs false"
-    },
-    "compliance-level-3/0070-feel-instance-of/0070-feel-instance-of-test-01.xml/list_014": {
-      "status": "FAIL",
-      "reason": "true vs false"
-    },
-    "compliance-level-3/0070-feel-instance-of/0070-feel-instance-of-test-01.xml/list_014_a": {
-      "status": "FAIL",
-      "reason": "true vs false"
-    },
-    "compliance-level-3/0070-feel-instance-of/0070-feel-instance-of-test-01.xml/list_019": {
-      "status": "FAIL",
-      "reason": "false vs true"
-    },
-    "compliance-level-3/0070-feel-instance-of/0070-feel-instance-of-test-01.xml/list_020": {
-      "status": "FAIL",
-      "reason": "expected a value, got null"
-    },
-    "compliance-level-3/0070-feel-instance-of/0070-feel-instance-of-test-01.xml/context_013": {
-      "status": "FAIL",
-      "reason": "true vs false"
-    },
-    "compliance-level-3/0070-feel-instance-of/0070-feel-instance-of-test-01.xml/context_014": {
-      "status": "FAIL",
-      "reason": "true vs false"
-    },
-    "compliance-level-3/0070-feel-instance-of/0070-feel-instance-of-test-01.xml/context_018": {
-      "status": "FAIL",
-      "reason": "expected a value, got null"
-    },
-    "compliance-level-3/0070-feel-instance-of/0070-feel-instance-of-test-01.xml/context_019": {
-      "status": "FAIL",
-      "reason": "expected a value, got null"
-    },
-    "compliance-level-3/0070-feel-instance-of/0070-feel-instance-of-test-01.xml/context_020": {
-      "status": "FAIL",
-      "reason": "expected a value, got null"
-    },
-    "compliance-level-3/0070-feel-instance-of/0070-feel-instance-of-test-01.xml/context_021": {
-      "status": "FAIL",
-      "reason": "expected a value, got null"
-    },
-    "compliance-level-3/0070-feel-instance-of/0070-feel-instance-of-test-01.xml/context_022": {
-      "status": "FAIL",
-      "reason": "expected a value, got null"
-    },
-    "compliance-level-3/0070-feel-instance-of/0070-feel-instance-of-test-01.xml/context_023": {
-      "status": "FAIL",
-      "reason": "expected a value, got null"
-    },
-    "compliance-level-3/0070-feel-instance-of/0070-feel-instance-of-test-01.xml/context_024": {
       "status": "FAIL",
       "reason": "expected a value, got null"
     },
@@ -690,81 +598,25 @@
       "status": "FAIL",
       "reason": "expected a value, got null"
     },
-    "compliance-level-3/0095-feel-day-of-year-function/0095-feel-day-of-year-function-test-01.xml/datetime_001": {
-      "status": "FAIL",
-      "reason": "expected a value, got null"
-    },
-    "compliance-level-3/0095-feel-day-of-year-function/0095-feel-day-of-year-function-test-01.xml/datetime_002": {
-      "status": "FAIL",
-      "reason": "expected a value, got null"
-    },
-    "compliance-level-3/0095-feel-day-of-year-function/0095-feel-day-of-year-function-test-01.xml/datetime_003": {
-      "status": "FAIL",
-      "reason": "expected a value, got null"
-    },
-    "compliance-level-3/0095-feel-day-of-year-function/0095-feel-day-of-year-function-test-01.xml/datetime_005": {
-      "status": "FAIL",
-      "reason": "expected a value, got null"
-    },
-    "compliance-level-3/0095-feel-day-of-year-function/0095-feel-day-of-year-function-test-01.xml/null_008": {
-      "status": "FAIL",
-      "reason": "expected an error but a value was returned"
-    },
     "compliance-level-3/0096-feel-day-of-week-function/0096-feel-day-of-week-function-test-01.xml/date_001": {
       "status": "UNSUPPORTED",
       "reason": "decision logic kind is not parsed by the engine"
-    },
-    "compliance-level-3/0096-feel-day-of-week-function/0096-feel-day-of-week-function-test-01.xml/date_002": {
-      "status": "FAIL",
-      "reason": "\u0022Tuesday\u0022 vs 2"
     },
     "compliance-level-3/0096-feel-day-of-week-function/0096-feel-day-of-week-function-test-01.xml/datetime_001": {
       "status": "UNSUPPORTED",
       "reason": "decision logic kind is not parsed by the engine"
     },
-    "compliance-level-3/0096-feel-day-of-week-function/0096-feel-day-of-week-function-test-01.xml/datetime_002": {
-      "status": "FAIL",
-      "reason": "expected a value, got null"
-    },
-    "compliance-level-3/0096-feel-day-of-week-function/0096-feel-day-of-week-function-test-01.xml/null_008": {
-      "status": "FAIL",
-      "reason": "expected an error but a value was returned"
-    },
     "compliance-level-3/0097-feel-month-of-year-function/0097-feel-month-of-year-function-test-01.xml/date_001": {
       "status": "UNSUPPORTED",
       "reason": "decision logic kind is not parsed by the engine"
-    },
-    "compliance-level-3/0097-feel-month-of-year-function/0097-feel-month-of-year-function-test-01.xml/date_002": {
-      "status": "FAIL",
-      "reason": "\u0022September\u0022 vs 9"
     },
     "compliance-level-3/0097-feel-month-of-year-function/0097-feel-month-of-year-function-test-01.xml/datetime_001": {
       "status": "UNSUPPORTED",
       "reason": "decision logic kind is not parsed by the engine"
     },
-    "compliance-level-3/0097-feel-month-of-year-function/0097-feel-month-of-year-function-test-01.xml/datetime_002": {
-      "status": "FAIL",
-      "reason": "expected a value, got null"
-    },
-    "compliance-level-3/0097-feel-month-of-year-function/0097-feel-month-of-year-function-test-01.xml/null_008": {
-      "status": "FAIL",
-      "reason": "expected an error but a value was returned"
-    },
     "compliance-level-3/0098-feel-week-of-year-function/0098-feel-week-of-year-function-test-01.xml/date_008": {
       "status": "UNSUPPORTED",
       "reason": "decision logic kind is not parsed by the engine"
-    },
-    "compliance-level-3/0098-feel-week-of-year-function/0098-feel-week-of-year-function-test-01.xml/datetime_001": {
-      "status": "FAIL",
-      "reason": "expected a value, got null"
-    },
-    "compliance-level-3/0098-feel-week-of-year-function/0098-feel-week-of-year-function-test-01.xml/datetime_005": {
-      "status": "FAIL",
-      "reason": "expected a value, got null"
-    },
-    "compliance-level-3/0098-feel-week-of-year-function/0098-feel-week-of-year-function-test-01.xml/null_008": {
-      "status": "FAIL",
-      "reason": "expected an error but a value was returned"
     },
     "compliance-level-3/1103-feel-substring-function/1103-feel-substring-function-test-01.xml/008_ddeffdc93e": {
       "status": "FAIL",
@@ -773,94 +625,6 @@
     "compliance-level-3/1103-feel-substring-function/1103-feel-substring-function-test-01.xml/011_a559ce6410": {
       "status": "FAIL",
       "reason": "expected a value, got null"
-    },
-    "compliance-level-3/1120-feel-duration-function/1120-feel-duration-function-test-01.xml/007_2f0ad399f3": {
-      "status": "FAIL",
-      "reason": "duration PT0.999S vs PT16M39S"
-    },
-    "compliance-level-3/1120-feel-duration-function/1120-feel-duration-function-test-01.xml/008_747f56743d": {
-      "status": "FAIL",
-      "reason": "duration P1DT2H3M4.1234567S vs P1429DT23H36M9S"
-    },
-    "compliance-level-3/1120-feel-duration-function/1120-feel-duration-function-test-01.xml/017_4f4549fda4": {
-      "status": "FAIL",
-      "reason": "duration PT16H40M0.9999999S vs P11574DT18H26M39S"
-    },
-    "compliance-level-3/1120-feel-duration-function/1120-feel-duration-function-test-01.xml/045_2ffcc37801": {
-      "status": "FAIL",
-      "reason": "expected an error but a value was returned"
-    },
-    "compliance-level-3/1120-feel-duration-function/1120-feel-duration-function-test-01.xml/046_eb637de5f6": {
-      "status": "FAIL",
-      "reason": "expected an error but a value was returned"
-    },
-    "compliance-level-3/1120-feel-duration-function/1120-feel-duration-function-test-01.xml/049_2225b503a0": {
-      "status": "FAIL",
-      "reason": "expected an error but a value was returned"
-    },
-    "compliance-level-3/1120-feel-duration-function/1120-feel-duration-function-test-01.xml/050_dd2ef33bbd": {
-      "status": "FAIL",
-      "reason": "expected an error but a value was returned"
-    },
-    "compliance-level-3/1121-feel-years-and-months-duration-function/1121-feel-years-and-months-duration-function-test-01.xml/014_1fadbba7cd": {
-      "status": "FAIL",
-      "reason": "years-months duration P1Y2M vs P1Y3M"
-    },
-    "compliance-level-3/1121-feel-years-and-months-duration-function/1121-feel-years-and-months-duration-function-test-01.xml/015_0e496f94fc": {
-      "status": "FAIL",
-      "reason": "years-months duration P7Y6M vs P7Y7M"
-    },
-    "compliance-level-3/1121-feel-years-and-months-duration-function/1121-feel-years-and-months-duration-function-test-01.xml/016_b38662aa93": {
-      "status": "FAIL",
-      "reason": "years-months duration P4Y9M vs P4Y10M"
-    },
-    "compliance-level-3/1121-feel-years-and-months-duration-function/1121-feel-years-and-months-duration-function-test-01.xml/017_86744b9a54": {
-      "status": "FAIL",
-      "reason": "expected a value, got null"
-    },
-    "compliance-level-3/1121-feel-years-and-months-duration-function/1121-feel-years-and-months-duration-function-test-01.xml/018_8a9ed1d66d": {
-      "status": "FAIL",
-      "reason": "expected a value, got null"
-    },
-    "compliance-level-3/1121-feel-years-and-months-duration-function/1121-feel-years-and-months-duration-function-test-01.xml/019_90c2084588": {
-      "status": "FAIL",
-      "reason": "expected a value, got null"
-    },
-    "compliance-level-3/1121-feel-years-and-months-duration-function/1121-feel-years-and-months-duration-function-test-01.xml/020_8ead9a0377": {
-      "status": "FAIL",
-      "reason": "years-months duration P2Y vs P2Y1M"
-    },
-    "compliance-level-3/1121-feel-years-and-months-duration-function/1121-feel-years-and-months-duration-function-test-01.xml/021_8a7d311ae9": {
-      "status": "FAIL",
-      "reason": "expected a value, got null"
-    },
-    "compliance-level-3/1121-feel-years-and-months-duration-function/1121-feel-years-and-months-duration-function-test-01.xml/022_87e369773b": {
-      "status": "FAIL",
-      "reason": "expected a value, got null"
-    },
-    "compliance-level-3/1121-feel-years-and-months-duration-function/1121-feel-years-and-months-duration-function-test-01.xml/023_6385c7a83e": {
-      "status": "FAIL",
-      "reason": "expected a value, got null"
-    },
-    "compliance-level-3/1121-feel-years-and-months-duration-function/1121-feel-years-and-months-duration-function-test-01.xml/024_e96d1bd93a": {
-      "status": "FAIL",
-      "reason": "expected a value, got null"
-    },
-    "compliance-level-3/1121-feel-years-and-months-duration-function/1121-feel-years-and-months-duration-function-test-01.xml/025_161f6fca54": {
-      "status": "FAIL",
-      "reason": "years-months duration P2Y9M vs P2Y10M"
-    },
-    "compliance-level-3/1121-feel-years-and-months-duration-function/1121-feel-years-and-months-duration-function-test-01.xml/026_fcc906b375": {
-      "status": "FAIL",
-      "reason": "years-months duration P3Y vs P3Y1M"
-    },
-    "compliance-level-3/1121-feel-years-and-months-duration-function/1121-feel-years-and-months-duration-function-test-01.xml/031_4fd9c09d89": {
-      "status": "FAIL",
-      "reason": "years-months duration P4Y3M vs P4Y4M"
-    },
-    "compliance-level-3/1121-feel-years-and-months-duration-function/1121-feel-years-and-months-duration-function-test-01.xml/032_2a09ac80d0": {
-      "status": "FAIL",
-      "reason": "years-months duration P2Y4M vs P2Y5M"
     },
     "compliance-level-3/1130-feel-interval/1130-feel-interval-test-01.xml/during": {
       "status": "UNSUPPORTED",
@@ -918,17 +682,33 @@
       "status": "UNSUPPORTED",
       "reason": "decision logic kind is not parsed by the engine"
     },
-    "compliance-level-3/1140-feel-string-join-function/1140-feel-string-join-function-test-01.xml/009": {
+    "compliance-level-3/1140-feel-string-join-function/1140-feel-string-join-function-test-01.xml/001": {
       "status": "FAIL",
-      "reason": "expected an error but a value was returned"
+      "reason": "expected a value, got null"
     },
-    "compliance-level-3/1140-feel-string-join-function/1140-feel-string-join-function-test-01.xml/013": {
+    "compliance-level-3/1140-feel-string-join-function/1140-feel-string-join-function-test-01.xml/004": {
       "status": "FAIL",
-      "reason": "expected an error but a value was returned"
+      "reason": "expected a value, got null"
     },
-    "compliance-level-3/1140-feel-string-join-function/1140-feel-string-join-function-test-01.xml/014": {
+    "compliance-level-3/1140-feel-string-join-function/1140-feel-string-join-function-test-01.xml/005_a": {
       "status": "FAIL",
-      "reason": "expected an error but a value was returned"
+      "reason": "expected a value, got null"
+    },
+    "compliance-level-3/1140-feel-string-join-function/1140-feel-string-join-function-test-01.xml/006_a": {
+      "status": "FAIL",
+      "reason": "expected a value, got null"
+    },
+    "compliance-level-3/1140-feel-string-join-function/1140-feel-string-join-function-test-01.xml/006_b": {
+      "status": "FAIL",
+      "reason": "expected a value, got null"
+    },
+    "compliance-level-3/1140-feel-string-join-function/1140-feel-string-join-function-test-01.xml/007_a": {
+      "status": "FAIL",
+      "reason": "expected a value, got null"
+    },
+    "compliance-level-3/1140-feel-string-join-function/1140-feel-string-join-function-test-01.xml/010_a": {
+      "status": "FAIL",
+      "reason": "expected a value, got null"
     },
     "compliance-level-3/1141-feel-round-up-function/1141-feel-round-up-function-test-01.xml/009": {
       "status": "FAIL",
@@ -962,26 +742,6 @@
       "status": "FAIL",
       "reason": "expected a value, got null"
     },
-    "compliance-level-3/1145-feel-context-function/1145-feel-context-function-test-01.xml/003": {
-      "status": "FAIL",
-      "reason": "expected an error but a value was returned"
-    },
-    "compliance-level-3/1145-feel-context-function/1145-feel-context-function-test-01.xml/006": {
-      "status": "FAIL",
-      "reason": "expected an error but a value was returned"
-    },
-    "compliance-level-3/1145-feel-context-function/1145-feel-context-function-test-01.xml/007": {
-      "status": "FAIL",
-      "reason": "expected an error but a value was returned"
-    },
-    "compliance-level-3/1145-feel-context-function/1145-feel-context-function-test-01.xml/008": {
-      "status": "FAIL",
-      "reason": "expected an error but a value was returned"
-    },
-    "compliance-level-3/1145-feel-context-function/1145-feel-context-function-test-01.xml/016": {
-      "status": "FAIL",
-      "reason": "expected an error but a value was returned"
-    },
     "compliance-level-3/1146-feel-context-put-function/1146-feel-context-put-function-test-01.xml/014": {
       "status": "FAIL",
       "reason": "expected a value, got null"
@@ -1005,18 +765,6 @@
     "compliance-level-3/1146-feel-context-put-function/1146-feel-context-put-function-test-01.xml/nested012": {
       "status": "UNSUPPORTED",
       "reason": "decision logic kind is not parsed by the engine"
-    },
-    "compliance-level-3/1147-feel-context-merge-function/1147-feel-context-merge-function-test-01.xml/007": {
-      "status": "FAIL",
-      "reason": "expected an error but a value was returned"
-    },
-    "compliance-level-3/1147-feel-context-merge-function/1147-feel-context-merge-function-test-01.xml/010": {
-      "status": "FAIL",
-      "reason": "expected an error but a value was returned"
-    },
-    "compliance-level-3/1147-feel-context-merge-function/1147-feel-context-merge-function-test-01.xml/011": {
-      "status": "FAIL",
-      "reason": "expected an error but a value was returned"
     },
     "compliance-level-3/1148-feel-now-function/1148-feel-now-function-test-01.xml/002": {
       "status": "FAIL",
@@ -1118,30 +866,6 @@
       "status": "FAIL",
       "reason": "expected an error but a value was returned"
     },
-    "compliance-level-3/1156-range-function/1156-range-function-test-01.xml/001_c": {
-      "status": "FAIL",
-      "reason": "expected a value, got null"
-    },
-    "compliance-level-3/1156-range-function/1156-range-function-test-01.xml/001_d": {
-      "status": "FAIL",
-      "reason": "expected a value, got null"
-    },
-    "compliance-level-3/1156-range-function/1156-range-function-test-01.xml/001_e": {
-      "status": "FAIL",
-      "reason": "expected a value, got null"
-    },
-    "compliance-level-3/1156-range-function/1156-range-function-test-01.xml/001_g": {
-      "status": "FAIL",
-      "reason": "expected a value, got null"
-    },
-    "compliance-level-3/1156-range-function/1156-range-function-test-01.xml/001_h": {
-      "status": "FAIL",
-      "reason": "expected a value, got null"
-    },
-    "compliance-level-3/1156-range-function/1156-range-function-test-01.xml/001_i": {
-      "status": "FAIL",
-      "reason": "expected a value, got null"
-    },
     "compliance-level-3/1156-range-function/1156-range-function-test-01.xml/004_e": {
       "status": "FAIL",
       "reason": "expected an error but a value was returned"
@@ -1150,53 +874,9 @@
       "status": "FAIL",
       "reason": "expected an error but a value was returned"
     },
-    "compliance-level-3/1156-range-function/1156-range-function-test-01.xml/005_a": {
-      "status": "FAIL",
-      "reason": "expected a value, got null"
-    },
-    "compliance-level-3/1156-range-function/1156-range-function-test-01.xml/005_b": {
-      "status": "FAIL",
-      "reason": "expected a value, got null"
-    },
-    "compliance-level-3/1156-range-function/1156-range-function-test-01.xml/005_c": {
-      "status": "FAIL",
-      "reason": "expected a value, got null"
-    },
-    "compliance-level-3/1156-range-function/1156-range-function-test-01.xml/005_d": {
-      "status": "FAIL",
-      "reason": "expected a value, got null"
-    },
-    "compliance-level-3/1156-range-function/1156-range-function-test-01.xml/005_e": {
-      "status": "FAIL",
-      "reason": "expected a value, got null"
-    },
-    "compliance-level-3/1156-range-function/1156-range-function-test-01.xml/005_f": {
-      "status": "FAIL",
-      "reason": "expected a value, got null"
-    },
-    "compliance-level-3/1156-range-function/1156-range-function-test-01.xml/007_a": {
-      "status": "FAIL",
-      "reason": "expected a value, got null"
-    },
     "compliance-level-3/1156-range-function/1156-range-function-test-01.xml/008_a": {
       "status": "FAIL",
-      "reason": "expected a value, got null"
-    },
-    "compliance-level-3/1156-range-function/1156-range-function-test-01.xml/009_a": {
-      "status": "FAIL",
-      "reason": "expected a value, got null"
-    },
-    "compliance-level-3/1156-range-function/1156-range-function-test-01.xml/010_a": {
-      "status": "FAIL",
-      "reason": "expected a value, got null"
-    },
-    "compliance-level-3/1156-range-function/1156-range-function-test-01.xml/013_a": {
-      "status": "FAIL",
-      "reason": "expected an error but a value was returned"
-    },
-    "compliance-level-3/1156-range-function/1156-range-function-test-01.xml/020": {
-      "status": "FAIL",
-      "reason": "expected an error but a value was returned"
+      "reason": "true vs false"
     },
     "compliance-level-3/1157-implicit-conversions/1157-implicit-conversions-test-01.xml/004": {
       "status": "UNSUPPORTED",

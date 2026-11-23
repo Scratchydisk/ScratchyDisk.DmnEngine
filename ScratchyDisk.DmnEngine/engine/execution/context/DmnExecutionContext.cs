@@ -270,7 +270,10 @@ namespace ScratchyDisk.DmnEngine.Engine.Execution.Context
         /// </summary>
         protected virtual FeelEvaluationContext BuildFeelEvaluationContext()
         {
-            var evalContext = new FeelEvaluationContext();
+            var evalContext = new FeelEvaluationContext
+            {
+                TypeAliases = Definition.ItemTypeNames
+            };
             foreach (var variable in Variables.Values)
             {
                 // FEEL null is a value. Do not substitute CLR defaults: null must

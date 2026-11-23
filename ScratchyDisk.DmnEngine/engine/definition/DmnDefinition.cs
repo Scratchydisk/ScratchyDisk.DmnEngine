@@ -41,6 +41,11 @@ namespace ScratchyDisk.DmnEngine.Engine.Definition
         public IReadOnlyDictionary<string, DmnBusinessKnowledgeModel> BusinessKnowledgeModels { get; }
 
         /// <summary>
+        /// Item definition names mapped to their FEEL type name (for instance of).
+        /// </summary>
+        public IReadOnlyDictionary<string, string> ItemTypeNames { get; }
+
+        /// <summary>
         /// Maps input data variable names to expression variable aliases.
         /// When a DMN file uses different names in the DRD input data elements
         /// vs. the decision table input expressions (common in Camunda exports),
@@ -65,13 +70,15 @@ namespace ScratchyDisk.DmnEngine.Engine.Definition
         public DmnDefinition(
             IReadOnlyDictionary<string, IDmnVariable> variables,
             IReadOnlyDictionary<string, IDmnDecision> decisions,
-            IReadOnlyDictionary<string, DmnBusinessKnowledgeModel> businessKnowledgeModels = null)
+            IReadOnlyDictionary<string, DmnBusinessKnowledgeModel> businessKnowledgeModels = null,
+            IReadOnlyDictionary<string, string> itemTypeNames = null)
         {
             Id = Guid.NewGuid().ToString();
             Variables = variables;
             Decisions = decisions;
             BusinessKnowledgeModels = businessKnowledgeModels
                                       ?? new Dictionary<string, DmnBusinessKnowledgeModel>();
+            ItemTypeNames = itemTypeNames ?? new Dictionary<string, string>();
         }
     }
 }

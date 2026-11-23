@@ -19,6 +19,10 @@ namespace ScratchyDisk.DmnEngine.Feel.Eval
         /// </summary>
         public object InputValue { get; set; }
 
+        /// <summary>Named item types mapped to FEEL type names (for instance of).</summary>
+        public IReadOnlyDictionary<string, string> TypeAliases { get; set; } =
+            new Dictionary<string, string>();
+
         public FeelEvaluationContext(FeelEvaluationContext parent = null)
         {
             this.parent = parent;

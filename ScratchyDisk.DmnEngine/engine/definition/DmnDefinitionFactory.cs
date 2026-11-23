@@ -94,6 +94,9 @@ namespace ScratchyDisk.DmnEngine.Engine.Definition
         protected Dictionary<string, DmnBusinessKnowledgeModel> BusinessKnowledgeModels { get; } =
             new Dictionary<string, DmnBusinessKnowledgeModel>(StringComparer.Ordinal);
 
+        private readonly Dictionary<string, string> itemTypeNames =
+            new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase);
+
         /// <summary>
         /// Set of known types that can be used for inputs/variables
         /// </summary>
@@ -256,12 +259,15 @@ namespace ScratchyDisk.DmnEngine.Engine.Definition
             //-----------------------------------------------------------------
             // Create DMN Definition
             //-----------------------------------------------------------------
+            BuildItemTypeNames();
+
             var definition = new DmnDefinition(
                 Variables.ToDictionary(
                     v => v.Key,
                     v => (IDmnVariable)v.Value),
                 Decisions,
-                BusinessKnowledgeModels);
+                BusinessKnowledgeModels,
+                itemTypeNames);
 
             // Attach the alias map to the definition
             if (inputAliases != null && inputAliases.Count > 0)
@@ -969,6 +975,78 @@ namespace ScratchyDisk.DmnEngine.Engine.Definition
         /// variable types. Resolution is lazy and supports aliases, structures and
         /// collections, including recursive references.
         /// </summary>
+        private void BuildItemTypeNames()
+        {
+            foreach (var item in SourceModel?.ItemDefinitions ?? Enumerable.Empty<ItemDefinition>())
+            {
+                if (string.IsNullOrWhiteSpace(item.Name)) continue;
+                itemTypeNames[item.Name] = ItemFeelTypeName(item, new HashSet<string>(StringComparer.OrdinalIgnoreCase));
+            }
+        }
+
+        private string ItemFeelTypeName(ItemDefinition item, HashSet<string> visiting)
+        {
+            if (item == null) return "any";
+            if (!visiting.Add(item.Name ?? "")) return "any";
+            try
+            {
+                if (item.IsCollection)
+                    return $"list<{ElementFeelTypeName(item, visiting)}>";
+
+                if (item.ItemComponents != null && item.ItemComponents.Count > 0)
+                {
+                    var fields = item.ItemComponents.Select(c => $"{c.Name}:{ComponentFeelTypeName(c, visiting)}");
+                    return $"context<{string.Join(",", fields)}>";
+                }
+
+                return TypeRefFeelTypeName(item.TypeRef, visiting);
+            }
+            finally
+            {
+                visiting.Remove(item.Name ?? "");
+            }
+        }
+
+        private string ElementFeelTypeName(ItemDefinition item, HashSet<string> visiting)
+        {
+            if (item.ItemComponents != null && item.ItemComponents.Count > 0)
+            {
+                var fields = item.ItemComponents.Select(c => $"{c.Name}:{ComponentFeelTypeName(c, visiting)}");
+                return $"context<{string.Join(",", fields)}>";
+            }
+            return TypeRefFeelTypeName(item.TypeRef, visiting);
+        }
+
+        private string ComponentFeelTypeName(ItemComponent component, HashSet<string> visiting)
+        {
+            var inner = TypeRefFeelTypeName(component.TypeRef, visiting);
+            return component.IsCollection ? $"list<{inner}>" : inner;
+        }
+
+        private string TypeRefFeelTypeName(string typeRef, HashSet<string> visiting)
+        {
+            if (string.IsNullOrWhiteSpace(typeRef)) return "any";
+            EnsureItemDefinitionsIndexed();
+            if (itemDefinitions.TryGetValue(typeRef, out var referenced))
+                return ItemFeelTypeName(referenced, visiting);
+            return ClrFeelTypeName(ParseTypeName(typeRef));
+        }
+
+        private static string ClrFeelTypeName(Type type)
+        {
+            if (type == typeof(decimal) || type == typeof(int) || type == typeof(long) || type == typeof(double)) return "number";
+            if (type == typeof(string)) return "string";
+            if (type == typeof(bool)) return "boolean";
+            if (type == typeof(DateOnly) || type == typeof(DateTime)) return "date";
+            if (type == typeof(DateTimeOffset) || type == typeof(FeelDateTime)) return "date and time";
+            if (type == typeof(FeelTime)) return "time";
+            if (type == typeof(TimeSpan)) return "days and time duration";
+            if (type == typeof(FeelYmDuration)) return "years and months duration";
+            if (type == typeof(FeelContext)) return "context";
+            if (type == typeof(List<object>)) return "list";
+            return "any";
+        }
+
         private void EnsureItemDefinitionsIndexed()
         {
             if (itemDefinitionsIndexed) return;

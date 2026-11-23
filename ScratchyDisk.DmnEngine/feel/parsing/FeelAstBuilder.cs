@@ -526,6 +526,15 @@ namespace ScratchyDisk.DmnEngine.Feel.Parsing
                 }
 
                 var escape = s[i + 1];
+
+                // The TCK writes \" for a quote inside a FEEL string.
+                if (escape == '\\' && i + 2 < s.Length && s[i + 2] == '"')
+                {
+                    builder.Append('"');
+                    i += 2;
+                    continue;
+                }
+
                 switch (escape)
                 {
                     case '"': builder.Append('"'); i++; break;

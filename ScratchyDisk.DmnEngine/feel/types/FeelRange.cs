@@ -83,8 +83,8 @@ namespace ScratchyDisk.DmnEngine.Feel.Types
             if (obj is not FeelRange other) return false;
             return LowInclusive == other.LowInclusive &&
                    HighInclusive == other.HighInclusive &&
-                   Equals(LowEndpoint, other.LowEndpoint) &&
-                   Equals(HighEndpoint, other.HighEndpoint);
+                   FeelValueComparer.FeelEqual(LowEndpoint, other.LowEndpoint) == true &&
+                   FeelValueComparer.FeelEqual(HighEndpoint, other.HighEndpoint) == true;
         }
 
         public override int GetHashCode() => HashCode.Combine(LowEndpoint, HighEndpoint, LowInclusive, HighInclusive);

@@ -338,11 +338,13 @@ namespace ScratchyDisk.DmnEngine.Feel.Functions
 
             Register("string join", new[] { "list", "delimiter" }, args =>
             {
+                if (args.Length != 2) return null;
                 var list = ArgList(args, 0);
                 if (list == null) return null;
-                var strings = list.Where(x => x is string).Cast<string>();
+                if (list.Any(item => item is not string)) return null;
                 var delim = ArgString(args, 1);
-                return delim != null ? string.Join(delim, strings) : string.Join("", strings);
+                if (delim == null) return null;
+                return string.Join(delim, list.Cast<string>());
             });
         }
 
@@ -816,8 +818,22 @@ namespace ScratchyDisk.DmnEngine.Feel.Functions
 
             Register("mode", new[] { "list" }, args =>
             {
-                var list = FlattenArgs(args);
-                if (list == null || list.Count == 0) return (object)new List<object>();
+                if (args.Length == 0) return null;
+                List<object> list;
+                if (args.Length == 1)
+                {
+                    if (Arg(args, 0) == null) return null;
+                    list = ArgList(args, 0);
+                }
+                else
+                {
+                    list = args.ToList();
+                }
+                if (list == null) return null;
+                if (list.Count == 0) return new List<object>();
+                if (list.Any(item => item == null)) return null;
+                var firstType = TypeName(list[0]);
+                if (list.Any(item => !Equals(TypeName(item), firstType))) return null;
                 var groups = new List<(object value, int count)>();
                 foreach (var item in list)
                 {
@@ -834,7 +850,10 @@ namespace ScratchyDisk.DmnEngine.Feel.Functions
                     if (!found) groups.Add((item, 1));
                 }
                 var maxCount = groups.Max(g => g.count);
-                return (object)groups.Where(g => g.count == maxCount).Select(g => g.value).ToList();
+                return (object)groups.Where(g => g.count == maxCount)
+                    .Select(g => g.value)
+                    .OrderBy(v => v, Comparer<object>.Create((a, b) => FeelValueComparer.Compare(a, b) ?? 0))
+                    .ToList();
             });
 
             Register("sort", new[] { "list", "precedes" }, args =>
@@ -1133,17 +1152,15 @@ namespace ScratchyDisk.DmnEngine.Feel.Functions
 
             Register("years and months duration", new[] { "from", "to" }, args =>
             {
-                var from = Arg(args, 0);
-                var to = Arg(args, 1);
-                DateOnly fromDate, toDate;
-                if (from is DateOnly fd) fromDate = fd;
-                else if (from is DateTimeOffset fdt) fromDate = DateOnly.FromDateTime(fdt.DateTime);
-                else return null;
-                if (to is DateOnly td) toDate = td;
-                else if (to is DateTimeOffset tdt) toDate = DateOnly.FromDateTime(tdt.DateTime);
-                else return null;
+                if (args.Length != 2) return null;
+                if (!TryTemporalDate(Arg(args, 0), out var fromYear, out var fromMonth, out var fromDay)) return null;
+                if (!TryTemporalDate(Arg(args, 1), out var toYear, out var toMonth, out var toDay)) return null;
 
-                var months = (toDate.Year - fromDate.Year) * 12 + (toDate.Month - fromDate.Month);
+                var months = (toYear - fromYear) * 12 + (toMonth - fromMonth);
+                var direction = new FeelExpandedDate(toYear, toMonth, toDay)
+                    .CompareTo(new FeelExpandedDate(fromYear, fromMonth, fromDay));
+                if (direction > 0 && toDay < fromDay) months--;
+                if (direction < 0 && toDay > fromDay) months++;
                 return new FeelYmDuration(months);
             });
 
@@ -1152,40 +1169,75 @@ namespace ScratchyDisk.DmnEngine.Feel.Functions
 
             Register("day of year", new[] { "date" }, args =>
             {
+                if (args.Length > 1) return null;
                 var val = Arg(args, 0);
                 if (val is DateOnly d) return (decimal)d.DayOfYear;
                 if (val is DateTimeOffset dto) return (decimal)dto.DayOfYear;
+                if (val is FeelDateTime zdt) return (decimal)zdt.Value.DayOfYear;
+                if (val is FeelExpandedDateTime edt)
+                    return (decimal)(edt.Date.ToDayNumber() - new FeelExpandedDate(edt.Date.Year, 1, 1).ToDayNumber() + 1);
+                if (val is FeelExpandedDate ed)
+                    return (decimal)(ed.ToDayNumber() - new FeelExpandedDate(ed.Year, 1, 1).ToDayNumber() + 1);
                 return null;
             });
 
             Register("day of week", new[] { "date" }, args =>
             {
+                if (args.Length != 1) return null;
                 var val = Arg(args, 0);
                 DayOfWeek dow;
                 if (val is DateOnly d) dow = d.DayOfWeek;
                 else if (val is DateTimeOffset dto) dow = dto.DayOfWeek;
+                else if (val is FeelDateTime zdt) dow = zdt.Value.DayOfWeek;
+                else if (val is FeelExpandedDate ed) dow = (DayOfWeek)(((ed.ToDayNumber() + 4) % 7 + 7) % 7);
+                else if (val is FeelExpandedDateTime edt) dow = (DayOfWeek)(((edt.Date.ToDayNumber() + 4) % 7 + 7) % 7);
                 else return null;
-                // FEEL: Monday=1 .. Sunday=7
-                return dow == DayOfWeek.Sunday ? 7m : (decimal)(int)dow;
+                return CultureInfo.InvariantCulture.DateTimeFormat.GetDayName(dow);
             });
 
             Register("month of year", new[] { "date" }, args =>
             {
+                if (args.Length != 1) return null;
                 var val = Arg(args, 0);
-                if (val is DateOnly d) return (decimal)d.Month;
-                if (val is DateTimeOffset dto) return (decimal)dto.Month;
-                return null;
+                int month;
+                if (val is DateOnly d) month = d.Month;
+                else if (val is DateTimeOffset dto) month = dto.Month;
+                else if (val is FeelDateTime zdt) month = zdt.Value.Month;
+                else if (val is FeelExpandedDate ed) month = ed.Month;
+                else if (val is FeelExpandedDateTime edt) month = edt.Date.Month;
+                else return null;
+                return CultureInfo.InvariantCulture.DateTimeFormat.GetMonthName(month);
             });
 
             Register("week of year", new[] { "date" }, args =>
             {
+                if (args.Length != 1) return null;
                 var val = Arg(args, 0);
                 DateTime dt;
                 if (val is DateOnly d) dt = d.ToDateTime(TimeOnly.MinValue);
                 else if (val is DateTimeOffset dto) dt = dto.DateTime;
+                else if (val is FeelDateTime zdt) dt = zdt.Value.DateTime;
+                else if (val is FeelExpandedDate ed) dt = ed.ToDateOnly().ToDateTime(TimeOnly.MinValue);
+                else if (val is FeelExpandedDateTime edt) dt = edt.Date.ToDateOnly().ToDateTime(TimeOnly.MinValue);
                 else return null;
                 return (decimal)ISOWeek.GetWeekOfYear(dt);
             });
+        }
+
+        private static bool TryTemporalDate(object value, out int year, out int month, out int day)
+        {
+            switch (value)
+            {
+                case DateOnly d: year = d.Year; month = d.Month; day = d.Day; return true;
+                case DateTimeOffset dto: year = dto.Year; month = dto.Month; day = dto.Day; return true;
+                case FeelDateTime zdt: year = zdt.Value.Year; month = zdt.Value.Month; day = zdt.Value.Day; return true;
+                case FeelExpandedDate ed: year = ed.Year; month = ed.Month; day = ed.Day; return true;
+                case FeelExpandedDateTime edt:
+                    year = edt.Date.Year; month = edt.Date.Month; day = edt.Date.Day; return true;
+                default:
+                    year = month = day = 0;
+                    return false;
+            }
         }
 
         private static bool TryParseExpandedDateTime(string raw, out FeelExpandedDateTime result)
@@ -1266,6 +1318,11 @@ namespace ScratchyDisk.DmnEngine.Feel.Functions
             var raw = negative ? s.Substring(1) : s;
             if (!raw.StartsWith('P')) return null;
             raw = raw.Substring(1);
+            if (raw.Length == 0) return null;
+            if (!raw.Any(char.IsLetter)) return null;
+
+            if (!raw.Contains('T') && !raw.Contains('D') && !raw.Contains('Y') && !raw.Contains('M')) return null;
+            if (!raw.Contains('T') && (raw.Contains('H') || raw.Contains('S'))) return null;
 
             if (!raw.Contains('T') && !raw.Contains('D') && !raw.Contains('H') && !raw.Contains('S'))
             {
@@ -1283,7 +1340,7 @@ namespace ScratchyDisk.DmnEngine.Feel.Functions
             var days = 0;
             var hours = 0;
             var minutes = 0;
-            var seconds = 0;
+            long secondTicks = 0;
             var dMatch = Regex.Match(raw, @"(\d+)D", RegexOptions.None, RegexDefaults.Timeout);
             if (dMatch.Success) days = int.Parse(dMatch.Groups[1].Value);
             var tIdx = raw.IndexOf('T');
@@ -1294,10 +1351,16 @@ namespace ScratchyDisk.DmnEngine.Feel.Functions
                 if (hMatch.Success) hours = int.Parse(hMatch.Groups[1].Value);
                 var minMatch = Regex.Match(timePart, @"(\d+)M", RegexOptions.None, RegexDefaults.Timeout);
                 if (minMatch.Success) minutes = int.Parse(minMatch.Groups[1].Value);
-                var sMatch = Regex.Match(timePart, @"(\d+)S", RegexOptions.None, RegexDefaults.Timeout);
-                if (sMatch.Success) seconds = int.Parse(sMatch.Groups[1].Value);
+                var sMatch = Regex.Match(timePart, @"(\d+(?:\.\d*)?)S", RegexOptions.None, RegexDefaults.Timeout);
+                if (sMatch.Success)
+                {
+                    var secondText = sMatch.Groups[1].Value;
+                    if (secondText.EndsWith('.')) secondText = secondText[..^1];
+                    var secondValue = decimal.Parse(secondText, CultureInfo.InvariantCulture);
+                    secondTicks = (long)(secondValue * TimeSpan.TicksPerSecond);
+                }
             }
-            var ts = new TimeSpan(days, hours, minutes, seconds);
+            var ts = new TimeSpan(days, hours, minutes, 0).Add(TimeSpan.FromTicks(secondTicks));
             if (negative) ts = -ts;
             return ts;
         }
@@ -1359,17 +1422,37 @@ namespace ScratchyDisk.DmnEngine.Feel.Functions
             Register("type", new[] { "value" }, args => TypeName(Arg(args, 0)));
             Register("range", new[] { "from" }, args =>
             {
-                var text = ArgString(args, 0);
-                if (string.IsNullOrWhiteSpace(text)) return null;
+                if (args.Length != 1) return null;
+                var text = ArgString(args, 0)?.Trim();
+                if (string.IsNullOrWhiteSpace(text) || text.Length < 5) return null;
+                if (text[0] is not ('[' or '(' or ']') || text[^1] is not (']' or ')' or '[')) return null;
+
+                var lowInclusive = text[0] == '[';
+                var highInclusive = text[^1] == ']';
+                var body = text[1..^1];
+                var separator = body.IndexOf("..", StringComparison.Ordinal);
+                if (separator < 0) return null;
+
+                var lowText = body[..separator].Trim();
+                var highText = body[(separator + 2)..].Trim();
+                if (lowText.Length == 0 && highText.Length == 0) return null;
+                if (lowText.Contains("string(") || highText.Contains("string(")) return null;
+
                 try
                 {
-                    var value = new FeelEngine().EvaluateExpression(
-                        text,
-                        new FeelEvaluationContext());
-                    var range = value as FeelRange;
-                    if (range == null) return null;
-                    // Both endpoints unbounded is not a valid range string.
-                    return range.LowEndpoint == null && range.HighEndpoint == null ? null : range;
+                    var engine = new FeelEngine();
+                    var low = lowText.Length == 0 ? null : engine.EvaluateExpression(lowText, new FeelEvaluationContext());
+                    var high = highText.Length == 0 ? null : engine.EvaluateExpression(highText, new FeelEvaluationContext());
+                    if ((lowText.Length > 0 && low == null) || (highText.Length > 0 && high == null)) return null;
+
+                    if (low != null && high != null)
+                    {
+                        if (!Equals(TypeName(low), TypeName(high))) return null;
+                        var comparison = FeelValueComparer.Compare(low, high);
+                        if (comparison == null || comparison > 0) return null;
+                    }
+
+                    return new FeelRange(low, lowInclusive, high, highInclusive);
                 }
                 catch
                 {
@@ -1423,16 +1506,18 @@ namespace ScratchyDisk.DmnEngine.Feel.Functions
 
             Register("context", new[] { "entries" }, args =>
             {
+                if (args.Length != 1) return null;
                 var entries = ArgList(args, 0);
                 if (entries == null) return null;
                 var result = new FeelContext();
                 foreach (var entry in entries)
                 {
-                    if (entry is FeelContext entryCtx)
-                    {
-                        var key = entryCtx["key"] as string;
-                        if (key != null) result.Put(key, entryCtx["value"]);
-                    }
+                    if (entry is not FeelContext entryCtx) return null;
+                    if (!entryCtx.ContainsKey("key") || !entryCtx.ContainsKey("value")) return null;
+                    var key = entryCtx["key"] as string;
+                    if (key == null) return null;
+                    if (result.ContainsKey(key)) return null;
+                    result.Put(key, entryCtx["value"]);
                 }
                 return result;
             });
@@ -1460,13 +1545,13 @@ namespace ScratchyDisk.DmnEngine.Feel.Functions
 
             Register("context merge", new[] { "contexts" }, args =>
             {
+                if (args.Length != 1) return null;
                 var list = ArgList(args, 0);
                 if (list == null) return null;
+                if (list.Any(item => item is not FeelContext)) return null;
                 var result = new FeelContext();
                 foreach (var item in list)
-                {
-                    if (item is FeelContext ctx) result.Merge(ctx);
-                }
+                    result.Merge((FeelContext)item);
                 return result;
             });
         }

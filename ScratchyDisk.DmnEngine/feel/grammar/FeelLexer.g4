@@ -78,7 +78,9 @@ StringLiteral
     ;
 
 fragment EscapeSequence
-    : '\\' '\\'
+    : '\\' '\\' '"'
+    | '\\' '"'
+    | '\\' '\\'
     | '\\' ~["\\\r\n]
     ;
 
