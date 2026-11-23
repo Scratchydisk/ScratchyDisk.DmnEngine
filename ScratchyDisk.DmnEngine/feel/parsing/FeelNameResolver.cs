@@ -28,6 +28,8 @@ namespace ScratchyDisk.DmnEngine.Feel.Parsing
             FeelLexer.OF,   // "index of", "day of year", "month of year", "week of year", "instance of"
             FeelLexer.NOT,  // "not" can be a function name
             FeelLexer.IN,
+            FeelLexer.IntegerLiteral, // "Extra days case 1"
+            FeelLexer.FloatLiteral,
         };
 
         public FeelNameResolver(CommonTokenStream fullStream, FeelScope scope)

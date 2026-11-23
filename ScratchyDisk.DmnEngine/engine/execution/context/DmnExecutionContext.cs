@@ -235,6 +235,43 @@ namespace ScratchyDisk.DmnEngine.Engine.Execution.Context
         /// <exception cref="ArgumentNullException"><paramref name="decision"/> is null</exception>
         public virtual DmnDecisionResult ExecuteDecision(IDmnDecision decision)
         {
+            var decisionResult = ExecuteDecisionCore(decision);
+            UpdateDecisionAlias(decision, decisionResult);
+            return decisionResult;
+        }
+
+        internal void UpdateDecisionAlias(IDmnDecision decision, DmnDecisionResult result)
+        {
+            if (decision == null || !Definition.DecisionAliases.TryGetValue(decision.Name, out var aliasName)) return;
+            if (!Variables.TryGetValue(aliasName, out var aliasVariable)) return;
+            if (Variables.Values.Any(v => v.Name == aliasName && v == aliasVariable) && aliasName == decision.Name) return;
+
+            if (!result.HasResult)
+            {
+                aliasVariable.Value = null;
+                return;
+            }
+
+            if (!result.IsSingleResult)
+            {
+                aliasVariable.Value = result.Results.Select(ExtractSingleValue).ToList();
+                return;
+            }
+
+            aliasVariable.Value = ExtractSingleValue(result.First);
+        }
+
+        private static object ExtractSingleValue(DmnDecisionSingleResult single)
+        {
+            if (single.Variables.Count == 0) return null;
+            if (single.Variables.Count == 1) return single.Variables[0].Value;
+            var context = new FeelContext();
+            foreach (var variable in single.Variables) context.Put(variable.Name, variable.Value);
+            return context;
+        }
+
+        private DmnDecisionResult ExecuteDecisionCore(IDmnDecision decision)
+        {
             if (decision == null) throw Logger.Fatal<ArgumentNullException>($"{nameof(decision)} is null");
 
             if (Options.RecordSnapshots)

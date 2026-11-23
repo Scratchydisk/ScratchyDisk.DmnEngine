@@ -27,6 +27,14 @@ namespace ScratchyDisk.DmnEngine.Parser.Dto
         [XmlElement("outputValues")]
         public AllowedValues AllowedOutputValues { get; set; }
 
+        /// <summary>Default output expression (non-standard text form used by some exporters).</summary>
+        [XmlElement("text")]
+        public string DefaultText { get; set; }
+
+        /// <summary>Default output entry.</summary>
+        [XmlElement("defaultOutputEntry")]
+        public Expression DefaultOutputEntry { get; set; }
+
         /// <inheritdoc />
         /// <summary>Returns a string that represents the current object.</summary>
         /// <returns>A string that represents the current object.</returns>

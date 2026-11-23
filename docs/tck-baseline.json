@@ -1,25 +1,25 @@
 {
   "schemaVersion": 1,
-  "generatedUtc": "2026-11-23T14:09:31.1518684Z",
+  "generatedUtc": "2026-11-23T14:32:04.7788451Z",
   "tck": {
     "root": "artifacts/tck/TestCases",
     "commit": "a428da2f9c5ff2a4b8566ab511144e9022d743fe"
   },
   "engine": {
-    "version": "2.0.1\u002B484c37fff9d368f22dd67f5a7f0c19751918b1c9"
+    "version": "2.0.1\u002B85699d27678fdd072e3ce6910df20f60210d791f"
   },
   "totals": {
     "total": 3437,
-    "pass": 3187,
-    "fail": 93,
+    "pass": 3196,
+    "fail": 84,
     "parseFail": 30,
     "notFound": 19,
     "unsupported": 108,
     "fixtureError": 0,
     "blocked": 157,
     "executed": 3280,
-    "passRate": 0.927262147221414,
-    "executedPassRate": 0.9716463414634147
+    "passRate": 0.9298807099214431,
+    "executedPassRate": 0.974390243902439
   },
   "cases": {
     "compliance-level-3/0002-string-functions/0002-string-functions-test-01.xml/001": {
@@ -49,34 +49,6 @@
     "compliance-level-3/0016-some-every/0016-some-every-test-01.xml/001": {
       "status": "FAIL",
       "reason": "resultNode[1] everyGtTen1: false vs true"
-    },
-    "compliance-level-3/0020-vacation-days/0020-vacation-days-test-01.xml/001": {
-      "status": "FAIL",
-      "reason": "expected a value, got null"
-    },
-    "compliance-level-3/0020-vacation-days/0020-vacation-days-test-01.xml/002": {
-      "status": "FAIL",
-      "reason": "expected a value, got null"
-    },
-    "compliance-level-3/0020-vacation-days/0020-vacation-days-test-01.xml/003": {
-      "status": "FAIL",
-      "reason": "expected a value, got null"
-    },
-    "compliance-level-3/0020-vacation-days/0020-vacation-days-test-01.xml/004": {
-      "status": "FAIL",
-      "reason": "expected a value, got null"
-    },
-    "compliance-level-3/0020-vacation-days/0020-vacation-days-test-01.xml/005": {
-      "status": "FAIL",
-      "reason": "expected a value, got null"
-    },
-    "compliance-level-3/0020-vacation-days/0020-vacation-days-test-01.xml/006": {
-      "status": "FAIL",
-      "reason": "expected a value, got null"
-    },
-    "compliance-level-3/0020-vacation-days/0020-vacation-days-test-01.xml/007": {
-      "status": "FAIL",
-      "reason": "expected a value, got null"
     },
     "compliance-level-3/0021-singleton-list/0021-singleton-list-test-01.xml/001": {
       "status": "FAIL",
@@ -205,14 +177,6 @@
     "compliance-level-3/0067-feel-split-function/0067-feel-split-function-test-01.xml/001": {
       "status": "FAIL",
       "reason": "list size 2 vs 1"
-    },
-    "compliance-level-3/0068-feel-equality/0068-feel-equality-test-01.xml/time_005": {
-      "status": "FAIL",
-      "reason": "true vs false"
-    },
-    "compliance-level-3/0068-feel-equality/0068-feel-equality-test-01.xml/datetime_003_a": {
-      "status": "FAIL",
-      "reason": "true vs false"
     },
     "compliance-level-3/0068-feel-equality/0068-feel-equality-test-01.xml/range_006": {
       "status": "FAIL",

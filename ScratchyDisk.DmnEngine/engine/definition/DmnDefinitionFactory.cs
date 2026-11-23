@@ -260,6 +260,7 @@ namespace ScratchyDisk.DmnEngine.Engine.Definition
             // Create DMN Definition
             //-----------------------------------------------------------------
             BuildItemTypeNames();
+            var decisionAliases = BuildDecisionAliases();
 
             var definition = new DmnDefinition(
                 Variables.ToDictionary(
@@ -267,7 +268,8 @@ namespace ScratchyDisk.DmnEngine.Engine.Definition
                     v => (IDmnVariable)v.Value),
                 Decisions,
                 BusinessKnowledgeModels,
-                itemTypeNames);
+                itemTypeNames,
+                decisionAliases);
 
             // Attach the alias map to the definition
             if (inputAliases != null && inputAliases.Count > 0)
@@ -664,7 +666,10 @@ namespace ScratchyDisk.DmnEngine.Engine.Definition
                     !string.IsNullOrWhiteSpace(sourceOutput.Name) ? sourceOutput.Name :
                     null;//label??name??null(will default to Output#n)
 
-                outputs.Add(new DmnDecisionTableOutput(outputIdx, variable, allowedValues, label));
+                var defaultExpression = !string.IsNullOrWhiteSpace(sourceOutput.DefaultText)
+                    ? sourceOutput.DefaultText
+                    : sourceOutput.DefaultOutputEntry?.Text;
+                outputs.Add(new DmnDecisionTableOutput(outputIdx, variable, allowedValues, label, defaultExpression));
                 outputIdx++;
             }
 
@@ -975,6 +980,28 @@ namespace ScratchyDisk.DmnEngine.Engine.Definition
         /// variable types. Resolution is lazy and supports aliases, structures and
         /// collections, including recursive references.
         /// </summary>
+        private Dictionary<string, string> BuildDecisionAliases()
+        {
+            var aliases = new Dictionary<string, string>(StringComparer.Ordinal);
+            foreach (var decisionName in Decisions.Keys)
+            {
+                string aliasName;
+                try
+                {
+                    aliasName = DmnVariableDefinition.NormalizeVariableName(decisionName);
+                }
+                catch
+                {
+                    continue;
+                }
+
+                if (!Variables.ContainsKey(aliasName))
+                    Variables.Add(aliasName, new DmnVariableDefinition(aliasName, label: decisionName));
+                aliases[decisionName] = aliasName;
+            }
+            return aliases;
+        }
+
         private void BuildItemTypeNames()
         {
             foreach (var item in SourceModel?.ItemDefinitions ?? Enumerable.Empty<ItemDefinition>())

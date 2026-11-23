@@ -24,6 +24,12 @@ namespace ScratchyDisk.DmnEngine.Feel.Types
             if (left is FeelDateTime leftZoned) left = leftZoned.Value;
             if (right is FeelDateTime rightZoned) right = rightZoned.Value;
 
+            if (left is FeelTime leftTime && right is FeelTime rightTime)
+                return TruncateToMilliseconds(leftTime.Time) == TruncateToMilliseconds(rightTime.Time)
+                       && leftTime.Offset == rightTime.Offset;
+            if (left is DateTimeOffset leftDto && right is DateTimeOffset rightDto)
+                return TruncateToMilliseconds(leftDto.UtcDateTime) == TruncateToMilliseconds(rightDto.UtcDateTime);
+
             if (left is FeelExpandedDate leftExpandedDate && right is FeelExpandedDate rightExpandedDate)
                 return leftExpandedDate.ToDayNumber() == rightExpandedDate.ToDayNumber();
             if (left is FeelExpandedDateTime leftExpanded && right is FeelExpandedDateTime rightExpanded)
@@ -64,6 +70,12 @@ namespace ScratchyDisk.DmnEngine.Feel.Types
             return null;
         }
 
+        private static DateTime TruncateToMilliseconds(DateTime value) =>
+            new(value.Ticks - value.Ticks % TimeSpan.TicksPerMillisecond, value.Kind);
+
+        private static TimeOnly TruncateToMilliseconds(TimeOnly value) =>
+            new(value.Ticks - value.Ticks % TimeSpan.TicksPerMillisecond);
+
         private static bool IsList(object value) =>
             value is IEnumerable<object> && value is not string && value is not FeelContext;
 
@@ -103,6 +115,17 @@ namespace ScratchyDisk.DmnEngine.Feel.Types
 
             if (left is FeelDateTime leftZoned) left = leftZoned.Value;
             if (right is FeelDateTime rightZoned) right = rightZoned.Value;
+
+            if (left is FeelTime leftTime && right is FeelTime rightTime)
+            {
+                var timeComparison = TruncateToMilliseconds(leftTime.Time)
+                    .CompareTo(TruncateToMilliseconds(rightTime.Time));
+                if (timeComparison != 0) return timeComparison;
+                return Nullable.Compare(leftTime.Offset, rightTime.Offset);
+            }
+            if (left is DateTimeOffset leftDto && right is DateTimeOffset rightDto)
+                return TruncateToMilliseconds(leftDto.UtcDateTime)
+                    .CompareTo(TruncateToMilliseconds(rightDto.UtcDateTime));
 
             if (left is FeelExpandedDate leftExpandedDate && right is FeelExpandedDate rightExpandedDate)
                 return leftExpandedDate.CompareTo(rightExpandedDate);

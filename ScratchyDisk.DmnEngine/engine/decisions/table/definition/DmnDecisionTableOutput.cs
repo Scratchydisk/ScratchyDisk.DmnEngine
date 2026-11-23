@@ -27,6 +27,9 @@ namespace ScratchyDisk.DmnEngine.Engine.Decisions.Table.Definition
         /// </summary>
         public string[] AllowedValues { get; }
 
+        /// <summary>Optional default output expression used when no rule matches.</summary>
+        public string DefaultExpression { get; }
+
         /// <summary>
         /// CTOR
         /// </summary>
@@ -34,12 +37,14 @@ namespace ScratchyDisk.DmnEngine.Engine.Decisions.Table.Definition
         /// <param name="variable">Variable to store the output to</param>
         /// <param name="allowedValues">Optional array of allowed values</param>
         /// <param name="label">Output label, "Output#{Index+1}" will be used if not provided</param>
-        public DmnDecisionTableOutput(int index, IDmnVariable variable, string[] allowedValues = null,string label=null)
+        public DmnDecisionTableOutput(int index, IDmnVariable variable, string[] allowedValues = null,string label=null,
+            string defaultExpression = null)
         {
             Index = index;
             Label = string.IsNullOrWhiteSpace(label) ? $"Output#{Index+1}" : label;
             Variable = variable;
             AllowedValues = allowedValues;
+            DefaultExpression = defaultExpression;
         }
 
         /// <summary>Returns a string that represents the current object.</summary>

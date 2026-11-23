@@ -45,6 +45,9 @@ namespace ScratchyDisk.DmnEngine.Engine.Definition
         /// </summary>
         public IReadOnlyDictionary<string, string> ItemTypeNames { get; }
 
+        /// <summary>Decision names mapped to the variable that holds their result.</summary>
+        public IReadOnlyDictionary<string, string> DecisionAliases { get; }
+
         /// <summary>
         /// Maps input data variable names to expression variable aliases.
         /// When a DMN file uses different names in the DRD input data elements
@@ -71,7 +74,8 @@ namespace ScratchyDisk.DmnEngine.Engine.Definition
             IReadOnlyDictionary<string, IDmnVariable> variables,
             IReadOnlyDictionary<string, IDmnDecision> decisions,
             IReadOnlyDictionary<string, DmnBusinessKnowledgeModel> businessKnowledgeModels = null,
-            IReadOnlyDictionary<string, string> itemTypeNames = null)
+            IReadOnlyDictionary<string, string> itemTypeNames = null,
+            IReadOnlyDictionary<string, string> decisionAliases = null)
         {
             Id = Guid.NewGuid().ToString();
             Variables = variables;
@@ -79,6 +83,7 @@ namespace ScratchyDisk.DmnEngine.Engine.Definition
             BusinessKnowledgeModels = businessKnowledgeModels
                                       ?? new Dictionary<string, DmnBusinessKnowledgeModel>();
             ItemTypeNames = itemTypeNames ?? new Dictionary<string, string>();
+            DecisionAliases = decisionAliases ?? new Dictionary<string, string>();
         }
     }
 }

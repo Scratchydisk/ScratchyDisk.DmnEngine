@@ -105,7 +105,24 @@ namespace ScratchyDisk.DmnEngine.Engine.Decisions.Table
                     EvaluateOutputsForPositiveRules(context, executionId, positiveRules);
 
             //APPLY HIT POLICY
-            if (positiveRules.Count <= 0) return new DmnDecisionResult();
+            if (positiveRules.Count <= 0)
+            {
+                if (Outputs.Any(output => !string.IsNullOrWhiteSpace(output.DefaultExpression)))
+                {
+                    var defaultResult = new DmnDecisionSingleResult();
+                    foreach (var output in Outputs)
+                    {
+                        var variable = context.GetVariable(output.Variable);
+                        variable.Value = string.IsNullOrWhiteSpace(output.DefaultExpression)
+                            ? null
+                            : context.EvalExpression(output.DefaultExpression,
+                                output.Variable.Type ?? typeof(object), executionId);
+                        defaultResult += variable.Clone();
+                    }
+                    return new DmnDecisionResult(defaultResult);
+                }
+                return new DmnDecisionResult();
+            }
 
             var retVal = new DmnDecisionResult();
             var positiveMatchOutputRules = new List<DmnDecisionTableRule>();

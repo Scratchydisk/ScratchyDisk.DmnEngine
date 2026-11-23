@@ -112,7 +112,8 @@ namespace ScratchyDisk.DmnEngine.Engine.Decisions
                 {
                     Logger.InfoCorr(executionId,
                         $"Executing dependency  {requiredDecision.Name} for decision {Name}...");
-                    requiredDecision.Execute(context, executionId);
+                    var dependencyResult = requiredDecision.Execute(context, executionId);
+                    context.UpdateDecisionAlias(requiredDecision, dependencyResult);
                     Logger.InfoCorr(executionId, $"Executed dependency  {requiredDecision.Name} for decision {Name}");
                 }
 
@@ -136,6 +137,7 @@ namespace ScratchyDisk.DmnEngine.Engine.Decisions
                 context.AddDiagnostic(Name, exception);
                 result = new DmnDecisionResult();
             }
+            context.UpdateDecisionAlias(this, result);
             context.CreateSnapshot(this, result);
 
             Logger.InfoCorr(executionId, $"Executed decision {Name}");
