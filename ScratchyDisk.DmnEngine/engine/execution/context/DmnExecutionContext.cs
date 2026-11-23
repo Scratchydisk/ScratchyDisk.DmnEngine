@@ -188,10 +188,16 @@ namespace ScratchyDisk.DmnEngine.Engine.Execution.Context
             if (Definition.ImportAliases.TryGetValue(name, out var importedName))
                 name = importedName;
 
+            // A namespaced input ("namespace#name") may address an element of an
+            // imported model; the definition knows the flattened name it was given.
+            if (Definition.QualifiedDecisionNames.TryGetValue(name, out var qualifiedName))
+                name = qualifiedName;
+
             // Aliases usually map an import-qualified name onto a variable name;
             // the target is then subject to the same normalization as a direct name.
-            if (!Variables.ContainsKey(name))
-                name = DmnVariableDefinition.NormalizeVariableName(name);
+            if (!Variables.ContainsKey(name)
+                && DmnVariableDefinition.CanNormalizeVariableName(name, out var normalizedName, out _))
+                name = normalizedName;
 
             var variable = Variables?.Values.FirstOrDefault(i => i.IsInputParameter && i.Name == name)
                            ?? Variables?.Values.FirstOrDefault(i => i.Name == name);
