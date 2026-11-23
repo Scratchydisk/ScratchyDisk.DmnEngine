@@ -1,25 +1,25 @@
 {
   "schemaVersion": 1,
-  "generatedUtc": "2026-11-23T15:20:39.7597015Z",
+  "generatedUtc": "2026-11-23T15:35:14.2075653Z",
   "tck": {
     "root": "artifacts/tck/TestCases",
     "commit": "a428da2f9c5ff2a4b8566ab511144e9022d743fe"
   },
   "engine": {
-    "version": "2.0.1\u002B2c235bc9e41b2c26827f43b4ac8ca130960daf2b"
+    "version": "2.0.1\u002Bf7a7b7bd7684996862be4f7628ff058aa40365aa"
   },
   "totals": {
     "total": 3437,
-    "pass": 3286,
+    "pass": 3290,
     "fail": 103,
     "parseFail": 0,
     "notFound": 19,
-    "unsupported": 29,
+    "unsupported": 25,
     "fixtureError": 0,
-    "blocked": 48,
-    "executed": 3389,
-    "passRate": 0.956066336921734,
-    "executedPassRate": 0.9696075538506934
+    "blocked": 44,
+    "executed": 3393,
+    "passRate": 0.9572301425661914,
+    "executedPassRate": 0.9696433834364869
   },
   "cases": {
     "compliance-level-3/0004-lending/0004-lending-test-01.xml/001": {
@@ -346,25 +346,9 @@
       "status": "FAIL",
       "reason": "expected a value, got null"
     },
-    "compliance-level-3/0085-decision-services/0085-decision-services-test-01.xml/002": {
-      "status": "UNSUPPORTED",
-      "reason": "engine cannot evaluate: WithInputParameter: decision_002_input is not an input parameter"
-    },
     "compliance-level-3/0085-decision-services/0085-decision-services-test-01.xml/002_a": {
       "status": "FAIL",
       "reason": "expected an error but a value was returned"
-    },
-    "compliance-level-3/0085-decision-services/0085-decision-services-test-01.xml/002_b": {
-      "status": "UNSUPPORTED",
-      "reason": "engine cannot evaluate: WithInputParameter: decision_002_input is not an input parameter"
-    },
-    "compliance-level-3/0085-decision-services/0085-decision-services-test-01.xml/002_c": {
-      "status": "UNSUPPORTED",
-      "reason": "engine cannot evaluate: WithInputParameter: decision_002_input is not an input parameter"
-    },
-    "compliance-level-3/0085-decision-services/0085-decision-services-test-01.xml/003": {
-      "status": "UNSUPPORTED",
-      "reason": "engine cannot evaluate: WithInputParameter: decision_003_input_1 is not an input parameter"
     },
     "compliance-level-3/0085-decision-services/0085-decision-services-test-01.xml/004": {
       "status": "FAIL",

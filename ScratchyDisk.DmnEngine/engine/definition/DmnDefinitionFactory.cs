@@ -93,6 +93,9 @@ namespace ScratchyDisk.DmnEngine.Engine.Definition
         /// <summary>
         /// Business knowledge models by name.
         /// </summary>
+        protected Dictionary<string, DmnDecisionService> DecisionServices { get; } =
+            new Dictionary<string, DmnDecisionService>(StringComparer.Ordinal);
+
         protected Dictionary<string, DmnBusinessKnowledgeModel> BusinessKnowledgeModels { get; } =
             new Dictionary<string, DmnBusinessKnowledgeModel>(StringComparer.Ordinal);
 
@@ -263,6 +266,7 @@ namespace ScratchyDisk.DmnEngine.Engine.Definition
             // Create DMN Definition
             //-----------------------------------------------------------------
             BuildItemTypeNames();
+            ProcessDecisionServicesSource();
             var decisionAliases = BuildDecisionAliases();
 
             var definition = new DmnDefinition(
@@ -274,7 +278,8 @@ namespace ScratchyDisk.DmnEngine.Engine.Definition
                 itemTypeNames,
                 decisionAliases,
                 SourceModel.ImportAliases?.InputAliases,
-                SourceModel.ImportAliases?.QualifiedDecisionNames);
+                SourceModel.ImportAliases?.QualifiedDecisionNames,
+                DecisionServices);
 
             // Attach the alias map to the definition
             if (inputAliases != null && inputAliases.Count > 0)
@@ -1085,6 +1090,51 @@ namespace ScratchyDisk.DmnEngine.Engine.Definition
             if (string.IsNullOrWhiteSpace(name)) return name;
             if (name.Contains('.')) return name;
             return DmnVariableDefinition.NormalizeVariableName(name);
+        }
+
+        private void ProcessDecisionServicesSource()
+        {
+            foreach (var source in SourceModel.DecisionServices ?? Enumerable.Empty<DecisionService>())
+            {
+                var name = source.Name ?? source.Id;
+                if (string.IsNullOrWhiteSpace(name)) continue;
+
+                var output = ResolveDecisionRef(source.OutputDecision?.Ref);
+                if (output == null) continue;
+
+                var parameterNames = new List<string>();
+                var parameterVariables = new List<string>();
+                var parameterDecisions = new List<string>();
+
+                foreach (var input in source.InputData ?? Enumerable.Empty<DecisionServiceReference>())
+                {
+                    var id = input.Ref?.TrimStart('#');
+                    if (id != null && InputDataById.TryGetValue(id, out var variable))
+                    {
+                        parameterNames.Add(variable.Label);
+                        parameterVariables.Add(variable.Name);
+                    }
+                }
+                foreach (var input in source.InputDecisions ?? Enumerable.Empty<DecisionServiceReference>())
+                {
+                    var decision = ResolveDecisionRef(input.Ref);
+                    if (decision == null) continue;
+                    parameterNames.Add(decision.Name);
+                    parameterVariables.Add(decision.Name);
+                    parameterDecisions.Add(decision.Name);
+                }
+
+                DecisionServices[name] = new DmnDecisionService(
+                    name, parameterNames, parameterVariables, output.Name, parameterDecisions);
+            }
+        }
+
+        private IDmnDecision ResolveDecisionRef(string reference)
+        {
+            if (string.IsNullOrWhiteSpace(reference)) return null;
+            var id = reference.TrimStart('#');
+            if (DecisionsById.TryGetValue(id, out var decision)) return decision;
+            return Decisions.Values.FirstOrDefault(d => d.Name == reference || d.Name == id);
         }
 
         private Dictionary<string, string> BuildDecisionAliases()

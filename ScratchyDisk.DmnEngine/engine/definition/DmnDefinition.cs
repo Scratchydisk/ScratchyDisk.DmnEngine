@@ -54,6 +54,9 @@ namespace ScratchyDisk.DmnEngine.Engine.Definition
         /// <summary>Imported decisions addressed by namespace#name.</summary>
         public IReadOnlyDictionary<string, string> QualifiedDecisionNames { get; }
 
+        /// <summary>Decision services by name.</summary>
+        public IReadOnlyDictionary<string, DmnDecisionService> DecisionServices { get; }
+
         /// <summary>
         /// Maps input data variable names to expression variable aliases.
         /// When a DMN file uses different names in the DRD input data elements
@@ -83,7 +86,8 @@ namespace ScratchyDisk.DmnEngine.Engine.Definition
             IReadOnlyDictionary<string, string> itemTypeNames = null,
             IReadOnlyDictionary<string, string> decisionAliases = null,
             IReadOnlyDictionary<string, string> importAliases = null,
-            IReadOnlyDictionary<string, string> qualifiedDecisionNames = null)
+            IReadOnlyDictionary<string, string> qualifiedDecisionNames = null,
+            IReadOnlyDictionary<string, DmnDecisionService> decisionServices = null)
         {
             Id = Guid.NewGuid().ToString();
             Variables = variables;
@@ -94,6 +98,7 @@ namespace ScratchyDisk.DmnEngine.Engine.Definition
             DecisionAliases = decisionAliases ?? new Dictionary<string, string>();
             ImportAliases = importAliases ?? new Dictionary<string, string>();
             QualifiedDecisionNames = qualifiedDecisionNames ?? new Dictionary<string, string>();
+            DecisionServices = decisionServices ?? new Dictionary<string, DmnDecisionService>();
         }
     }
 }

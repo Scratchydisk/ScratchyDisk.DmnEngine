@@ -117,6 +117,7 @@ namespace ScratchyDisk.DmnEngine.Engine.Decisions
                 Logger.InfoCorr(executionId, $"Resolving dependencies for decision {Name}...");
                 foreach (var requiredDecision in RequiredDecisions)
                 {
+                    if (context.IsProvidedDecision(requiredDecision.Name)) continue;
                     Logger.InfoCorr(executionId,
                         $"Executing dependency  {requiredDecision.Name} for decision {Name}...");
                     var dependencyResult = requiredDecision.Execute(context, executionId);

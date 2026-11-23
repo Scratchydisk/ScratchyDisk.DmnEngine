@@ -48,6 +48,12 @@ namespace ScratchyDisk.DmnEngine.Parser.Dto
         public List<BusinessKnowledgeModel> BusinessKnowledgeModels { get; set; }
 
         /// <summary>
+        /// Decision services declared by the model.
+        /// </summary>
+        [XmlElement("decisionService")]
+        public List<DecisionService> DecisionServices { get; set; }
+
+        /// <summary>
         /// Named item definitions (aliases, structures and collections).
         /// </summary>
         [XmlElement("itemDefinition")]

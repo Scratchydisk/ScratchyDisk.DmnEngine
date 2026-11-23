@@ -83,6 +83,25 @@ namespace ScratchyDisk.DmnEngine.Engine.Execution.Context
         /// <summary>Aliases active for the decision currently being evaluated.</summary>
         internal IReadOnlyDictionary<string, string> CurrentNameAliases { get; set; } =
             new Dictionary<string, string>(StringComparer.Ordinal);
+
+        private readonly HashSet<string> providedDecisions = new(StringComparer.Ordinal);
+
+        internal IReadOnlyCollection<string> ProvidedDecisions
+        {
+            get => providedDecisions;
+            set
+            {
+                providedDecisions.Clear();
+                if (value != null) providedDecisions.UnionWith(value);
+            }
+        }
+
+        internal void AddProvidedDecision(string decisionName)
+        {
+            if (!string.IsNullOrWhiteSpace(decisionName)) providedDecisions.Add(decisionName);
+        }
+
+        internal bool IsProvidedDecision(string decisionName) => providedDecisions.Contains(decisionName);
         /// <summary>
         /// Adds a semantic error to the execution diagnostics.
         /// </summary>
@@ -169,11 +188,20 @@ namespace ScratchyDisk.DmnEngine.Engine.Execution.Context
             else if (!Variables.ContainsKey(name))
                 name = DmnVariableDefinition.NormalizeVariableName(name);
 
-            var variable = Variables?.Values.FirstOrDefault(i => i.IsInputParameter && i.Name == name);
+            var variable = Variables?.Values.FirstOrDefault(i => i.IsInputParameter && i.Name == name)
+                           ?? Variables?.Values.FirstOrDefault(i => i.Name == name);
             if (variable == null)
                 throw Logger.Fatal<DmnExecutorException>($"WithInputParameter: {name} is not an input parameter");
 
-            variable.SetInputParameterValue(value);
+            if (variable.IsInputParameter)
+            {
+                variable.SetInputParameterValue(value);
+            }
+            else
+            {
+                variable.Value = value;
+                providedDecisions.Add(variable.Name);
+            }
             Logger.Info($"Execution context input parameter {name} set to {value}");
 
             // Propagate value to alias variables (e.g. when Camunda exports use different
@@ -386,6 +414,10 @@ namespace ScratchyDisk.DmnEngine.Engine.Execution.Context
             {
                 scope.AddName(bkm.Name);
             }
+            foreach (var service in Definition.DecisionServices.Values)
+            {
+                scope.AddName(service.Name);
+            }
 
             foreach (var alias in CurrentNameAliases.Keys)
                 scope.AddName(alias);
@@ -393,6 +425,51 @@ namespace ScratchyDisk.DmnEngine.Engine.Execution.Context
                 scope.AddName(alias);
 
             return scope;
+        }
+
+        private FeelFunction CreateDecisionServiceFunction(DmnDecisionService service)
+        {
+            return new FeelFunction(service.Name, service.ParameterNames, args =>
+            {
+                var previousProvided = ProvidedDecisions.ToList();
+                ProvidedDecisions = previousProvided.Concat(service.ParameterDecisionNames).ToList();
+                try
+                {
+                for (var i = 0; i < service.ParameterVariables.Count; i++)
+                {
+                    if (!Variables.TryGetValue(service.ParameterVariables[i], out var variable)) continue;
+                    var value = i < args.Length ? args[i] : null;
+                    if (variable.IsInputParameter) variable.SetInputParameterValue(value);
+                    else variable.Value = value;
+                }
+
+                var result = ExecuteDecision(service.OutputDecisionName);
+                return ExtractDecisionValue(result);
+                }
+                finally
+                {
+                    ProvidedDecisions = previousProvided;
+                }
+            });
+        }
+
+        private static object ExtractDecisionValue(DmnDecisionResult result)
+        {
+            if (!result.HasResult) return null;
+            if (!result.IsSingleResult)
+                return result.Results.Select(single => ExtractSingleDecisionValue(single)).ToList();
+
+            return ExtractSingleDecisionValue(result.First);
+        }
+
+        private static object ExtractSingleDecisionValue(DmnDecisionSingleResult single)
+        {
+            if (single.Variables.Count == 0) return null;
+            if (single.Variables.Count == 1) return single.Variables[0].Value;
+
+            var context = new FeelContext();
+            foreach (var variable in single.Variables) context.Put(variable.Name, variable.Value);
+            return context;
         }
 
         /// <summary>
