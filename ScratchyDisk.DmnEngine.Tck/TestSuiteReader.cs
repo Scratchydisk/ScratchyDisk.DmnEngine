@@ -73,12 +73,13 @@ public static class TestSuiteReader
                 Id = (string)testCase.Attribute("id") ?? "",
                 Description = Child(testCase, "description")?.Value,
                 Inputs = Children(testCase, "inputNode")
-                    .Select(i => new TckInput((string)i.Attribute("name"), i))
+                    .Select(i => new TckInput((string)i.Attribute("name"), (string)i.Attribute("namespace"), i))
                     .ToList(),
                 Results = Children(testCase, "resultNode")
                     .Select((r, index) => new TckResult(
                         index,
                         (string)r.Attribute("name"),
+                        (string)r.Attribute("namespace"),
                         (string)r.Attribute("type") ?? "decision",
                         (string)r.Attribute("errorResult") == "true",
                         r))
@@ -121,9 +122,9 @@ public sealed class TckTestCase
     public IReadOnlyList<TckResult> Results { get; init; } = Array.Empty<TckResult>();
 }
 
-public sealed record TckInput(string Name, XElement Value);
+public sealed record TckInput(string Name, string Namespace, XElement Value);
 
-public sealed record TckResult(int Index, string Name, string Type, bool ExpectsError, XElement Node)
+public sealed record TckResult(int Index, string Name, string Namespace, string Type, bool ExpectsError, XElement Node)
 {
     public XElement Expected => Node.Elements().FirstOrDefault(e => e.Name.LocalName == "expected");
 }

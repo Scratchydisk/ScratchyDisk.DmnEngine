@@ -1,25 +1,25 @@
 {
   "schemaVersion": 1,
-  "generatedUtc": "2026-11-23T14:40:46.8777159Z",
+  "generatedUtc": "2026-11-23T14:53:42.7213996Z",
   "tck": {
     "root": "artifacts/tck/TestCases",
     "commit": "a428da2f9c5ff2a4b8566ab511144e9022d743fe"
   },
   "engine": {
-    "version": "2.0.1\u002Bf38d22bfbd07c6b64bd43003f60248482477865f"
+    "version": "2.0.1\u002B83de68bd0580e441293b5a532616833f2e332e6f"
   },
   "totals": {
     "total": 3437,
-    "pass": 3200,
+    "pass": 3234,
     "fail": 80,
-    "parseFail": 30,
+    "parseFail": 0,
     "notFound": 19,
-    "unsupported": 108,
+    "unsupported": 104,
     "fixtureError": 0,
-    "blocked": 157,
-    "executed": 3280,
-    "passRate": 0.9310445155659005,
-    "executedPassRate": 0.975609756097561
+    "blocked": 123,
+    "executed": 3314,
+    "passRate": 0.9409368635437881,
+    "executedPassRate": 0.975859987929994
   },
   "cases": {
     "compliance-level-3/0002-string-functions/0002-string-functions-test-01.xml/001": {
@@ -530,10 +530,6 @@
       "status": "UNSUPPORTED",
       "reason": "engine cannot evaluate: WithInputParameter: Teacher\u0027s_Evaluation is not an input parameter"
     },
-    "compliance-level-3/0089-nested-inputdata-imports/0089-nested-inputdata-imports-test-01.xml/001": {
-      "status": "PARSE-FAIL",
-      "reason": "model: Decision with reference _96df766e-23e1-4aa6-9d5d-545fbe2f1e23 for Model C Decision based on Bs not found"
-    },
     "compliance-level-3/0092-feel-lambda/0092-feel-lambda-test-01.xml/004": {
       "status": "FAIL",
       "reason": "expected a value, got null"
@@ -826,134 +822,6 @@
       "status": "UNSUPPORTED",
       "reason": "decision logic kind is not parsed by the engine"
     },
-    "compliance-level-3/1159-prefix-imports/1159-prefix-imports-test-01.xml/001": {
-      "status": "PARSE-FAIL",
-      "reason": "model: Decision with reference _model_b_decision001 for decision001 not found"
-    },
-    "compliance-level-3/1159-prefix-imports/1159-prefix-imports-test-01.xml/002": {
-      "status": "PARSE-FAIL",
-      "reason": "model: Decision with reference _model_b_decision001 for decision001 not found"
-    },
-    "compliance-level-3/1159-prefix-imports/1159-prefix-imports-test-01.xml/003": {
-      "status": "PARSE-FAIL",
-      "reason": "model: Decision with reference _model_b_decision001 for decision001 not found"
-    },
-    "compliance-level-3/1159-prefix-imports/1159-prefix-imports-test-01.xml/004": {
-      "status": "PARSE-FAIL",
-      "reason": "model: Decision with reference _model_b_decision001 for decision001 not found"
-    },
-    "compliance-level-3/1159-prefix-imports/1159-prefix-imports-test-02.xml/001": {
-      "status": "PARSE-FAIL",
-      "reason": "model: Decision with reference _model_a_decision001 for decision001 not found"
-    },
-    "compliance-level-3/1159-prefix-imports/1159-prefix-imports-test-02.xml/002": {
-      "status": "PARSE-FAIL",
-      "reason": "model: Decision with reference _model_a_decision001 for decision001 not found"
-    },
-    "compliance-level-3/1159-prefix-imports/1159-prefix-imports-test-02.xml/003": {
-      "status": "PARSE-FAIL",
-      "reason": "model: Decision with reference _model_a_decision001 for decision001 not found"
-    },
-    "compliance-level-3/1159-prefix-imports/1159-prefix-imports-test-02.xml/004": {
-      "status": "PARSE-FAIL",
-      "reason": "model: Decision with reference _model_a_decision001 for decision001 not found"
-    },
-    "compliance-level-3/1159-prefix-imports/1159-prefix-imports-test-03.xml/001": {
-      "status": "UNSUPPORTED",
-      "reason": "model uses DMN imports"
-    },
-    "compliance-level-3/1159-prefix-imports/1159-prefix-imports-test-03.xml/002": {
-      "status": "UNSUPPORTED",
-      "reason": "model uses DMN imports"
-    },
-    "compliance-level-3/1159-prefix-imports/1159-prefix-imports-test-03.xml/003": {
-      "status": "UNSUPPORTED",
-      "reason": "model uses DMN imports"
-    },
-    "compliance-level-3/1159-prefix-imports/1159-prefix-imports-test-03.xml/004": {
-      "status": "UNSUPPORTED",
-      "reason": "model uses DMN imports"
-    },
-    "compliance-level-3/1159-prefix-imports/1159-prefix-imports-test-04.xml/001": {
-      "status": "PARSE-FAIL",
-      "reason": "model: Unsupported type name b.allowableduplicatename"
-    },
-    "compliance-level-3/1159-prefix-imports/1159-prefix-imports-test-05.xml/001": {
-      "status": "PARSE-FAIL",
-      "reason": "model: Decision with reference _decision002 for decision001 not found"
-    },
-    "compliance-level-3/1159-prefix-imports/1159-prefix-imports-test-06.xml/001": {
-      "status": "PARSE-FAIL",
-      "reason": "model: Decision with reference _decision002 for decision001 not found"
-    },
-    "compliance-level-3/1159-prefix-imports/1159-prefix-imports-test-07.xml/001": {
-      "status": "PARSE-FAIL",
-      "reason": "model: Decision with reference _decision002 for decision001 not found"
-    },
-    "compliance-level-3/1159-prefix-imports/1159-prefix-imports-test-08.xml/001": {
-      "status": "PARSE-FAIL",
-      "reason": "model: Decision with reference _decision002 for decision001 not found"
-    },
-    "compliance-level-3/1159-prefix-imports/1159-prefix-imports-test-09.xml/001": {
-      "status": "PARSE-FAIL",
-      "reason": "model: Decision with reference _decision002 for decision001 not found"
-    },
-    "compliance-level-3/1159-prefix-imports/1159-prefix-imports-test-10.xml/001": {
-      "status": "PARSE-FAIL",
-      "reason": "model: Decision with reference _decision002 for decision001 not found"
-    },
-    "compliance-level-3/1159-prefix-imports/1159-prefix-imports-test-11.xml/001": {
-      "status": "PARSE-FAIL",
-      "reason": "model: Unsupported type name b.allowableduplicatename"
-    },
-    "compliance-level-3/1159-prefix-imports/1159-prefix-imports-test-12.xml/001": {
-      "status": "PARSE-FAIL",
-      "reason": "model: Decision with reference _allowableDuplicateName for decision001 not found"
-    },
-    "compliance-level-3/1159-prefix-imports/1159-prefix-imports-test-13.xml/001": {
-      "status": "PARSE-FAIL",
-      "reason": "model: Decision with reference _allowableDuplicateName for decision001 not found"
-    },
-    "compliance-level-3/1159-prefix-imports/1159-prefix-imports-test-14.xml/001": {
-      "status": "PARSE-FAIL",
-      "reason": "model: Decision with reference _decision002 for decision001 not found"
-    },
-    "compliance-level-3/1159-prefix-imports/1159-prefix-imports-test-15.xml/001": {
-      "status": "PARSE-FAIL",
-      "reason": "model: Decision with reference _decision002 for decision001 not found"
-    },
-    "compliance-level-3/1159-prefix-imports/1159-prefix-imports-test-16.xml/001": {
-      "status": "PARSE-FAIL",
-      "reason": "model: Decision with reference _decision002 for decision001 not found"
-    },
-    "compliance-level-3/1159-prefix-imports/1159-prefix-imports-test-17.xml/001": {
-      "status": "UNSUPPORTED",
-      "reason": "model uses DMN imports"
-    },
-    "compliance-level-3/1159-prefix-imports/1159-prefix-imports-test-18.xml/001": {
-      "status": "PARSE-FAIL",
-      "reason": "model: Decision with reference _decision002 for decision001 not found"
-    },
-    "compliance-level-3/1159-prefix-imports/1159-prefix-imports-test-19.xml/001": {
-      "status": "PARSE-FAIL",
-      "reason": "model: No decision in DMN model."
-    },
-    "compliance-level-3/1160-multiple-imports/1160-multiple-imports-test-01.xml/001": {
-      "status": "PARSE-FAIL",
-      "reason": "model: Input with reference _B4982021-33F9-4148-9015-93511122650E for DecisionB not found"
-    },
-    "compliance-level-3/1160-multiple-imports/1160-multiple-imports-test-02.xml/001": {
-      "status": "PARSE-FAIL",
-      "reason": "model: Decision with reference _C2C804CE-1467-4797-83F1-D55DD6D94298 for DecisionC not found"
-    },
-    "compliance-level-3/1160-multiple-imports/1160-multiple-imports-test-03.xml/001": {
-      "status": "PARSE-FAIL",
-      "reason": "model: Input with reference _B4982021-33F9-4148-9015-93511122650E for DecisionB not found"
-    },
-    "compliance-level-3/1160-multiple-imports/1160-multiple-imports-test-04.xml/001": {
-      "status": "PARSE-FAIL",
-      "reason": "model: Decision with reference _C2C804CE-1467-4797-83F1-D55DD6D94298 for DecisionC not found"
-    },
     "compliance-level-3/1161-boxed-list-expression/1161-boxed-list-expression-test-01.xml/001": {
       "status": "UNSUPPORTED",
       "reason": "decision logic kind is not parsed by the engine"
@@ -962,13 +830,9 @@
       "status": "UNSUPPORTED",
       "reason": "decision logic kind is not parsed by the engine"
     },
-    "compliance-level-3/1162-import-same-name/1162-import-same-name-test-01.xml/001": {
-      "status": "PARSE-FAIL",
-      "reason": "model: Input with reference _40510BDC-204C-48EB-8367-7B6527C40793 for Decision not found"
-    },
     "compliance-level-3/1162-import-same-name/1162-import-same-name-test-02.xml/001": {
-      "status": "PARSE-FAIL",
-      "reason": "model: Decision with reference _547AFB9B-16CF-4A75-B1C5-DD37901FB60F for Decision not found"
+      "status": "UNSUPPORTED",
+      "reason": "engine cannot evaluate: Variable name \u0027https://kie.org/dmn/_DDA3BC7D-BEBD-4990-AC9A-73B1A60DEE3E#A\u0027 contains invalid character (Parameter \u0027name\u0027)"
     }
   }
 }

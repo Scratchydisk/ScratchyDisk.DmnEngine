@@ -140,6 +140,10 @@ namespace ScratchyDisk.DmnEngine.Feel.Eval
 
         private object ResolveQualifiedName(QualifiedNameNode qn)
         {
+            // Multi-model names are stored flat, e.g. "b.model_b_input001".
+            if (qn.Parts.Count > 1 && context.TryGetVariable(string.Join(".", qn.Parts), out var flatValue))
+                return flatValue;
+
             var value = ResolveVariable(qn.Parts[0]);
             for (var i = 1; i < qn.Parts.Count; i++)
             {
@@ -1006,8 +1010,26 @@ namespace ScratchyDisk.DmnEngine.Feel.Eval
 
         private object EvalPath(PathNode path)
         {
+            // Imported names are stored flat: b.input, a.person.name, etc.
+            var flatName = FlatPathName(path);
+            if (flatName != null && context.TryGetVariable(flatName, out var flatValue))
+                return flatValue;
+
             var source = Evaluate(path.Source);
             return AccessMember(source, path.Member);
+        }
+
+        private static string FlatPathName(FeelAstNode node)
+        {
+            switch (node)
+            {
+                case NameNode name: return name.Name;
+                case QualifiedNameNode qualified: return string.Join(".", qualified.Parts);
+                case PathNode path:
+                    var prefix = FlatPathName(path.Source);
+                    return prefix == null ? null : prefix + "." + path.Member;
+                default: return null;
+            }
         }
         private object EvalDescendant(DescendantNode descendant)
         {
@@ -1078,6 +1100,15 @@ namespace ScratchyDisk.DmnEngine.Feel.Eval
 
         private object EvalFunctionInvocation(FunctionInvocation fi)
         {
+            // Imported/qualified function values: b.bkm(...)
+            if (fi.Function is PathNode qualifiedPath
+                && qualifiedPath.Source is NameNode qualifiedSource
+                && context.TryGetVariable($"{qualifiedSource.Name}.{qualifiedPath.Member}", out var qualifiedValue)
+                && qualifiedValue is FeelFunction qualifiedFunction)
+            {
+                return qualifiedFunction.Invoke(fi.Arguments.Select(Evaluate).ToArray());
+            }
+
             // Handle CLR method calls: obj.Method(args) or Type.StaticMethod(args)
             if (fi.Function is PathNode pathNode)
             {

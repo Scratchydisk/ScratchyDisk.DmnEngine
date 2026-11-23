@@ -226,13 +226,16 @@ public sealed class TckRunner
             return Node(result, TckStatus.Unsupported, "result is a decision service");
         if (model.UnsupportedLogicDecisions.Contains(result.Name))
             return Node(result, TckStatus.Unsupported, "decision logic kind is not parsed by the engine");
-        if (model.HasImport)
-            return Node(result, TckStatus.Unsupported, "model uses DMN imports");
 
-        if (!model.Definition.Decisions.TryGetValue(result.Name, out var decision))
+        var decisionName = result.Name;
+        if (!string.IsNullOrWhiteSpace(result.Namespace)
+            && model.Definition.QualifiedDecisionNames.TryGetValue($"{result.Namespace}#{result.Name}", out var qualified))
+            decisionName = qualified;
+
+        if (!model.Definition.Decisions.TryGetValue(decisionName, out var decision))
         {
             return Node(result, TckStatus.NotFound,
-                $"no decision '{result.Name}' (available: {string.Join(", ", model.Definition.Decisions.Keys)})");
+                $"no decision '{decisionName}' (available: {string.Join(", ", model.Definition.Decisions.Keys)})");
         }
 
         object expected;
@@ -261,10 +264,13 @@ public sealed class TckRunner
                 {
                     return Node(result, TckStatus.FixtureError, $"input '{input.Name}': {ex.Message}");
                 }
-                context.WithInputParameter(input.Name, TckValue.ToEngineValue(value));
+                var inputKey = string.IsNullOrWhiteSpace(input.Namespace)
+                    ? input.Name
+                    : $"{input.Namespace}#{input.Name}";
+                context.WithInputParameter(inputKey, TckValue.ToEngineValue(value));
             }
 
-            var actualResult = context.ExecuteDecision(result.Name);
+            var actualResult = context.ExecuteDecision(decisionName);
             actual = Extract(actualResult, result.Name, AlwaysReturnsList(decision));
         }
         catch (Exception ex)

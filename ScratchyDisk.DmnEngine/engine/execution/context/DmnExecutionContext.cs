@@ -79,6 +79,10 @@ namespace ScratchyDisk.DmnEngine.Engine.Execution.Context
         /// Semantic errors collected during lenient execution.
         /// </summary>
         public IReadOnlyList<DmnDiagnostic> Diagnostics => diagnostics;
+
+        /// <summary>Aliases active for the decision currently being evaluated.</summary>
+        internal IReadOnlyDictionary<string, string> CurrentNameAliases { get; set; } =
+            new Dictionary<string, string>(StringComparer.Ordinal);
         /// <summary>
         /// Adds a semantic error to the execution diagnostics.
         /// </summary>
@@ -160,7 +164,11 @@ namespace ScratchyDisk.DmnEngine.Engine.Execution.Context
             if (string.IsNullOrWhiteSpace(name))
                 throw Logger.Fatal<ArgumentException>($"{nameof(name)} is null or empty");
 
-            name = DmnVariableDefinition.NormalizeVariableName(name);
+            if (Definition.ImportAliases.TryGetValue(name, out var importedName))
+                name = importedName;
+            else if (!Variables.ContainsKey(name))
+                name = DmnVariableDefinition.NormalizeVariableName(name);
+
             var variable = Variables?.Values.FirstOrDefault(i => i.IsInputParameter && i.Name == name);
             if (variable == null)
                 throw Logger.Fatal<DmnExecutorException>($"WithInputParameter: {name} is not an input parameter");
@@ -329,6 +337,9 @@ namespace ScratchyDisk.DmnEngine.Engine.Execution.Context
             }
 
             // Business knowledge models are FEEL functions, not stored variables.
+            ApplyAliases(evalContext, Definition.ImportAliases);
+            ApplyAliases(evalContext, CurrentNameAliases);
+
             foreach (var bkm in Definition.BusinessKnowledgeModels.Values)
             {
                 evalContext.SetVariable(bkm.Name, CreateBusinessKnowledgeModelFunction(bkm));
@@ -340,6 +351,22 @@ namespace ScratchyDisk.DmnEngine.Engine.Execution.Context
         /// <summary>
         /// Builds a FEEL scope with all known variable names for multi-word name resolution.
         /// </summary>
+        private void ApplyAliases(FeelEvaluationContext evalContext, IReadOnlyDictionary<string, string> aliases)
+        {
+            if (aliases == null) return;
+            foreach (var alias in aliases)
+            {
+                if (Variables.TryGetValue(alias.Value, out var source))
+                {
+                    evalContext.SetVariable(alias.Key, FeelTypeCoercion.CoerceToFeel(source.Value));
+                }
+                else if (Definition.BusinessKnowledgeModels.TryGetValue(alias.Value, out var bkm))
+                {
+                    evalContext.SetVariable(alias.Key, CreateBusinessKnowledgeModelFunction(bkm));
+                }
+            }
+        }
+
         protected virtual FeelScope BuildFeelScope()
         {
             var scope = new FeelScope();
@@ -360,6 +387,11 @@ namespace ScratchyDisk.DmnEngine.Engine.Execution.Context
                 scope.AddName(bkm.Name);
             }
 
+            foreach (var alias in CurrentNameAliases.Keys)
+                scope.AddName(alias);
+            foreach (var alias in Definition.ImportAliases.Keys)
+                scope.AddName(alias);
+
             return scope;
         }
 
@@ -374,7 +406,9 @@ namespace ScratchyDisk.DmnEngine.Engine.Execution.Context
 
             return new FeelFunction(bkm.Name, parameters, args =>
             {
-                var child = BuildFeelEvaluationContext().CreateChildScope();
+                var childContext = BuildFeelEvaluationContext();
+                ApplyAliases(childContext, bkm.NameAliases);
+                var child = childContext.CreateChildScope();
                 for (var i = 0; i < parameters.Count; i++)
                 {
                     child.SetVariable(parameters[i], i < args.Length ? args[i] : null);

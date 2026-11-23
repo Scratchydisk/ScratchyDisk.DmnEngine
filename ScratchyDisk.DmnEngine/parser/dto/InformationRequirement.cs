@@ -84,9 +84,17 @@ namespace ScratchyDisk.DmnEngine.Parser.Dto
         /// <summary>
         /// Gets the reference to ID of decision or input the decision depends to
         /// </summary>
-        public string Ref => RequirementType == InformationRequirementType.Decision
-            ? ParseRef(RequiredDecision.Ref)
-            : ParseRef(RequiredInput.Ref);
+        public string Ref => OverrideRef ?? ParseRef(RawRef);
+
+        /// <summary>Reference exactly as written in the model (before normalisation).</summary>
+        [XmlIgnore]
+        public string RawRef => RequirementType == InformationRequirementType.Decision
+            ? RequiredDecision.Ref
+            : RequiredInput.Ref;
+
+        /// <summary>Resolved (global) reference set by the import flattener.</summary>
+        [XmlIgnore]
+        public string OverrideRef { get; set; }
 
         /// <summary>
         /// Parses the reference attribute - get's the ID of the required decision/input from href attribute by removing the "#" prefix.

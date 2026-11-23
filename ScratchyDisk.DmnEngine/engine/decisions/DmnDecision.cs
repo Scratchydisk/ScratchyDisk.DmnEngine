@@ -36,6 +36,13 @@ namespace ScratchyDisk.DmnEngine.Engine.Decisions
         public string NameWithLabel => DmnUtils.NameWithLabel(Name, Label);
 
         /// <summary>
+        /// Aliases (local name -> definition variable name) used while evaluating
+        /// this decision. Imported models use this to resolve their local names.
+        /// </summary>
+        public IReadOnlyDictionary<string, string> NameAliases { get; set; } =
+            new Dictionary<string, string>(StringComparer.Ordinal);
+
+        /// <summary>
         /// Decision required inputs (input variables)
         /// <remarks>Only direct dependencies are here, use <see cref="GetAllRequiredInputs"/> method to get the full list</remarks>
         /// </summary>
@@ -121,6 +128,8 @@ namespace ScratchyDisk.DmnEngine.Engine.Decisions
             }
 
             DmnDecisionResult result;
+            var previousAliases = context.CurrentNameAliases;
+            context.CurrentNameAliases = NameAliases ?? previousAliases;
             try
             {
                 result = Evaluate(context, executionId);
@@ -136,6 +145,10 @@ namespace ScratchyDisk.DmnEngine.Engine.Decisions
             {
                 context.AddDiagnostic(Name, exception);
                 result = new DmnDecisionResult();
+            }
+            finally
+            {
+                context.CurrentNameAliases = previousAliases;
             }
             context.UpdateDecisionAlias(this, result);
             context.CreateSnapshot(this, result);

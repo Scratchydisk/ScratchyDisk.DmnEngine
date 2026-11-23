@@ -9,6 +9,22 @@ namespace ScratchyDisk.DmnEngine.Parser.Dto
     /// </summary>
     public class DmnModel
     {
+        /// <summary>Definitions namespace attribute.</summary>
+        [XmlAttribute("namespace")]
+        public string Namespace { get; set; }
+
+        /// <summary>Import declarations.</summary>
+        [XmlElement("import")]
+        public List<Import> Imports { get; set; }
+
+        /// <summary>Source file path when parsed from a file.</summary>
+        [XmlIgnore]
+        public string SourcePath { get; set; }
+
+        /// <summary>Aliases produced by import flattening.</summary>
+        [XmlIgnore]
+        public ModelImportAliases ImportAliases { get; set; }
+
         /// <summary>
         /// List of input data parameters to be used by <see cref="Decisions"/> for DMN Model
         /// </summary>

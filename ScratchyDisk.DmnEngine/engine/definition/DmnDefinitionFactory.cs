@@ -151,6 +151,7 @@ namespace ScratchyDisk.DmnEngine.Engine.Definition
         public static DmnDefinition CreateDmnDefinition(DmnModel source)
         {
             if (source == null) throw new ArgumentNullException(nameof(source));
+            ModelImportResolver.Resolve(source);
             ValidateExpressionLanguages(source);
             var factory = new DmnDefinitionFactory(source);
             return factory.ProcessModel();
@@ -271,7 +272,9 @@ namespace ScratchyDisk.DmnEngine.Engine.Definition
                 Decisions,
                 BusinessKnowledgeModels,
                 itemTypeNames,
-                decisionAliases);
+                decisionAliases,
+                SourceModel.ImportAliases?.InputAliases,
+                SourceModel.ImportAliases?.QualifiedDecisionNames);
 
             // Attach the alias map to the definition
             if (inputAliases != null && inputAliases.Count > 0)
@@ -432,12 +435,15 @@ namespace ScratchyDisk.DmnEngine.Engine.Definition
                     .Where(p => !string.IsNullOrWhiteSpace(p))
                     .ToList() ?? new List<string>();
 
-                BusinessKnowledgeModels[name] = new DmnBusinessKnowledgeModel(
+                var bkmDefinition = new DmnBusinessKnowledgeModel(
                     name,
                     name,
                     parameters,
                     logic.Expression.Text,
                     logic.Expression.Language);
+                if (SourceModel.ImportAliases?.BkmAliases.TryGetValue(name, out var bkmAliases) == true)
+                    bkmDefinition.NameAliases = bkmAliases;
+                BusinessKnowledgeModels[name] = bkmDefinition;
             }
         }
 
@@ -467,7 +473,7 @@ namespace ScratchyDisk.DmnEngine.Engine.Definition
                 }
 
                 var inputName = !string.IsNullOrWhiteSpace(sourceInput.Name) ? sourceInput.Name : inputId;
-                var variableName = DmnVariableDefinition.NormalizeVariableName(inputName);
+                var variableName = NormalizeName(inputName);
                 if (InputData.ContainsKey(variableName))
                     throw Logger.Fatal<DmnParserException>($"Duplicate input data name {variableName} (from {inputName})");
 
@@ -583,6 +589,8 @@ namespace ScratchyDisk.DmnEngine.Engine.Definition
 
             if (decision != null)
             {
+                if (SourceModel.ImportAliases?.DecisionAliases.TryGetValue(decisionName, out var decisionAliases) == true)
+                    decision.NameAliases = decisionAliases;
                 Decisions.Add(decisionName, decision);
                 DecisionsById.Add(decisionId, decision);
             }
@@ -651,7 +659,7 @@ namespace ScratchyDisk.DmnEngine.Engine.Definition
                         sourceOutput.Id;
                 }
 
-                var variableName = DmnVariableDefinition.NormalizeVariableName(sourceVariableName);
+                var variableName = NormalizeName(sourceVariableName);
                 if (!Variables.TryGetValue(variableName, out var variable))
                 {
                     //create variable
@@ -844,7 +852,7 @@ namespace ScratchyDisk.DmnEngine.Engine.Definition
             var sourceVariableName = !string.IsNullOrWhiteSpace(sourceDecision.OutputVariable.Name)
                 ? sourceDecision.OutputVariable.Name
                 : sourceDecision.OutputVariable.Id;
-            var variableName = DmnVariableDefinition.NormalizeVariableName(sourceVariableName);
+            var variableName = NormalizeName(sourceVariableName);
             if (!Variables.TryGetValue(variableName, out var variable))
             {
                 //create variable
@@ -999,6 +1007,13 @@ namespace ScratchyDisk.DmnEngine.Engine.Definition
         /// variable types. Resolution is lazy and supports aliases, structures and
         /// collections, including recursive references.
         /// </summary>
+        private static string NormalizeName(string name)
+        {
+            if (string.IsNullOrWhiteSpace(name)) return name;
+            if (name.Contains('.')) return name;
+            return DmnVariableDefinition.NormalizeVariableName(name);
+        }
+
         private Dictionary<string, string> BuildDecisionAliases()
         {
             var aliases = new Dictionary<string, string>(StringComparer.Ordinal);
@@ -1007,7 +1022,7 @@ namespace ScratchyDisk.DmnEngine.Engine.Definition
                 string aliasName;
                 try
                 {
-                    aliasName = DmnVariableDefinition.NormalizeVariableName(decisionName);
+                    aliasName = NormalizeName(decisionName);
                 }
                 catch
                 {
@@ -1158,11 +1173,15 @@ namespace ScratchyDisk.DmnEngine.Engine.Definition
             if (string.IsNullOrWhiteSpace(typeName)) throw Logger.Fatal<ArgumentException>($"{nameof(typeName)} is null or empty");
 
             typeName = typeName.ToLower();
+            var localName = typeName.Contains('.') ? typeName[(typeName.LastIndexOf('.') + 1)..] : typeName;
             if (KnownTypes.TryGetValue(typeName, out var type)) return type;
+            if (KnownTypes.TryGetValue(localName, out var localType)) return localType;
 
             EnsureItemDefinitionsIndexed();
             if (itemDefinitions.TryGetValue(typeName, out var item))
                 return ResolveItemDefinition(item);
+            if (itemDefinitions.TryGetValue(localName, out var localItem))
+                return ResolveItemDefinition(localItem);
 
             throw Logger.Fatal<DmnParserException>($"Unsupported type name {typeName}");
         }

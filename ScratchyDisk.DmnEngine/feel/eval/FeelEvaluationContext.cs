@@ -59,5 +59,14 @@ namespace ScratchyDisk.DmnEngine.Feel.Eval
         /// Checks if a variable exists in the current scope (not parents).
         /// </summary>
         public bool HasLocalVariable(string name) => variables.ContainsKey(name);
+
+        /// <summary>Checks the scope chain for a variable.</summary>
+        public bool TryGetVariable(string name, out object value)
+        {
+            if (variables.TryGetValue(name, out value)) return true;
+            if (parent != null) return parent.TryGetVariable(name, out value);
+            value = null;
+            return false;
+        }
     }
 }

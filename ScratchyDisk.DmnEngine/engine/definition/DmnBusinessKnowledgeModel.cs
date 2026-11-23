@@ -1,4 +1,5 @@
-﻿using System.Collections.Generic;
+﻿using System;
+using System.Collections.Generic;
 
 namespace ScratchyDisk.DmnEngine.Engine.Definition
 {
@@ -22,6 +23,10 @@ namespace ScratchyDisk.DmnEngine.Engine.Definition
 
         /// <summary>Expression language URI, if present.</summary>
         public string ExpressionLanguage { get; }
+
+        /// <summary>Aliases used inside the function body.</summary>
+        public IReadOnlyDictionary<string, string> NameAliases { get; set; } =
+            new Dictionary<string, string>(StringComparer.Ordinal);
 
         public DmnBusinessKnowledgeModel(
             string name,

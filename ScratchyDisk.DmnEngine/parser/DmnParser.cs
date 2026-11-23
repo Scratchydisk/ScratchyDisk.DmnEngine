@@ -282,7 +282,9 @@ namespace ScratchyDisk.DmnEngine.Parser
                 Logger.Info($"Auto-detected DMN version {version} for file {filePath}");
             }
 
-            return ParseString(content, version);
+            var model = ParseString(content, version);
+            model.SourcePath = filePath;
+            return model;
         }
 
         /// <summary>
@@ -362,6 +364,7 @@ namespace ScratchyDisk.DmnEngine.Parser
             }
 
             def.DmnVersion=dmnVersion;
+            def.SourcePath = filePath;
             return def;
         }
 

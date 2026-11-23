@@ -22,6 +22,9 @@ namespace ScratchyDisk.DmnEngine.Engine.Decisions
         /// </summary>
         IReadOnlyCollection<IDmnDecision> RequiredDecisions { get; }
 
+        /// <summary>Aliases used while evaluating the decision expressions.</summary>
+        IReadOnlyDictionary<string, string> NameAliases { get; set; }
+
         /// <summary>
         /// Executes the decision.
         /// </summary>
