@@ -202,6 +202,29 @@ namespace ScratchyDisk.DmnEngine.Parser
         }
 
         /// <summary>
+        /// Rejects unsupported optional DMN 1.6 features that are not represented in the DTO model.
+        /// </summary>
+        private static void ValidateUnsupportedFeatures(string xmlContent)
+        {
+            try
+            {
+                using var reader = XmlReader.Create(new StringReader(xmlContent));
+                while (reader.Read())
+                {
+                    if (reader.NodeType != XmlNodeType.Element) continue;
+                    if (string.Equals(reader.GetAttribute("kind"), DmnExpressionLanguage.Onnx, StringComparison.OrdinalIgnoreCase))
+                    {
+                        throw Logger.Fatal<DmnParserException>(
+                            "ONNX external functions are not supported. ONNX is optional for DMN 1.6 Level 3 conformance and is not implemented.");
+                    }
+                }
+            }
+            catch (XmlException)
+            {
+                // Leave malformed XML to the normal parser error path.
+            }
+        }
+        /// <summary>
         /// Detects the DMN version from the root element namespace of the given XML content.
         /// </summary>
         /// <param name="xmlContent">DMN XML content</param>
@@ -298,6 +321,7 @@ namespace ScratchyDisk.DmnEngine.Parser
         {
             if (string.IsNullOrWhiteSpace(filePath)) throw Logger.Fatal<DmnParserException>($"{nameof(filePath)} is null or empty");
             if (!File.Exists(filePath)) throw Logger.Fatal<DmnParserException>($"File {filePath} doesn't exist");
+            ValidateUnsupportedFeatures(File.ReadAllText(filePath));
 
             DmnModel def;
             // ReSharper disable once AssignNullToNotNullAttribute
@@ -407,6 +431,7 @@ namespace ScratchyDisk.DmnEngine.Parser
         {
             dmnDefinition = dmnDefinition?.Trim();
             if (string.IsNullOrWhiteSpace(dmnDefinition)) throw Logger.Fatal<DmnParserException>("Missing DMN Model definition");
+            ValidateUnsupportedFeatures(dmnDefinition);
 
             DmnModel def;
             // ReSharper disable once AssignNullToNotNullAttribute

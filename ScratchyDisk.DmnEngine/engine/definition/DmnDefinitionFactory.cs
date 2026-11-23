@@ -140,10 +140,17 @@ namespace ScratchyDisk.DmnEngine.Engine.Definition
         private static void ValidateExpressionLanguage(Expression expression)
         {
             if (string.IsNullOrWhiteSpace(expression?.Language)) return;
-            if (!string.Equals(expression.Language.Trim(), DmnExpressionLanguage.BFeel, StringComparison.OrdinalIgnoreCase))
-                return;
-            throw Logger.Fatal<DmnParserException>(
-                $"B-FEEL expression language is not supported: {DmnExpressionLanguage.BFeel}. Supported expression language: FEEL.");
+            var language = expression.Language.Trim();
+            if (string.Equals(language, DmnExpressionLanguage.BFeel, StringComparison.OrdinalIgnoreCase))
+            {
+                throw Logger.Fatal<DmnParserException>(
+                    $"B-FEEL expression language is not supported: {DmnExpressionLanguage.BFeel}. Supported expression language: FEEL.");
+            }
+            if (string.Equals(language, DmnExpressionLanguage.Onnx, StringComparison.OrdinalIgnoreCase))
+            {
+                throw Logger.Fatal<DmnParserException>(
+                    "ONNX external functions are not supported. ONNX is optional for DMN 1.6 Level 3 conformance and is not implemented.");
+            }
         }
 
         /// <summary>

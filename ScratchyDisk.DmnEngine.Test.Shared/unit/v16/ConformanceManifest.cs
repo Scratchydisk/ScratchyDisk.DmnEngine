@@ -19,6 +19,7 @@ namespace ScratchyDisk.DmnEngine.Test.Unit
                 ["Dmn16BFeelDetectionTests"] = "DMN 1.6 §11.1 and the B-FEEL language URI",
                 ["Dmn16ExpressionRoutingTests"] = "DMN 1.6 §11.1 language selection and §13.3 expressionLanguage",
                 ["Dmn16ExpressionLanguageInspectorTests"] = "DMN 1.6 §13.3 expressionLanguage and §11.1 B-FEEL URI",
+                ["Dmn16OnnxDetectionTests"] = "DMN 1.6 §2.1 and §10.3.2.13.3 ONNX external functions",
                 ["Dmn16ErrorHandlingModeTests"] = "DMN 1.6 §7.3.8",
                 ["Dmn16LenientDiagnosticsTests"] = "DMN 1.6 §7.3.8",
                 ["Dmn16StrictModeTests"] = "DMN 1.6 §7.3.8",
