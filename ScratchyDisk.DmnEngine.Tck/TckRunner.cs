@@ -118,12 +118,6 @@ public sealed class TckModel
         if (decision.Elements().Any(e => e.Name.LocalName == "knowledgeRequirement"))
             KnowledgeRequiringDecisions.Add(name);
 
-        var logicKind = decision.Elements()
-            .Select(e => e.Name.LocalName)
-            .FirstOrDefault(n => n is "context" or "relation" or "invocation" or "functionDefinition" or "list");
-
-        if (logicKind != null)
-            UnsupportedLogicDecisions.Add(name);
     }
 
     private static void AddName(HashSet<string> set, XElement element)
@@ -224,8 +218,6 @@ public sealed class TckRunner
             return Node(result, TckStatus.Unsupported, "result is a business knowledge model");
         if (model.DecisionServiceNames.Contains(result.Name))
             return Node(result, TckStatus.Unsupported, "result is a decision service");
-        if (model.UnsupportedLogicDecisions.Contains(result.Name))
-            return Node(result, TckStatus.Unsupported, "decision logic kind is not parsed by the engine");
 
         var decisionName = result.Name;
         if (!string.IsNullOrWhiteSpace(result.Namespace)

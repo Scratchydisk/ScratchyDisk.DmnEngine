@@ -1,90 +1,74 @@
 {
   "schemaVersion": 1,
-  "generatedUtc": "2026-11-23T14:53:42.7213996Z",
+  "generatedUtc": "2026-11-23T15:13:08.9797073Z",
   "tck": {
     "root": "artifacts/tck/TestCases",
     "commit": "a428da2f9c5ff2a4b8566ab511144e9022d743fe"
   },
   "engine": {
-    "version": "2.0.1\u002B83de68bd0580e441293b5a532616833f2e332e6f"
+    "version": "2.0.1\u002B0462129f9a3f54471f65b63e3390f672dcb1fa7b"
   },
   "totals": {
     "total": 3437,
-    "pass": 3234,
-    "fail": 80,
+    "pass": 3277,
+    "fail": 130,
     "parseFail": 0,
     "notFound": 19,
-    "unsupported": 104,
+    "unsupported": 11,
     "fixtureError": 0,
-    "blocked": 123,
-    "executed": 3314,
-    "passRate": 0.9409368635437881,
-    "executedPassRate": 0.975859987929994
+    "blocked": 30,
+    "executed": 3407,
+    "passRate": 0.953447774221705,
+    "executedPassRate": 0.961843263868506
   },
   "cases": {
-    "compliance-level-3/0002-string-functions/0002-string-functions-test-01.xml/001": {
-      "status": "UNSUPPORTED",
-      "reason": "decision logic kind is not parsed by the engine"
-    },
-    "compliance-level-3/0002-string-functions/0002-string-functions-test-01.xml/003": {
-      "status": "UNSUPPORTED",
-      "reason": "decision logic kind is not parsed by the engine"
-    },
     "compliance-level-3/0004-lending/0004-lending-test-01.xml/001": {
       "status": "FAIL",
-      "reason": "resultNode[8] Strategy: expected a value, got null"
+      "reason": "resultNode[1] ApplicationRiskScore: expected a value, got null"
     },
     "compliance-level-3/0007-date-time/0007-date-time-test-01.xml/001": {
       "status": "FAIL",
-      "reason": "resultNode[3] Date-Time2: expected a value, got null"
+      "reason": "resultNode[1] Date: entry \u0027fromDateTime\u0027: expected a value, got null"
     },
     "compliance-level-3/0008-listGen/0008-listGen-test-01.xml/010": {
       "status": "FAIL",
       "reason": "list size 7 vs 5"
     },
     "compliance-level-3/0014-loan-comparison/0014-loan-comparison-test-01.xml/001": {
-      "status": "UNSUPPORTED",
-      "reason": "resultNode[0] Bankrates: decision logic kind is not parsed by the engine"
-    },
-    "compliance-level-3/0016-some-every/0016-some-every-test-01.xml/001": {
       "status": "FAIL",
-      "reason": "resultNode[1] everyGtTen1: false vs true"
+      "reason": "resultNode[1] RankedProducts: entry \u0027metricsTable\u0027: item 0: expected a value, got null"
     },
     "compliance-level-3/0021-singleton-list/0021-singleton-list-test-01.xml/001": {
       "status": "FAIL",
       "reason": "resultNode[4] decision5: expected a value, got null"
     },
     "compliance-level-3/0030-user-defined-functions/0030-user-defined-functions-test-01.xml/001": {
-      "status": "UNSUPPORTED",
-      "reason": "resultNode[0] simple function invocation: decision logic kind is not parsed by the engine"
+      "status": "FAIL",
+      "reason": "resultNode[0] simple function invocation: expected a value, got null"
     },
     "compliance-level-3/0031-user-defined-functions/0031-user-defined-functions-test-01.xml/001": {
-      "status": "UNSUPPORTED",
-      "reason": "decision logic kind is not parsed by the engine"
+      "status": "FAIL",
+      "reason": "entry \u0027multiplicationResultPositional\u0027: expected a value, got null"
     },
     "compliance-level-3/0031-user-defined-functions/0031-user-defined-functions-test-01.xml/002": {
-      "status": "UNSUPPORTED",
-      "reason": "decision logic kind is not parsed by the engine"
+      "status": "FAIL",
+      "reason": "entry \u0027multiplicationResultNamed\u0027: expected a value, got null"
     },
     "compliance-level-3/0031-user-defined-functions/0031-user-defined-functions-test-01.xml/003": {
-      "status": "UNSUPPORTED",
-      "reason": "decision logic kind is not parsed by the engine"
-    },
-    "compliance-level-3/0034-drg-scopes/0034-drg-scopes-test-01.xml/001": {
-      "status": "UNSUPPORTED",
-      "reason": "resultNode[0] decision A 1: decision logic kind is not parsed by the engine"
+      "status": "FAIL",
+      "reason": "entry \u0027functionInvocationLiteralExpressionInParameter\u0027: expected a value, got null"
     },
     "compliance-level-3/0035-test-structure-output/0035-test-structure-output-test-01.xml/001": {
-      "status": "UNSUPPORTED",
-      "reason": "decision logic kind is not parsed by the engine"
+      "status": "FAIL",
+      "reason": "context has 3 entries, actual 0"
     },
     "compliance-level-3/0035-test-structure-output/0035-test-structure-output-test-01.xml/002": {
-      "status": "UNSUPPORTED",
-      "reason": "decision logic kind is not parsed by the engine"
+      "status": "FAIL",
+      "reason": "context has 3 entries, actual 0"
     },
     "compliance-level-3/0035-test-structure-output/0035-test-structure-output-test-01.xml/003": {
-      "status": "UNSUPPORTED",
-      "reason": "decision logic kind is not parsed by the engine"
+      "status": "FAIL",
+      "reason": "context has 3 entries, actual 0"
     },
     "compliance-level-3/0036-dt-variable-input/0036-dt-variable-input-test-01.xml/_20445ee0-744d-4488-a90e-136701510871": {
       "status": "FAIL",
@@ -95,44 +79,44 @@
       "reason": "resultNode[7] Compare Boolean: string \u0022Not same boolean\u0022 vs \u0022Same boolean\u0022"
     },
     "compliance-level-3/0037-dt-on-bkm-implicit-params/0037-dt-on-bkm-implicit-params-test-01.xml/_0de87bf9-0269-40b1-b7ac-767ae9a99b89": {
-      "status": "UNSUPPORTED",
-      "reason": "decision logic kind is not parsed by the engine"
+      "status": "FAIL",
+      "reason": "expected a value, got null"
     },
     "compliance-level-3/0037-dt-on-bkm-implicit-params/0037-dt-on-bkm-implicit-params-test-01.xml/_20d7e21f-f58f-4a78-8074-a70cbf13de83": {
-      "status": "UNSUPPORTED",
-      "reason": "decision logic kind is not parsed by the engine"
+      "status": "FAIL",
+      "reason": "expected a value, got null"
     },
     "compliance-level-3/0038-dt-on-bkm-explicit-params/0038-dt-on-bkm-explicit-params-test-01.xml/_b224d5f5-006f-43bb-9ace-e6af924dc2b3": {
-      "status": "UNSUPPORTED",
-      "reason": "decision logic kind is not parsed by the engine"
+      "status": "FAIL",
+      "reason": "expected a value, got null"
     },
     "compliance-level-3/0038-dt-on-bkm-explicit-params/0038-dt-on-bkm-explicit-params-test-01.xml/_bf27c25d-18f6-4891-8370-42d440709d90": {
-      "status": "UNSUPPORTED",
-      "reason": "decision logic kind is not parsed by the engine"
+      "status": "FAIL",
+      "reason": "expected a value, got null"
     },
     "compliance-level-3/0040-singlenestedcontext/0040-singlenestedcontext-test-01.xml/001": {
-      "status": "UNSUPPORTED",
-      "reason": "decision logic kind is not parsed by the engine"
+      "status": "FAIL",
+      "reason": "expected a value, got null"
     },
     "compliance-level-3/0040-singlenestedcontext/0040-singlenestedcontext-test-01.xml/002": {
-      "status": "UNSUPPORTED",
-      "reason": "decision logic kind is not parsed by the engine"
+      "status": "FAIL",
+      "reason": "expected a value, got null"
     },
     "compliance-level-3/0040-singlenestedcontext/0040-singlenestedcontext-test-01.xml/003": {
-      "status": "UNSUPPORTED",
-      "reason": "decision logic kind is not parsed by the engine"
+      "status": "FAIL",
+      "reason": "expected a value, got null"
     },
     "compliance-level-3/0041-multiple-nestedcontext/0041-multiple-nestedcontext-test-01.xml/001": {
-      "status": "UNSUPPORTED",
-      "reason": "decision logic kind is not parsed by the engine"
+      "status": "FAIL",
+      "reason": "expected a value, got null"
     },
     "compliance-level-3/0041-multiple-nestedcontext/0041-multiple-nestedcontext-test-01.xml/002": {
-      "status": "UNSUPPORTED",
-      "reason": "decision logic kind is not parsed by the engine"
+      "status": "FAIL",
+      "reason": "expected a value, got null"
     },
     "compliance-level-3/0041-multiple-nestedcontext/0041-multiple-nestedcontext-test-01.xml/003": {
-      "status": "UNSUPPORTED",
-      "reason": "decision logic kind is not parsed by the engine"
+      "status": "FAIL",
+      "reason": "expected a value, got null"
     },
     "compliance-level-3/0050-feel-abs-function/0050-feel-abs-function-test-01.xml/005": {
       "status": "FAIL",
@@ -218,117 +202,81 @@
       "status": "FAIL",
       "reason": "expected null, got a value"
     },
-    "compliance-level-3/0074-feel-properties/0074-feel-properties-test-01.xml/range_001": {
-      "status": "UNSUPPORTED",
-      "reason": "decision logic kind is not parsed by the engine"
-    },
-    "compliance-level-3/0074-feel-properties/0074-feel-properties-test-01.xml/range_002": {
-      "status": "UNSUPPORTED",
-      "reason": "decision logic kind is not parsed by the engine"
-    },
-    "compliance-level-3/0074-feel-properties/0074-feel-properties-test-01.xml/range_003": {
-      "status": "UNSUPPORTED",
-      "reason": "decision logic kind is not parsed by the engine"
-    },
-    "compliance-level-3/0074-feel-properties/0074-feel-properties-test-01.xml/range_004": {
-      "status": "UNSUPPORTED",
-      "reason": "decision logic kind is not parsed by the engine"
-    },
-    "compliance-level-3/0074-feel-properties/0074-feel-properties-test-01.xml/range_005": {
-      "status": "UNSUPPORTED",
-      "reason": "decision logic kind is not parsed by the engine"
-    },
     "compliance-level-3/0074-feel-properties/0074-feel-properties-test-01.xml/range_006": {
-      "status": "UNSUPPORTED",
-      "reason": "decision logic kind is not parsed by the engine"
+      "status": "FAIL",
+      "reason": "expected a value, got null"
     },
     "compliance-level-3/0074-feel-properties/0074-feel-properties-test-01.xml/range_007": {
-      "status": "UNSUPPORTED",
-      "reason": "decision logic kind is not parsed by the engine"
+      "status": "FAIL",
+      "reason": "expected a value, got null"
     },
     "compliance-level-3/0074-feel-properties/0074-feel-properties-test-01.xml/range_009": {
-      "status": "UNSUPPORTED",
-      "reason": "decision logic kind is not parsed by the engine"
+      "status": "FAIL",
+      "reason": "expected a value, got null"
     },
     "compliance-level-3/0074-feel-properties/0074-feel-properties-test-01.xml/range_010": {
-      "status": "UNSUPPORTED",
-      "reason": "decision logic kind is not parsed by the engine"
+      "status": "FAIL",
+      "reason": "expected a value, got null"
     },
     "compliance-level-3/0074-feel-properties/0074-feel-properties-test-01.xml/range_011": {
-      "status": "UNSUPPORTED",
-      "reason": "decision logic kind is not parsed by the engine"
+      "status": "FAIL",
+      "reason": "expected a value, got null"
     },
     "compliance-level-3/0076-feel-external-java/0076-feel-external-java-test-01.xml/boxed_001": {
-      "status": "UNSUPPORTED",
-      "reason": "decision logic kind is not parsed by the engine"
-    },
-    "compliance-level-3/0076-feel-external-java/0076-feel-external-java-test-01.xml/incorrect_001": {
-      "status": "UNSUPPORTED",
-      "reason": "decision logic kind is not parsed by the engine"
-    },
-    "compliance-level-3/0076-feel-external-java/0076-feel-external-java-test-01.xml/incorrect_002": {
-      "status": "UNSUPPORTED",
-      "reason": "decision logic kind is not parsed by the engine"
-    },
-    "compliance-level-3/0076-feel-external-java/0076-feel-external-java-test-01.xml/incorrect_003": {
-      "status": "UNSUPPORTED",
-      "reason": "decision logic kind is not parsed by the engine"
+      "status": "FAIL",
+      "reason": "456 vs {}"
     },
     "compliance-level-3/0076-feel-external-java/0076-feel-external-java-test-01.xml/literal_001": {
-      "status": "UNSUPPORTED",
-      "reason": "decision logic kind is not parsed by the engine"
+      "status": "FAIL",
+      "reason": "expected a value, got null"
     },
     "compliance-level-3/0076-feel-external-java/0076-feel-external-java-test-01.xml/literal_002": {
-      "status": "UNSUPPORTED",
-      "reason": "decision logic kind is not parsed by the engine"
+      "status": "FAIL",
+      "reason": "expected a value, got null"
     },
     "compliance-level-3/0076-feel-external-java/0076-feel-external-java-test-01.xml/literal_003": {
-      "status": "UNSUPPORTED",
-      "reason": "decision logic kind is not parsed by the engine"
+      "status": "FAIL",
+      "reason": "expected a value, got null"
     },
     "compliance-level-3/0076-feel-external-java/0076-feel-external-java-test-01.xml/literal_004": {
-      "status": "UNSUPPORTED",
-      "reason": "decision logic kind is not parsed by the engine"
+      "status": "FAIL",
+      "reason": "expected a value, got null"
     },
     "compliance-level-3/0076-feel-external-java/0076-feel-external-java-test-01.xml/literal_005": {
-      "status": "UNSUPPORTED",
-      "reason": "decision logic kind is not parsed by the engine"
+      "status": "FAIL",
+      "reason": "expected a value, got null"
     },
     "compliance-level-3/0076-feel-external-java/0076-feel-external-java-test-01.xml/literal_006": {
-      "status": "UNSUPPORTED",
-      "reason": "decision logic kind is not parsed by the engine"
+      "status": "FAIL",
+      "reason": "expected a value, got null"
     },
     "compliance-level-3/0076-feel-external-java/0076-feel-external-java-test-01.xml/literal_007": {
-      "status": "UNSUPPORTED",
-      "reason": "decision logic kind is not parsed by the engine"
-    },
-    "compliance-level-3/0076-feel-external-java/0076-feel-external-java-test-01.xml/literal_007_a": {
-      "status": "UNSUPPORTED",
-      "reason": "decision logic kind is not parsed by the engine"
+      "status": "FAIL",
+      "reason": "expected a value, got null"
     },
     "compliance-level-3/0076-feel-external-java/0076-feel-external-java-test-01.xml/literal_008": {
-      "status": "UNSUPPORTED",
-      "reason": "decision logic kind is not parsed by the engine"
+      "status": "FAIL",
+      "reason": "expected a value, got null"
     },
     "compliance-level-3/0076-feel-external-java/0076-feel-external-java-test-01.xml/literal_009": {
-      "status": "UNSUPPORTED",
-      "reason": "decision logic kind is not parsed by the engine"
+      "status": "FAIL",
+      "reason": "expected a value, got null"
     },
     "compliance-level-3/0076-feel-external-java/0076-feel-external-java-test-01.xml/literal_010": {
-      "status": "UNSUPPORTED",
-      "reason": "decision logic kind is not parsed by the engine"
+      "status": "FAIL",
+      "reason": "expected a value, got null"
     },
     "compliance-level-3/0076-feel-external-java/0076-feel-external-java-test-01.xml/literal_011": {
-      "status": "UNSUPPORTED",
-      "reason": "decision logic kind is not parsed by the engine"
+      "status": "FAIL",
+      "reason": "expected a value, got null"
     },
     "compliance-level-3/0076-feel-external-java/0076-feel-external-java-test-01.xml/literal_012": {
-      "status": "UNSUPPORTED",
-      "reason": "decision logic kind is not parsed by the engine"
+      "status": "FAIL",
+      "reason": "expected a value, got null"
     },
     "compliance-level-3/0076-feel-external-java/0076-feel-external-java-test-01.xml/varargs_001": {
-      "status": "UNSUPPORTED",
-      "reason": "decision logic kind is not parsed by the engine"
+      "status": "FAIL",
+      "reason": "expected a value, got null"
     },
     "compliance-level-3/0080-feel-getvalue-function/0080-feel-getvalue-function-test-01.xml/decision_003": {
       "status": "FAIL",
@@ -375,36 +323,32 @@
       "reason": "expected an error but a value was returned"
     },
     "compliance-level-3/0082-feel-coercion/0082-feel-coercion-test-01.xml/invoke_001": {
-      "status": "UNSUPPORTED",
-      "reason": "decision logic kind is not parsed by the engine"
+      "status": "FAIL",
+      "reason": "expected an error but a value was returned"
     },
     "compliance-level-3/0082-feel-coercion/0082-feel-coercion-test-01.xml/invoke_002": {
-      "status": "UNSUPPORTED",
-      "reason": "decision logic kind is not parsed by the engine"
+      "status": "FAIL",
+      "reason": "expected an error but a value was returned"
     },
     "compliance-level-3/0082-feel-coercion/0082-feel-coercion-test-01.xml/invoke_004": {
-      "status": "UNSUPPORTED",
-      "reason": "decision logic kind is not parsed by the engine"
+      "status": "FAIL",
+      "reason": "expected an error but a value was returned"
     },
     "compliance-level-3/0082-feel-coercion/0082-feel-coercion-test-01.xml/invoke_005": {
-      "status": "UNSUPPORTED",
-      "reason": "decision logic kind is not parsed by the engine"
-    },
-    "compliance-level-3/0082-feel-coercion/0082-feel-coercion-test-01.xml/invoke_006": {
-      "status": "UNSUPPORTED",
-      "reason": "decision logic kind is not parsed by the engine"
+      "status": "FAIL",
+      "reason": "expected an error but a value was returned"
     },
     "compliance-level-3/0082-feel-coercion/0082-feel-coercion-test-01.xml/invoke_007": {
-      "status": "UNSUPPORTED",
-      "reason": "decision logic kind is not parsed by the engine"
+      "status": "FAIL",
+      "reason": "expected an error but a value was returned"
     },
     "compliance-level-3/0082-feel-coercion/0082-feel-coercion-test-01.xml/fd_001": {
-      "status": "UNSUPPORTED",
-      "reason": "decision logic kind is not parsed by the engine"
+      "status": "FAIL",
+      "reason": "10 vs {fn: function(arg)}"
     },
     "compliance-level-3/0082-feel-coercion/0082-feel-coercion-test-01.xml/fd_002": {
-      "status": "UNSUPPORTED",
-      "reason": "decision logic kind is not parsed by the engine"
+      "status": "FAIL",
+      "reason": "expected an error but a value was returned"
     },
     "compliance-level-3/0082-feel-coercion/0082-feel-coercion-test-01.xml/literal_004": {
       "status": "FAIL",
@@ -479,48 +423,48 @@
       "reason": "expected a value, got null"
     },
     "compliance-level-3/0085-decision-services/0085-decision-services-test-01.xml/013": {
-      "status": "UNSUPPORTED",
-      "reason": "decision logic kind is not parsed by the engine"
+      "status": "FAIL",
+      "reason": "entry \u0027decisionService_013\u0027: expected a value, got null"
     },
     "compliance-level-3/0085-decision-services/0085-decision-services-test-01.xml/014": {
-      "status": "UNSUPPORTED",
-      "reason": "decision logic kind is not parsed by the engine"
+      "status": "FAIL",
+      "reason": "entry \u0027decisionService_014\u0027: expected a value, got null"
     },
     "compliance-level-3/0086-import/0086-import-test-01.xml/test_001": {
       "status": "UNSUPPORTED",
-      "reason": "decision logic kind is not parsed by the engine"
+      "reason": "engine cannot evaluate: WithInputParameter: A Person is not an input parameter"
     },
     "compliance-level-3/0086-import/0086-import-test-01.xml/test_002": {
       "status": "UNSUPPORTED",
-      "reason": "decision logic kind is not parsed by the engine"
+      "reason": "engine cannot evaluate: WithInputParameter: A Person is not an input parameter"
     },
     "compliance-level-3/0087-chapter-11-example/0087-chapter-11-example-test-01.xml/001": {
       "status": "FAIL",
       "reason": "expected a value, got null"
     },
     "compliance-level-3/0087-chapter-11-example/0087-chapter-11-example-test-01.xml/002": {
-      "status": "UNSUPPORTED",
-      "reason": "decision logic kind is not parsed by the engine"
+      "status": "FAIL",
+      "reason": "expected a value, got null"
     },
     "compliance-level-3/0087-chapter-11-example/0087-chapter-11-example-test-01.xml/003a": {
-      "status": "UNSUPPORTED",
-      "reason": "decision logic kind is not parsed by the engine"
+      "status": "FAIL",
+      "reason": "expected a value, got null"
     },
     "compliance-level-3/0087-chapter-11-example/0087-chapter-11-example-test-01.xml/003b": {
-      "status": "UNSUPPORTED",
-      "reason": "decision logic kind is not parsed by the engine"
+      "status": "FAIL",
+      "reason": "expected a value, got null"
     },
     "compliance-level-3/0087-chapter-11-example/0087-chapter-11-example-test-01.xml/003c": {
-      "status": "UNSUPPORTED",
-      "reason": "decision logic kind is not parsed by the engine"
+      "status": "FAIL",
+      "reason": "expected a value, got null"
     },
     "compliance-level-3/0087-chapter-11-example/0087-chapter-11-example-test-01.xml/003d": {
-      "status": "UNSUPPORTED",
-      "reason": "decision logic kind is not parsed by the engine"
+      "status": "FAIL",
+      "reason": "expected a value, got null"
     },
     "compliance-level-3/0087-chapter-11-example/0087-chapter-11-example-test-01.xml/003e": {
-      "status": "UNSUPPORTED",
-      "reason": "decision logic kind is not parsed by the engine"
+      "status": "FAIL",
+      "reason": "expected a value, got null"
     },
     "compliance-level-3/0087-chapter-11-example/0087-chapter-11-example-test-01.xml/004": {
       "status": "FAIL",
@@ -539,8 +483,8 @@
       "reason": "expected a value, got null"
     },
     "compliance-level-3/0092-feel-lambda/0092-feel-lambda-test-01.xml/009": {
-      "status": "UNSUPPORTED",
-      "reason": "decision logic kind is not parsed by the engine"
+      "status": "FAIL",
+      "reason": "200 vs {a: 10}"
     },
     "compliance-level-3/0092-feel-lambda/0092-feel-lambda-test-01.xml/010_a": {
       "status": "FAIL",
@@ -554,145 +498,33 @@
       "status": "FAIL",
       "reason": "expected a value, got null"
     },
-    "compliance-level-3/0096-feel-day-of-week-function/0096-feel-day-of-week-function-test-01.xml/date_001": {
-      "status": "UNSUPPORTED",
-      "reason": "decision logic kind is not parsed by the engine"
-    },
-    "compliance-level-3/0096-feel-day-of-week-function/0096-feel-day-of-week-function-test-01.xml/datetime_001": {
-      "status": "UNSUPPORTED",
-      "reason": "decision logic kind is not parsed by the engine"
-    },
-    "compliance-level-3/0097-feel-month-of-year-function/0097-feel-month-of-year-function-test-01.xml/date_001": {
-      "status": "UNSUPPORTED",
-      "reason": "decision logic kind is not parsed by the engine"
-    },
-    "compliance-level-3/0097-feel-month-of-year-function/0097-feel-month-of-year-function-test-01.xml/datetime_001": {
-      "status": "UNSUPPORTED",
-      "reason": "decision logic kind is not parsed by the engine"
-    },
-    "compliance-level-3/0098-feel-week-of-year-function/0098-feel-week-of-year-function-test-01.xml/date_008": {
-      "status": "UNSUPPORTED",
-      "reason": "decision logic kind is not parsed by the engine"
-    },
     "compliance-level-3/1103-feel-substring-function/1103-feel-substring-function-test-01.xml/008_ddeffdc93e": {
       "status": "FAIL",
       "reason": "string \u0022\u0022 vs \u0022 \u0022"
     },
-    "compliance-level-3/1103-feel-substring-function/1103-feel-substring-function-test-01.xml/011_a559ce6410": {
-      "status": "FAIL",
-      "reason": "expected a value, got null"
-    },
-    "compliance-level-3/1130-feel-interval/1130-feel-interval-test-01.xml/during": {
-      "status": "UNSUPPORTED",
-      "reason": "decision logic kind is not parsed by the engine"
-    },
-    "compliance-level-3/1130-feel-interval/1130-feel-interval-test-01.xml/after": {
-      "status": "UNSUPPORTED",
-      "reason": "decision logic kind is not parsed by the engine"
-    },
     "compliance-level-3/1130-feel-interval/1130-feel-interval-test-01.xml/started by": {
-      "status": "UNSUPPORTED",
-      "reason": "decision logic kind is not parsed by the engine"
-    },
-    "compliance-level-3/1130-feel-interval/1130-feel-interval-test-01.xml/includes": {
-      "status": "UNSUPPORTED",
-      "reason": "decision logic kind is not parsed by the engine"
-    },
-    "compliance-level-3/1130-feel-interval/1130-feel-interval-test-01.xml/met by": {
-      "status": "UNSUPPORTED",
-      "reason": "decision logic kind is not parsed by the engine"
-    },
-    "compliance-level-3/1130-feel-interval/1130-feel-interval-test-01.xml/before": {
-      "status": "UNSUPPORTED",
-      "reason": "decision logic kind is not parsed by the engine"
-    },
-    "compliance-level-3/1130-feel-interval/1130-feel-interval-test-01.xml/overlaps": {
-      "status": "UNSUPPORTED",
-      "reason": "decision logic kind is not parsed by the engine"
-    },
-    "compliance-level-3/1130-feel-interval/1130-feel-interval-test-01.xml/overlaps before": {
-      "status": "UNSUPPORTED",
-      "reason": "decision logic kind is not parsed by the engine"
+      "status": "FAIL",
+      "reason": "entry \u0027startedbyRPF\u0027: false vs true"
     },
     "compliance-level-3/1130-feel-interval/1130-feel-interval-test-01.xml/finishes": {
-      "status": "UNSUPPORTED",
-      "reason": "decision logic kind is not parsed by the engine"
+      "status": "FAIL",
+      "reason": "entry \u0027finishesPRF\u0027: false vs true"
     },
     "compliance-level-3/1130-feel-interval/1130-feel-interval-test-01.xml/finished by": {
-      "status": "UNSUPPORTED",
-      "reason": "decision logic kind is not parsed by the engine"
+      "status": "FAIL",
+      "reason": "entry \u0027finishedbyRPF\u0027: false vs true"
     },
     "compliance-level-3/1130-feel-interval/1130-feel-interval-test-01.xml/starts": {
-      "status": "UNSUPPORTED",
-      "reason": "decision logic kind is not parsed by the engine"
-    },
-    "compliance-level-3/1130-feel-interval/1130-feel-interval-test-01.xml/coincides": {
-      "status": "UNSUPPORTED",
-      "reason": "decision logic kind is not parsed by the engine"
-    },
-    "compliance-level-3/1130-feel-interval/1130-feel-interval-test-01.xml/overlaps after": {
-      "status": "UNSUPPORTED",
-      "reason": "decision logic kind is not parsed by the engine"
-    },
-    "compliance-level-3/1130-feel-interval/1130-feel-interval-test-01.xml/mmets": {
-      "status": "UNSUPPORTED",
-      "reason": "decision logic kind is not parsed by the engine"
-    },
-    "compliance-level-3/1141-feel-round-up-function/1141-feel-round-up-function-test-01.xml/009": {
       "status": "FAIL",
-      "reason": "expected an error but a value was returned"
-    },
-    "compliance-level-3/1141-feel-round-up-function/1141-feel-round-up-function-test-01.xml/017_a": {
-      "status": "FAIL",
-      "reason": "expected a value, got null"
-    },
-    "compliance-level-3/1142-feel-round-down-function/1142-feel-round-down-function-test-01.xml/009": {
-      "status": "FAIL",
-      "reason": "expected an error but a value was returned"
-    },
-    "compliance-level-3/1142-feel-round-down-function/1142-feel-round-down-function-test-01.xml/017_a": {
-      "status": "FAIL",
-      "reason": "expected a value, got null"
-    },
-    "compliance-level-3/1143-feel-round-half-up-function/1143-feel-round-half-up-function-test-01.xml/009": {
-      "status": "FAIL",
-      "reason": "expected an error but a value was returned"
-    },
-    "compliance-level-3/1143-feel-round-half-up-function/1143-feel-round-half-up-function-test-01.xml/017_a": {
-      "status": "FAIL",
-      "reason": "expected a value, got null"
-    },
-    "compliance-level-3/1144-feel-round-half-down-function/1144-feel-round-half-down-function-test-01.xml/009": {
-      "status": "FAIL",
-      "reason": "expected an error but a value was returned"
-    },
-    "compliance-level-3/1144-feel-round-half-down-function/1144-feel-round-half-down-function-test-01.xml/017_a": {
-      "status": "FAIL",
-      "reason": "expected a value, got null"
-    },
-    "compliance-level-3/1146-feel-context-put-function/1146-feel-context-put-function-test-01.xml/014": {
-      "status": "FAIL",
-      "reason": "expected a value, got null"
-    },
-    "compliance-level-3/1146-feel-context-put-function/1146-feel-context-put-function-test-01.xml/015": {
-      "status": "UNSUPPORTED",
-      "reason": "decision logic kind is not parsed by the engine"
-    },
-    "compliance-level-3/1146-feel-context-put-function/1146-feel-context-put-function-test-01.xml/016": {
-      "status": "UNSUPPORTED",
-      "reason": "decision logic kind is not parsed by the engine"
+      "reason": "entry \u0027startsPRF\u0027: false vs true"
     },
     "compliance-level-3/1146-feel-context-put-function/1146-feel-context-put-function-test-01.xml/nested010": {
       "status": "FAIL",
       "reason": "expected a value, got null"
     },
     "compliance-level-3/1146-feel-context-put-function/1146-feel-context-put-function-test-01.xml/nested011": {
-      "status": "UNSUPPORTED",
-      "reason": "decision logic kind is not parsed by the engine"
-    },
-    "compliance-level-3/1146-feel-context-put-function/1146-feel-context-put-function-test-01.xml/nested012": {
-      "status": "UNSUPPORTED",
-      "reason": "decision logic kind is not parsed by the engine"
+      "status": "FAIL",
+      "reason": "entry \u0027nestedContext01\u0027: context has 1 entries, actual 0"
     },
     "compliance-level-3/1148-feel-now-function/1148-feel-now-function-test-01.xml/002": {
       "status": "FAIL",
@@ -815,20 +647,16 @@
       "reason": "2000-01-02 vs [2000-01-02]"
     },
     "compliance-level-3/1157-implicit-conversions/1157-implicit-conversions-test-01.xml/010": {
-      "status": "UNSUPPORTED",
-      "reason": "decision logic kind is not parsed by the engine"
+      "status": "FAIL",
+      "reason": "list size 3 vs 1"
     },
     "compliance-level-3/1157-implicit-conversions/1157-implicit-conversions-test-01.xml/011": {
-      "status": "UNSUPPORTED",
-      "reason": "decision logic kind is not parsed by the engine"
-    },
-    "compliance-level-3/1161-boxed-list-expression/1161-boxed-list-expression-test-01.xml/001": {
-      "status": "UNSUPPORTED",
-      "reason": "decision logic kind is not parsed by the engine"
+      "status": "FAIL",
+      "reason": "item 0: [1] vs 1"
     },
     "compliance-level-3/1161-boxed-list-expression/1161-boxed-list-expression-test-01.xml/002": {
-      "status": "UNSUPPORTED",
-      "reason": "decision logic kind is not parsed by the engine"
+      "status": "FAIL",
+      "reason": "item 0: expected null, got a value"
     },
     "compliance-level-3/1162-import-same-name/1162-import-same-name-test-02.xml/001": {
       "status": "UNSUPPORTED",

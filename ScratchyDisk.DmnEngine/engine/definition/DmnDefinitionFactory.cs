@@ -578,10 +578,13 @@ namespace ScratchyDisk.DmnEngine.Engine.Definition
                 //decision table
                 decision = CreateDecisionTable(sourceDecision.DecisionTable, decisionName, requiredInputs, requiredDecisions);
             }
-            else if (sourceDecision.Expression != null || sourceDecision.FunctionDefinition != null)
+            else if (sourceDecision.Expression != null || sourceDecision.FunctionDefinition != null
+                     || sourceDecision.Context != null || sourceDecision.Relation != null
+                     || sourceDecision.List != null || sourceDecision.Invocation != null)
             {
-                //expression
-                decision = CreateExpressionDecision(sourceDecision, decisionName, requiredInputs, requiredDecisions);
+                //expression / boxed expression
+                decision = CreateExpressionDecision(sourceDecision, decisionName, requiredInputs, requiredDecisions,
+                    BuildBoxedExpression(sourceDecision));
             }else 
             {
                 //unsupported decision type
@@ -835,11 +838,63 @@ namespace ScratchyDisk.DmnEngine.Engine.Definition
         /// <exception cref="ArgumentException"><paramref name="decisionName"/> is empty</exception>    
         /// <exception cref="DmnParserException">Missing expression for expression decision</exception> 
         /// <exception cref="DmnParserException">Missing output variable for expression decision</exception> 
+        private static string BuildBoxedExpression(Decision decision)
+        {
+            if (decision.Context != null) return BuildContext(decision.Context);
+            if (decision.Relation != null) return BuildRelation(decision.Relation);
+            if (decision.List != null) return "[" + string.Join(", ", decision.List.Expressions?
+                .Select(e => e.Text) ?? Enumerable.Empty<string>()) + "]";
+            if (decision.Invocation != null)
+            {
+                var function = decision.Invocation.Function?.Text ?? "";
+                var bindings = decision.Invocation.Bindings ?? new List<InvocationBinding>();
+                var args = bindings.Select(b =>
+                {
+                    var parameter = b.Parameter?.Name ?? "";
+                    var value = b.Expression?.Text ?? "null";
+                    return $"{parameter}: {value}";
+                });
+                return $"{function}({string.Join(", ", args)})";
+            }
+            return null;
+        }
+
+        private static string BuildContext(ContextExpression context)
+        {
+            var entries = new List<string>();
+            foreach (var entry in context.Entries ?? Enumerable.Empty<ContextEntry>())
+            {
+                var key = entry.Variable?.Name;
+                if (string.IsNullOrWhiteSpace(key) || entry.Expression == null) continue;
+                entries.Add($"{QuoteFeelString(key)}: {entry.Expression.Text}");
+            }
+            return "{" + string.Join(", ", entries) + "}";
+        }
+
+        private static string BuildRelation(RelationExpression relation)
+        {
+            var columns = relation.Columns ?? new List<RelationColumn>();
+            var rows = new List<string>();
+            foreach (var row in relation.Rows ?? Enumerable.Empty<RelationRow>())
+            {
+                var values = row.Expressions ?? new List<Expression>();
+                var entries = new List<string>();
+                for (var i = 0; i < columns.Count && i < values.Count; i++)
+                    entries.Add($"{QuoteFeelString(columns[i].Name ?? $"column{i + 1}")}: {values[i].Text}");
+                rows.Add("{" + string.Join(", ", entries) + "}");
+            }
+            return "[" + string.Join(", ", rows) + "]";
+        }
+
+        private static string QuoteFeelString(string value) =>
+            "\"" + (value ?? "").Replace("\\", "\\\\").Replace("\"", "\\\"") + "\"";
+
         protected virtual DmnExpressionDecision CreateExpressionDecision(
            Decision sourceDecision,
            string decisionName,
            IReadOnlyCollection<IDmnVariable> requiredInputs,
-           IReadOnlyCollection<IDmnDecision> requiredDecisions)
+           IReadOnlyCollection<IDmnDecision> requiredDecisions,
+           string expressionText = null)
         {
             if (sourceDecision == null) throw Logger.Fatal<ArgumentNullException>($"{nameof(sourceDecision)} is null");
             if (decisionName == null) throw Logger.Fatal<ArgumentNullException>($"{nameof(decisionName)} is null");
@@ -865,7 +920,11 @@ namespace ScratchyDisk.DmnEngine.Engine.Definition
 
             //prepare expression
             string expr;
-            if (sourceDecision.Expression != null)
+            if (!string.IsNullOrWhiteSpace(expressionText))
+            {
+                expr = expressionText;
+            }
+            else if (sourceDecision.Expression != null)
             {
                 if (string.IsNullOrWhiteSpace(sourceDecision.Expression.Text))
                     throw Logger.Fatal<DmnParserException>($"Missing expression for expression decision {decisionName}");

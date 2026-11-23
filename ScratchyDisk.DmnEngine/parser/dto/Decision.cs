@@ -43,6 +43,22 @@ namespace ScratchyDisk.DmnEngine.Parser.Dto
         [XmlElement("functionDefinition")]
         public FunctionDefinition FunctionDefinition { get; set; }
 
+        /// <summary>Boxed context body.</summary>
+        [XmlElement("context")]
+        public ContextExpression Context { get; set; }
+
+        /// <summary>Boxed relation body.</summary>
+        [XmlElement("relation")]
+        public RelationExpression Relation { get; set; }
+
+        /// <summary>Boxed list body.</summary>
+        [XmlElement("list")]
+        public ListExpression List { get; set; }
+
+        /// <summary>Boxed invocation body.</summary>
+        [XmlElement("invocation")]
+        public InvocationExpression Invocation { get; set; }
+
         //------------------------------------
         //Decision table
         //------------------------------------

@@ -384,6 +384,8 @@ namespace ScratchyDisk.DmnEngine.Feel.Functions
                 var n = ArgDecimal(args, 0);
                 if (n == null) return null;
                 if (args.Length == 2 && ArgDecimal(args, 1) == null) return null;
+                if (args.Length > 1 && ArgDecimal(args, 1) is decimal floorScale && Math.Abs((int)floorScale) > 28)
+                    return n.Value;
                 return args.Length > 1 && ArgDecimal(args, 1) is decimal scale
                     ? Math.Floor(n.Value * PowerOf10(scale)) / PowerOf10(scale)
                     : Math.Floor(n.Value);
@@ -395,6 +397,8 @@ namespace ScratchyDisk.DmnEngine.Feel.Functions
                 var n = ArgDecimal(args, 0);
                 if (n == null) return null;
                 if (args.Length == 2 && ArgDecimal(args, 1) == null) return null;
+                if (args.Length > 1 && ArgDecimal(args, 1) is decimal ceilingScale && Math.Abs((int)ceilingScale) > 28)
+                    return n.Value;
                 return args.Length > 1 && ArgDecimal(args, 1) is decimal scale
                     ? Math.Ceiling(n.Value * PowerOf10(scale)) / PowerOf10(scale)
                     : Math.Ceiling(n.Value);
@@ -402,9 +406,13 @@ namespace ScratchyDisk.DmnEngine.Feel.Functions
 
             Register("round up", new[] { "n", "scale" }, args =>
             {
+                if (args.Length is < 1 or > 2) return null;
                 var n = ArgDecimal(args, 0);
                 var scale = args.Length > 1 ? ArgDecimal(args, 1) : 0m;
                 if (n == null || scale == null) return null;
+                var scaleValue = (int)scale.Value;
+                if (scaleValue < -6111 || scaleValue > 6176) return null;
+                if (Math.Abs(scaleValue) > 28) return n.Value;
                 var factor = PowerOf10(scale.Value);
                 return n.Value >= 0
                     ? Math.Ceiling(n.Value * factor) / factor
@@ -413,9 +421,13 @@ namespace ScratchyDisk.DmnEngine.Feel.Functions
 
             Register("round down", new[] { "n", "scale" }, args =>
             {
+                if (args.Length is < 1 or > 2) return null;
                 var n = ArgDecimal(args, 0);
                 var scale = args.Length > 1 ? ArgDecimal(args, 1) : 0m;
                 if (n == null || scale == null) return null;
+                var scaleValue = (int)scale.Value;
+                if (scaleValue < -6111 || scaleValue > 6176) return null;
+                if (Math.Abs(scaleValue) > 28) return n.Value;
                 var factor = PowerOf10(scale.Value);
                 return n.Value >= 0
                     ? Math.Floor(n.Value * factor) / factor
@@ -424,17 +436,25 @@ namespace ScratchyDisk.DmnEngine.Feel.Functions
 
             Register("round half up", new[] { "n", "scale" }, args =>
             {
+                if (args.Length is < 1 or > 2) return null;
                 var n = ArgDecimal(args, 0);
                 var scale = args.Length > 1 ? ArgDecimal(args, 1) : 0m;
                 if (n == null || scale == null) return null;
+                var scaleValue = (int)scale.Value;
+                if (scaleValue < -6111 || scaleValue > 6176) return null;
+                if (Math.Abs(scaleValue) > 28) return n.Value;
                 return Math.Round(n.Value, (int)scale.Value, MidpointRounding.AwayFromZero);
             });
 
             Register("round half down", new[] { "n", "scale" }, args =>
             {
+                if (args.Length is < 1 or > 2) return null;
                 var n = ArgDecimal(args, 0);
                 var scale = args.Length > 1 ? ArgDecimal(args, 1) : 0m;
                 if (n == null || scale == null) return null;
+                var scaleValue = (int)scale.Value;
+                if (scaleValue < -6111 || scaleValue > 6176) return null;
+                if (Math.Abs(scaleValue) > 28) return n.Value;
                 return RoundHalfDown(n.Value, (int)scale.Value);
             });
 
