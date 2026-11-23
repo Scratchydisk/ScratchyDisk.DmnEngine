@@ -616,7 +616,10 @@ namespace ScratchyDisk.DmnEngine.Engine.Definition
                 decision = CreateExpressionDecision(sourceDecision, decisionName, requiredInputs, requiredDecisions);
             }
             else if (sourceDecision.Context != null || sourceDecision.Relation != null
-                     || sourceDecision.List != null || sourceDecision.Invocation != null)
+                     || sourceDecision.List != null || sourceDecision.Invocation != null
+                     || sourceDecision.Conditional != null || sourceDecision.For != null
+                     || sourceDecision.Some != null || sourceDecision.Every != null
+                     || sourceDecision.Filter != null)
             {
                 //boxed expression decision
                 decision = CreateBoxedExpressionDecision(sourceDecision, decisionName, requiredInputs, requiredDecisions);
@@ -625,9 +628,8 @@ namespace ScratchyDisk.DmnEngine.Engine.Definition
             {
                 // A decision without decision logic has no value of its own; its
                 // value is null unless an external caller (for example a decision
-                // service parameter) provides one. Decisions whose logic uses an
-                // unmodelled boxed expression stay unsupported.
-                if (!HasUnsupportedLogic(sourceDecision) && sourceDecision.OutputVariable != null)
+                // service parameter) provides one.
+                if (sourceDecision.OutputVariable != null)
                 {
                     decision = CreateExpressionDecision(sourceDecision, decisionName, requiredInputs,
                         requiredDecisions, "null");
@@ -1334,18 +1336,6 @@ namespace ScratchyDisk.DmnEngine.Engine.Definition
 
             var source = SourceModel?.InputData?.FirstOrDefault(i => i.Id == inputId);
             return TypeRefFeelTypeName(source?.Variable?.TypeRef, new HashSet<string>(StringComparer.Ordinal));
-        }
-
-        private static readonly HashSet<string> UnmodelledLogicKinds =
-            new(StringComparer.Ordinal) { "conditional", "for", "some", "every", "filter" };
-
-        /// <summary>
-        /// True when the decision declares a boxed expression the engine does not model.
-        /// </summary>
-        private static bool HasUnsupportedLogic(Decision sourceDecision)
-        {
-            return sourceDecision.UnknownElements != null
-                   && sourceDecision.UnknownElements.Any(e => UnmodelledLogicKinds.Contains(e.LocalName));
         }
 
         /// <summary>

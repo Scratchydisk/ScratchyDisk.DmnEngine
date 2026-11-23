@@ -671,4 +671,247 @@ namespace ScratchyDisk.DmnEngine.Engine.Decisions.Expression
             catch { return 0m; }
         }
     }
+
+    /// <summary>Boxed conditional expression (if/then/else).</summary>
+    public sealed class DmnConditionalBoxedExpression : DmnBoxedExpression
+    {
+        /// <summary>Condition of the conditional.</summary>
+        public DmnBoxedExpression If { get; }
+
+        /// <summary>Value when the condition is true.</summary>
+        public DmnBoxedExpression Then { get; }
+
+        /// <summary>Value when the condition is false.</summary>
+        public DmnBoxedExpression Else { get; }
+
+        public DmnConditionalBoxedExpression(DmnBoxedExpression ifExpression,
+            DmnBoxedExpression thenExpression, DmnBoxedExpression elseExpression)
+        {
+            If = ifExpression ?? new DmnLiteralBoxedExpression(null);
+            Then = thenExpression ?? new DmnLiteralBoxedExpression(null);
+            Else = elseExpression ?? new DmnLiteralBoxedExpression(null);
+        }
+
+        /// <inheritdoc />
+        public override object Evaluate(DmnBoxedExpressionRuntime runtime)
+        {
+            // DMN: a condition that is not a boolean makes the whole conditional null.
+            if (runtime.Evaluate(If) is not bool condition) return null;
+            return runtime.Evaluate(condition ? Then : Else);
+        }
+    }
+
+    /// <summary>Boxed for expression: maps every value of <see cref="In"/> with <see cref="Return"/>.</summary>
+    public sealed class DmnForBoxedExpression : DmnBoxedExpression
+    {
+        /// <summary>Name the iteration variable is bound to.</summary>
+        public string IteratorVariable { get; }
+
+        /// <summary>Expression that provides the values to iterate.</summary>
+        public DmnBoxedExpression In { get; }
+
+        /// <summary>Expression evaluated for every value; its result maps to the iteration variable.</summary>
+        public DmnBoxedExpression Return { get; }
+
+        public DmnForBoxedExpression(string iteratorVariable, DmnBoxedExpression inExpression,
+            DmnBoxedExpression returnExpression)
+        {
+            IteratorVariable = string.IsNullOrWhiteSpace(iteratorVariable) ? "item" : iteratorVariable;
+            In = inExpression ?? new DmnLiteralBoxedExpression(null);
+            Return = returnExpression ?? new DmnLiteralBoxedExpression(null);
+        }
+
+        /// <inheritdoc />
+        public override object Evaluate(DmnBoxedExpressionRuntime runtime)
+        {
+            var items = DmnBoxedExpressionIteration.ToItems(runtime.Evaluate(In));
+            if (items == null) return null;
+
+            var result = new List<object>(items.Count);
+            foreach (var item in items)
+            {
+                var scope = runtime.Scope.CreateChildScope();
+                scope.SetVariable(IteratorVariable, item);
+                result.Add(runtime.CreateChild(scope, IteratorVariable).Evaluate(Return));
+            }
+            return result;
+        }
+
+        /// <inheritdoc />
+        public override string ToString() => $"for {IteratorVariable} in ... return ...";
+    }
+
+    /// <summary>Base of the boxed quantified expressions (some/every).</summary>
+    public abstract class DmnQuantifiedBoxedExpression : DmnBoxedExpression
+    {
+        /// <summary>Name the iteration variable is bound to.</summary>
+        public string IteratorVariable { get; }
+
+        /// <summary>Expression that provides the values to iterate.</summary>
+        public DmnBoxedExpression In { get; }
+
+        /// <summary>Predicate evaluated for every value.</summary>
+        public DmnBoxedExpression Satisfies { get; }
+
+        protected DmnQuantifiedBoxedExpression(string iteratorVariable, DmnBoxedExpression inExpression,
+            DmnBoxedExpression satisfies)
+        {
+            IteratorVariable = string.IsNullOrWhiteSpace(iteratorVariable) ? "item" : iteratorVariable;
+            In = inExpression ?? new DmnLiteralBoxedExpression(null);
+            Satisfies = satisfies ?? new DmnLiteralBoxedExpression(null);
+        }
+
+        /// <summary>True when the quantifier needs at least one satisfying value.</summary>
+        protected abstract bool RequiresOne { get; }
+
+        /// <inheritdoc />
+        public override object Evaluate(DmnBoxedExpressionRuntime runtime)
+        {
+            var items = DmnBoxedExpressionIteration.ToItems(runtime.Evaluate(In));
+            if (items == null) return null;
+
+            var any = false;
+            foreach (var item in items)
+            {
+                // Iterate over the values under the iterator name declared by this node.
+                var scope = runtime.Scope.CreateChildScope();
+                scope.SetVariable(IteratorVariable, item);
+                var test = runtime.CreateChild(scope, IteratorVariable).Evaluate(Satisfies);
+
+                // DMN: a predicate that is not a boolean makes the whole expression null.
+                if (test is not bool satisfied) return null;
+
+                if (satisfied) any = true;
+                else if (!RequiresOne) return false;
+            }
+
+            return RequiresOne ? any : true;
+        }
+    }
+
+    /// <summary>Boxed some expression: at least one value satisfies the predicate.</summary>
+    public sealed class DmnSomeBoxedExpression : DmnQuantifiedBoxedExpression
+    {
+        public DmnSomeBoxedExpression(string iteratorVariable, DmnBoxedExpression inExpression,
+            DmnBoxedExpression satisfies)
+            : base(iteratorVariable, inExpression, satisfies)
+        {
+        }
+
+        /// <inheritdoc />
+        protected override bool RequiresOne => true;
+    }
+
+    /// <summary>Boxed every expression: all values satisfy the predicate.</summary>
+    public sealed class DmnEveryBoxedExpression : DmnQuantifiedBoxedExpression
+    {
+        public DmnEveryBoxedExpression(string iteratorVariable, DmnBoxedExpression inExpression,
+            DmnBoxedExpression satisfies)
+            : base(iteratorVariable, inExpression, satisfies)
+        {
+        }
+
+        /// <inheritdoc />
+        protected override bool RequiresOne => false;
+    }
+
+    /// <summary>Boxed filter expression: the values of <see cref="In"/> matching <see cref="Match"/>.</summary>
+    public sealed class DmnFilterBoxedExpression : DmnBoxedExpression
+    {
+        /// <summary>Name the current list element is bound to (the implicit filter variable).</summary>
+        public const string ItemName = "item";
+
+        /// <summary>Expression that provides the list to filter.</summary>
+        public DmnBoxedExpression In { get; }
+
+        /// <summary>Predicate evaluated for every value.</summary>
+        public DmnBoxedExpression Match { get; }
+
+        public DmnFilterBoxedExpression(DmnBoxedExpression inExpression, DmnBoxedExpression match)
+        {
+            In = inExpression ?? new DmnLiteralBoxedExpression(null);
+            Match = match ?? new DmnLiteralBoxedExpression(null);
+        }
+
+        /// <inheritdoc />
+        public override object Evaluate(DmnBoxedExpressionRuntime runtime)
+        {
+            var items = DmnBoxedExpressionIteration.ToItems(runtime.Evaluate(In));
+            if (items == null) return null;
+
+            var result = new List<object>();
+            foreach (var item in items)
+            {
+                var scope = runtime.Scope.CreateChildScope();
+                scope.SetVariable(ItemName, item);
+                // The implicit filter variable is also available as '?'.
+                scope.InputValue = item;
+
+                var match = runtime.CreateChild(scope, ItemName).Evaluate(Match);
+                // DMN: a match that is not a boolean makes the whole filter null.
+                if (match is not bool keep) return null;
+                if (keep) result.Add(item);
+            }
+            return result;
+        }
+    }
+
+    /// <summary>
+    /// Converts the value of a boxed construct's 'in' expression to the values it iterates.
+    /// Lists and ranges are iterable; any other value (including a single value) is not,
+    /// because DMN does not coerce a single value to a singleton list here.
+    /// </summary>
+    internal static class DmnBoxedExpressionIteration
+    {
+        /// <summary>Returns the values of <paramref name="value"/>, or null when it is not iterable.</summary>
+        public static IReadOnlyList<object> ToItems(object value)
+        {
+            switch (value)
+            {
+                case null:
+                case string:
+                    return null;
+                case List<object> list:
+                    return list;
+                case FeelRange range:
+                    return RangeItems(range);
+                case System.Collections.IList list:
+                    return list.Cast<object>().ToList();
+                default:
+                    return null;
+            }
+        }
+
+        private static IReadOnlyList<object> RangeItems(FeelRange range)
+        {
+            if (range.IsUnaryTest) return null;
+
+            // Numeric range: step 1 in the direction of the range.
+            if (FeelValueComparer.IsNumeric(range.LowEndpoint) && FeelValueComparer.IsNumeric(range.HighEndpoint))
+            {
+                var items = new List<object>();
+                var start = (int)FeelValueComparer.ToDecimal(range.LowEndpoint);
+                var end = (int)FeelValueComparer.ToDecimal(range.HighEndpoint);
+                if (!range.LowInclusive && start < end) start++;
+                if (!range.HighInclusive && end > start) end--;
+
+                for (var value = start; value <= end; value++)
+                    items.Add((decimal)value);
+                return items;
+            }
+
+            // Date range: step one day.
+            if (range.LowEndpoint is DateOnly startDate && range.HighEndpoint is DateOnly endDate)
+            {
+                var items = new List<object>();
+                if (!range.LowInclusive) startDate = startDate.AddDays(1);
+                if (!range.HighInclusive) endDate = endDate.AddDays(-1);
+                for (var date = startDate; date <= endDate; date = date.AddDays(1))
+                    items.Add(date);
+                return items;
+            }
+
+            return null;
+        }
+    }
 }

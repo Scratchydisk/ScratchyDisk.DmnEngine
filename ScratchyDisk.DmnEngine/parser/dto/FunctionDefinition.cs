@@ -54,8 +54,28 @@ namespace ScratchyDisk.DmnEngine.Parser.Dto
         [XmlElement("invocation")]
         public InvocationExpression Invocation { get; set; }
 
-        /// <summary>Function body when expressed as a decision table.</summary>
+        /// <summary>Function body when expressed as a boxed decision table.</summary>
         [XmlElement("decisionTable")]
         public DecisionTable DecisionTable { get; set; }
+
+        /// <summary>Function body when expressed as a boxed conditional.</summary>
+        [XmlElement("conditional")]
+        public ConditionalExpression Conditional { get; set; }
+
+        /// <summary>Function body when expressed as a boxed for.</summary>
+        [XmlElement("for")]
+        public ForExpression For { get; set; }
+
+        /// <summary>Function body when expressed as a boxed some.</summary>
+        [XmlElement("some")]
+        public QuantifiedExpression Some { get; set; }
+
+        /// <summary>Function body when expressed as a boxed every.</summary>
+        [XmlElement("every")]
+        public QuantifiedExpression Every { get; set; }
+
+        /// <summary>Function body when expressed as a boxed filter.</summary>
+        [XmlElement("filter")]
+        public FilterExpression Filter { get; set; }
     }
 }

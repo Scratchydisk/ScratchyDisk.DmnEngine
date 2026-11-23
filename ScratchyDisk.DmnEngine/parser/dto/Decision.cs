@@ -10,7 +10,7 @@ namespace ScratchyDisk.DmnEngine.Parser.Dto
     /// Decision table is recognized by having the <see cref="DecisionTable"/> element, 
     /// otherwise, the expression decision is expected with elements <see cref="Expression"/> and <see cref="OutputVariable"/>
     /// </summary>
-    public class Decision : NamedElement
+    public class Decision : NamedElement, IBoxedExpressionContainer
     {
         /// <summary>
         /// List of inputs of decisions the decision depends on
@@ -59,6 +59,26 @@ namespace ScratchyDisk.DmnEngine.Parser.Dto
         [XmlElement("invocation")]
         public InvocationExpression Invocation { get; set; }
 
+        /// <summary>Boxed conditional (if/then/else) body.</summary>
+        [XmlElement("conditional")]
+        public ConditionalExpression Conditional { get; set; }
+
+        /// <summary>Boxed for body.</summary>
+        [XmlElement("for")]
+        public ForExpression For { get; set; }
+
+        /// <summary>Boxed some body.</summary>
+        [XmlElement("some")]
+        public QuantifiedExpression Some { get; set; }
+
+        /// <summary>Boxed every body.</summary>
+        [XmlElement("every")]
+        public QuantifiedExpression Every { get; set; }
+
+        /// <summary>Boxed filter body.</summary>
+        [XmlElement("filter")]
+        public FilterExpression Filter { get; set; }
+
         //------------------------------------
         //Decision table
         //------------------------------------
@@ -70,10 +90,8 @@ namespace ScratchyDisk.DmnEngine.Parser.Dto
         public DecisionTable DecisionTable { get; set; }
 
         /// <summary>
-        /// Child elements this DTO does not model. Boxed expressions that the
-        /// engine does not support yet (conditional, filter, for, some, every) are
-        /// found here, so a decision with unsupported logic can be told apart from
-        /// a decision that declares no logic at all.
+        /// Child elements this DTO does not model. A decision with an unrecognised child
+        /// element can be told apart from a decision that declares no logic at all.
         /// </summary>
         [XmlAnyElement]
         public List<System.Xml.XmlElement> UnknownElements { get; set; }
