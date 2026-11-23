@@ -59,6 +59,7 @@ public sealed class TckModel
     public HashSet<string> KnowledgeRequiringDecisions { get; } = new(StringComparer.Ordinal);
     public HashSet<string> UnsupportedLogicDecisions { get; } = new(StringComparer.Ordinal);
     public bool HasImport { get; private set; }
+    public bool HasExternalJava { get; private set; }
 
     public static TckModel Load(string path)
     {
@@ -92,6 +93,9 @@ public sealed class TckModel
         if (root == null) return;
 
         HasImport = root.Elements().Any(e => e.Name.LocalName == "import");
+        HasExternalJava = document.ToString().Contains("external {java:", StringComparison.OrdinalIgnoreCase)
+                          || document.Descendants().Any(e => e.Name.LocalName == "functionDefinition"
+                                                              && string.Equals((string)e.Attribute("kind"), "Java", StringComparison.OrdinalIgnoreCase));
 
         foreach (var element in root.Descendants())
         {
@@ -210,6 +214,9 @@ public sealed class TckRunner
 
     private TckNodeResult RunResult(TckModel model, TckTestCase testCase, TckResult result)
     {
+        if (model.HasExternalJava)
+            return Node(result, TckStatus.Unsupported, "external Java function");
+
         if (result.Type is "bkm")
             return Node(result, TckStatus.Unsupported, "resultNode type 'bkm' is not supported");
         if (result.Type is "decisionService")

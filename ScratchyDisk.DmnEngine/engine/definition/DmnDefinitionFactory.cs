@@ -845,17 +845,7 @@ namespace ScratchyDisk.DmnEngine.Engine.Definition
             if (decision.List != null) return "[" + string.Join(", ", decision.List.Expressions?
                 .Select(e => e.Text) ?? Enumerable.Empty<string>()) + "]";
             if (decision.Invocation != null)
-            {
-                var function = decision.Invocation.Function?.Text ?? "";
-                var bindings = decision.Invocation.Bindings ?? new List<InvocationBinding>();
-                var args = bindings.Select(b =>
-                {
-                    var parameter = b.Parameter?.Name ?? "";
-                    var value = b.Expression?.Text ?? "null";
-                    return $"{parameter}: {value}";
-                });
-                return $"{function}({string.Join(", ", args)})";
-            }
+                return BuildInvocation(decision.Invocation);
             return null;
         }
 
@@ -866,9 +856,33 @@ namespace ScratchyDisk.DmnEngine.Engine.Definition
             {
                 var key = entry.Variable?.Name;
                 if (string.IsNullOrWhiteSpace(key) || entry.Expression == null) continue;
-                entries.Add($"{QuoteFeelString(key)}: {entry.Expression.Text}");
+                entries.Add($"{QuoteFeelString(key)}: {BuildEntryValue(entry)}");
             }
             return "{" + string.Join(", ", entries) + "}";
+        }
+
+        private static string BuildEntryValue(ContextEntry entry)
+        {
+            if (entry.Expression != null) return entry.Expression.Text;
+            if (entry.Context != null) return BuildContext(entry.Context);
+            if (entry.List != null)
+                return "[" + string.Join(", ", entry.List.Expressions?
+                    .Select(e => e.Text) ?? Enumerable.Empty<string>()) + "]";
+            if (entry.Relation != null) return BuildRelation(entry.Relation);
+            if (entry.Invocation != null) return BuildInvocation(entry.Invocation);
+            return "null";
+        }
+
+        private static string BuildInvocation(InvocationExpression invocation)
+        {
+            var function = invocation.Function?.Text ?? "";
+            var args = (invocation.Bindings ?? new List<InvocationBinding>()).Select(b =>
+            {
+                var parameter = b.Parameter?.Name ?? "";
+                var value = b.Expression?.Text ?? "null";
+                return $"{parameter}: {value}";
+            });
+            return $"{function}({string.Join(", ", args)})";
         }
 
         private static string BuildRelation(RelationExpression relation)

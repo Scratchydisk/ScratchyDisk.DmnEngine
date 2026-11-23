@@ -1,25 +1,25 @@
 {
   "schemaVersion": 1,
-  "generatedUtc": "2026-11-23T15:17:56.4097283Z",
+  "generatedUtc": "2026-11-23T15:20:39.7597015Z",
   "tck": {
     "root": "artifacts/tck/TestCases",
     "commit": "a428da2f9c5ff2a4b8566ab511144e9022d743fe"
   },
   "engine": {
-    "version": "2.0.1\u002Bbc7455bec2418428c5d3729ca6d447a413478431"
+    "version": "2.0.1\u002B2c235bc9e41b2c26827f43b4ac8ca130960daf2b"
   },
   "totals": {
     "total": 3437,
-    "pass": 3290,
-    "fail": 117,
+    "pass": 3286,
+    "fail": 103,
     "parseFail": 0,
     "notFound": 19,
-    "unsupported": 11,
+    "unsupported": 29,
     "fixtureError": 0,
-    "blocked": 30,
-    "executed": 3407,
-    "passRate": 0.9572301425661914,
-    "executedPassRate": 0.9656589374816554
+    "blocked": 48,
+    "executed": 3389,
+    "passRate": 0.956066336921734,
+    "executedPassRate": 0.9696075538506934
   },
   "cases": {
     "compliance-level-3/0004-lending/0004-lending-test-01.xml/001": {
@@ -171,60 +171,76 @@
       "reason": "expected null, got a value"
     },
     "compliance-level-3/0076-feel-external-java/0076-feel-external-java-test-01.xml/boxed_001": {
-      "status": "FAIL",
-      "reason": "456 vs {}"
+      "status": "UNSUPPORTED",
+      "reason": "external Java function"
+    },
+    "compliance-level-3/0076-feel-external-java/0076-feel-external-java-test-01.xml/incorrect_001": {
+      "status": "UNSUPPORTED",
+      "reason": "external Java function"
+    },
+    "compliance-level-3/0076-feel-external-java/0076-feel-external-java-test-01.xml/incorrect_002": {
+      "status": "UNSUPPORTED",
+      "reason": "external Java function"
+    },
+    "compliance-level-3/0076-feel-external-java/0076-feel-external-java-test-01.xml/incorrect_003": {
+      "status": "UNSUPPORTED",
+      "reason": "external Java function"
     },
     "compliance-level-3/0076-feel-external-java/0076-feel-external-java-test-01.xml/literal_001": {
-      "status": "FAIL",
-      "reason": "expected a value, got null"
+      "status": "UNSUPPORTED",
+      "reason": "external Java function"
     },
     "compliance-level-3/0076-feel-external-java/0076-feel-external-java-test-01.xml/literal_002": {
-      "status": "FAIL",
-      "reason": "expected a value, got null"
+      "status": "UNSUPPORTED",
+      "reason": "external Java function"
     },
     "compliance-level-3/0076-feel-external-java/0076-feel-external-java-test-01.xml/literal_003": {
-      "status": "FAIL",
-      "reason": "expected a value, got null"
+      "status": "UNSUPPORTED",
+      "reason": "external Java function"
     },
     "compliance-level-3/0076-feel-external-java/0076-feel-external-java-test-01.xml/literal_004": {
-      "status": "FAIL",
-      "reason": "expected a value, got null"
+      "status": "UNSUPPORTED",
+      "reason": "external Java function"
     },
     "compliance-level-3/0076-feel-external-java/0076-feel-external-java-test-01.xml/literal_005": {
-      "status": "FAIL",
-      "reason": "expected a value, got null"
+      "status": "UNSUPPORTED",
+      "reason": "external Java function"
     },
     "compliance-level-3/0076-feel-external-java/0076-feel-external-java-test-01.xml/literal_006": {
-      "status": "FAIL",
-      "reason": "expected a value, got null"
+      "status": "UNSUPPORTED",
+      "reason": "external Java function"
     },
     "compliance-level-3/0076-feel-external-java/0076-feel-external-java-test-01.xml/literal_007": {
-      "status": "FAIL",
-      "reason": "expected a value, got null"
+      "status": "UNSUPPORTED",
+      "reason": "external Java function"
+    },
+    "compliance-level-3/0076-feel-external-java/0076-feel-external-java-test-01.xml/literal_007_a": {
+      "status": "UNSUPPORTED",
+      "reason": "external Java function"
     },
     "compliance-level-3/0076-feel-external-java/0076-feel-external-java-test-01.xml/literal_008": {
-      "status": "FAIL",
-      "reason": "expected a value, got null"
+      "status": "UNSUPPORTED",
+      "reason": "external Java function"
     },
     "compliance-level-3/0076-feel-external-java/0076-feel-external-java-test-01.xml/literal_009": {
-      "status": "FAIL",
-      "reason": "expected a value, got null"
+      "status": "UNSUPPORTED",
+      "reason": "external Java function"
     },
     "compliance-level-3/0076-feel-external-java/0076-feel-external-java-test-01.xml/literal_010": {
-      "status": "FAIL",
-      "reason": "expected a value, got null"
+      "status": "UNSUPPORTED",
+      "reason": "external Java function"
     },
     "compliance-level-3/0076-feel-external-java/0076-feel-external-java-test-01.xml/literal_011": {
-      "status": "FAIL",
-      "reason": "expected a value, got null"
+      "status": "UNSUPPORTED",
+      "reason": "external Java function"
     },
     "compliance-level-3/0076-feel-external-java/0076-feel-external-java-test-01.xml/literal_012": {
-      "status": "FAIL",
-      "reason": "expected a value, got null"
+      "status": "UNSUPPORTED",
+      "reason": "external Java function"
     },
     "compliance-level-3/0076-feel-external-java/0076-feel-external-java-test-01.xml/varargs_001": {
-      "status": "FAIL",
-      "reason": "expected a value, got null"
+      "status": "UNSUPPORTED",
+      "reason": "external Java function"
     },
     "compliance-level-3/0080-feel-getvalue-function/0080-feel-getvalue-function-test-01.xml/decision_003": {
       "status": "FAIL",

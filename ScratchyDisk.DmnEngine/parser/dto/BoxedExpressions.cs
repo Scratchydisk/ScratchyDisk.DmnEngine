@@ -18,6 +18,18 @@ namespace ScratchyDisk.DmnEngine.Parser.Dto
 
         [XmlElement("literalExpression")]
         public Expression Expression { get; set; }
+
+        [XmlElement("context")]
+        public ContextExpression Context { get; set; }
+
+        [XmlElement("list")]
+        public ListExpression List { get; set; }
+
+        [XmlElement("relation")]
+        public RelationExpression Relation { get; set; }
+
+        [XmlElement("invocation")]
+        public InvocationExpression Invocation { get; set; }
     }
 
     /// <summary>Boxed relation expression (a decision returning a list of contexts).</summary>
