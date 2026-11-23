@@ -217,8 +217,12 @@ public sealed class TckRunner
         if (model.HasExternalJava)
             return Node(result, TckStatus.Unsupported, "external Java function");
 
-        if (result.Type is "bkm")
-            return Node(result, TckStatus.Unsupported, "resultNode type 'bkm' is not supported");
+        // A test case may invoke a business knowledge model directly
+        // (invocableName + type="bkm"); the input nodes are its arguments.
+        if (string.Equals(testCase.Type, "bkm", StringComparison.Ordinal) || result.Type is "bkm")
+            return RunBusinessKnowledgeModelInvocation(model, testCase, result,
+                testCase.InvocableName ?? result.Name);
+
         if (result.Type is "decisionService")
             return Node(result, TckStatus.Unsupported, "resultNode type 'decisionService' is not supported");
         if (model.BkmNames.Contains(result.Name))
@@ -382,6 +386,62 @@ public sealed class TckRunner
                     $"decision service '{serviceName}' has no output decision '{result.Name}' " +
                     $"(outputs: {string.Join(", ", outputs.Keys)})");
             }
+        }
+        catch (Exception ex)
+        {
+            return ErrorNode(result, expectedText, ex);
+        }
+
+        return CompareNode(result, expected, actual, expectedText);
+    }
+
+    /// <summary>
+    /// Runs a test case that invokes a business knowledge model directly. The input
+    /// nodes are positional argument values; the result node holds the expected value
+    /// of the function call.
+    /// </summary>
+    private TckNodeResult RunBusinessKnowledgeModelInvocation(TckModel model, TckTestCase testCase,
+        TckResult result, string bkmName)
+    {
+        object expected;
+        try
+        {
+            expected = TckValue.Parse(result.Expected);
+        }
+        catch (Exception ex)
+        {
+            return Node(result, TckStatus.FixtureError, "expected value: " + ex.Message);
+        }
+
+        var expectedText = TckValue.Format(expected);
+
+        if (!model.Definition.BusinessKnowledgeModels.TryGetValue(bkmName, out _))
+        {
+            return Node(result, TckStatus.NotFound,
+                $"no business knowledge model '{bkmName}' " +
+                $"(available: {string.Join(", ", model.Definition.BusinessKnowledgeModels.Keys)})");
+        }
+
+        var arguments = new List<object>();
+        foreach (var input in testCase.Inputs)
+        {
+            object value;
+            try
+            {
+                value = TckValue.Parse(input.Value);
+            }
+            catch (Exception ex)
+            {
+                return Node(result, TckStatus.FixtureError, $"input '{input.Name}': {ex.Message}");
+            }
+            arguments.Add(TckValue.ToEngineValue(value));
+        }
+
+        object actual;
+        try
+        {
+            var context = DmnExecutionContextFactory.CreateExecutionContext(model.Definition);
+            actual = context.InvokeBusinessKnowledgeModel(bkmName, arguments);
         }
         catch (Exception ex)
         {

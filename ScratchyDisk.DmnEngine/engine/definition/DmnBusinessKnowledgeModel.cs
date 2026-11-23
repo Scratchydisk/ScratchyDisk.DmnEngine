@@ -32,6 +32,12 @@ namespace ScratchyDisk.DmnEngine.Engine.Definition
         public string OutputTypeName { get; }
 
         /// <summary>
+        /// Declared return type of the business knowledge model as a function (from its
+        /// function item type), if any. The function result is converted to this type.
+        /// </summary>
+        public string ReturnTypeName { get; }
+
+        /// <summary>
         /// Executable function body. A literal expression body is wrapped as a
         /// <see cref="DmnLiteralBoxedExpression"/>; other DMN boxed bodies (context,
         /// relation, list, invocation, decision table) are executable as well.
@@ -49,11 +55,12 @@ namespace ScratchyDisk.DmnEngine.Engine.Definition
             string expression,
             string expressionLanguage = null,
             IReadOnlyList<string> parameterTypes = null,
-            string outputTypeName = null)
+            string outputTypeName = null,
+            string returnTypeName = null)
             : this(name, label, parameterNames,
                 new DmnLiteralBoxedExpression(expression,
                     Parser.DmnExpressionLanguage.Resolve(expressionLanguage)),
-                expression, expressionLanguage, parameterTypes, outputTypeName)
+                expression, expressionLanguage, parameterTypes, outputTypeName, returnTypeName)
         {
         }
 
@@ -65,7 +72,8 @@ namespace ScratchyDisk.DmnEngine.Engine.Definition
             string expression = null,
             string expressionLanguage = null,
             IReadOnlyList<string> parameterTypes = null,
-            string outputTypeName = null)
+            string outputTypeName = null,
+            string returnTypeName = null)
         {
             Name = name;
             Label = label;
@@ -75,6 +83,7 @@ namespace ScratchyDisk.DmnEngine.Engine.Definition
             Expression = expression ?? (body as DmnLiteralBoxedExpression)?.Text;
             ExpressionLanguage = expressionLanguage;
             OutputTypeName = outputTypeName;
+            ReturnTypeName = returnTypeName;
         }
     }
 }

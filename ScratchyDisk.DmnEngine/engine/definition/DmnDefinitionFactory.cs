@@ -455,7 +455,8 @@ namespace ScratchyDisk.DmnEngine.Engine.Definition
                     logic.Expression?.Text,
                     logic.Expression?.Language,
                     parameterTypes,
-                    outputTypeName);
+                    outputTypeName,
+                    ResolveFunctionReturnTypeName(source.OutputVariable?.TypeRef));
                 if (SourceModel.ImportAliases?.BkmAliases.TryGetValue(name, out var bkmAliases) == true)
                     bkmDefinition.NameAliases = bkmAliases;
                 BusinessKnowledgeModels[name] = bkmDefinition;
@@ -1206,6 +1207,33 @@ namespace ScratchyDisk.DmnEngine.Engine.Definition
         {
             if (string.IsNullOrWhiteSpace(typeRef)) return null;
             return TypeRefFeelTypeName(typeRef, new HashSet<string>(StringComparer.OrdinalIgnoreCase));
+        }
+
+        /// <summary>
+        /// Resolves the return type declared by a function item definition. A business
+        /// knowledge model is typed as a function, and the function's output type
+        /// constrains (and consequently converts) the value the body produces.
+        /// </summary>
+        /// <param name="typeRef">Type reference of the business knowledge model variable</param>
+        /// <returns>FEEL type name of the function result, or null when not declared</returns>
+        private string ResolveFunctionReturnTypeName(string typeRef)
+        {
+            if (string.IsNullOrWhiteSpace(typeRef)) return null;
+            EnsureItemDefinitionsIndexed();
+
+            if (!itemDefinitions.TryGetValue(typeRef, out var item))
+            {
+                // Imported type references are qualified ("m1.functionType") while the
+                // flattened item definition keeps the same qualified name; fall back to
+                // the unqualified name for models that only qualify one side.
+                var localName = typeRef.Contains('.') ? typeRef[(typeRef.LastIndexOf('.') + 1)..] : typeRef;
+                item = SourceModel?.ItemDefinitions?
+                    .FirstOrDefault(i => string.Equals(i.Name, localName, StringComparison.Ordinal)
+                                         || (i.Name != null && i.Name.EndsWith("." + localName, StringComparison.Ordinal)));
+            }
+
+            var outputTypeRef = item?.FunctionItem?.OutputTypeRef;
+            return string.IsNullOrWhiteSpace(outputTypeRef) ? null : ResolveFeelTypeName(outputTypeRef);
         }
 
 

@@ -1,6 +1,7 @@
 ﻿using FluentAssertions;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 using ScratchyDisk.DmnEngine.Engine.Definition;
+using ScratchyDisk.DmnEngine.Engine.Execution;
 using ScratchyDisk.DmnEngine.Engine.Execution.Context;
 using ScratchyDisk.DmnEngine.Parser;
 
@@ -203,6 +204,61 @@ namespace ScratchyDisk.DmnEngine.Test.Unit
                 .ExecuteDecision("boxed");
 
             result.FirstResultVariables[0].Value.Should().Be(42m);
+        }
+        [TestMethod]
+        public void BusinessKnowledgeModelResultIsConvertedToDeclaredFunctionReturnType()
+        {
+            var xml = $@"
+<definitions xmlns=""{Dmn15}"" id=""def"" name=""def"" namespace=""http://example.com"">
+  <itemDefinition name=""numberList"" id=""t0"" isCollection=""true""><typeRef>number</typeRef></itemDefinition>
+  <itemDefinition name=""functionReturningNumberList"" id=""t1"">
+    <functionItem outputTypeRef=""numberList"" id=""fi1""/>
+  </itemDefinition>
+  <businessKnowledgeModel name=""Singleton"" id=""b1"">
+    <variable name=""Singleton"" typeRef=""functionReturningNumberList""/>
+    <encapsulatedLogic id=""f1"">
+      <literalExpression typeRef=""number""><text>1</text></literalExpression>
+    </encapsulatedLogic>
+  </businessKnowledgeModel>
+  <decision name=""d"" id=""d1"">
+    <variable typeRef=""number"" name=""d""/>
+    <literalExpression typeRef=""number""><text>0</text></literalExpression>
+  </decision>
+</definitions>";
+
+            var definition = DmnDefinitionFactory.CreateDmnDefinition(DmnParser.ParseString15(xml));
+            definition.BusinessKnowledgeModels["Singleton"].ReturnTypeName.Should().Be("list<number>");
+
+            var context = DmnExecutionContextFactory.CreateExecutionContext(definition);
+            var result = context.InvokeBusinessKnowledgeModel("Singleton", new object[0]);
+
+            result.Should().BeOfType<List<object>>().Which.Should().ContainSingle().Which.Should().Be(1m);
+        }
+
+        [TestMethod]
+        public void BusinessKnowledgeModelInvocationRejectsWrongArgumentCount()
+        {
+            var xml = $@"
+<definitions xmlns=""{Dmn15}"" id=""def"" name=""def"" namespace=""http://example.com"">
+  <businessKnowledgeModel name=""Double"" id=""b1"">
+    <variable name=""Double""/>
+    <encapsulatedLogic id=""f1"">
+      <formalParameter name=""p"" typeRef=""number"" id=""p1""/>
+      <literalExpression typeRef=""number""><text>p * 2</text></literalExpression>
+    </encapsulatedLogic>
+  </businessKnowledgeModel>
+  <decision name=""d"" id=""d1"">
+    <variable typeRef=""number"" name=""d""/>
+    <literalExpression typeRef=""number""><text>0</text></literalExpression>
+  </decision>
+</definitions>";
+
+            var definition = DmnDefinitionFactory.CreateDmnDefinition(DmnParser.ParseString15(xml));
+            var context = DmnExecutionContextFactory.CreateExecutionContext(definition);
+
+            var act = () => context.InvokeBusinessKnowledgeModel("Double", new object[0]);
+
+            act.Should().Throw<DmnExecutorException>();
         }
     }
 }

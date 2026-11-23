@@ -765,41 +765,75 @@ namespace ScratchyDisk.DmnEngine.Engine.Execution.Context
                     child.SetVariable(parameters[i], i < args.Length ? args[i] : null);
                 }
 
+                object result;
                 if (bkm.Body != null)
                 {
                     // Boxed bodies (context, relation, list, invocation, decision table or
                     // literal expression) are evaluated against the function scope.
                     var runtime = new DmnBoxedExpressionRuntime(this, child, parameters, null);
-                    var boxedResult = runtime.Evaluate(bkm.Body);
-
-                    // The body can declare its output type; a non-conforming value is
-                    // the DMN null-coercion result.
-                    if (!string.IsNullOrWhiteSpace(bkm.OutputTypeName)
-                        && !FeelTypeConformance.TryCoerce(boxedResult, bkm.OutputTypeName,
-                            Definition.ItemTypeNames, out boxedResult))
-                        return null;
-
-                    return boxedResult;
+                    result = runtime.Evaluate(bkm.Body);
                 }
-
-                var scope = BuildFeelScope();
-                foreach (var parameter in parameters)
+                else
                 {
-                    scope.AddName(parameter);
+                    var scope = BuildFeelScope();
+                    foreach (var parameter in parameters)
+                    {
+                        scope.AddName(parameter);
+                    }
+
+                    var engine = GetFeelEngine();
+                    var ast = engine.ParseExpression(bkm.Expression, scope);
+                    result = engine.Evaluate(ast, child,
+                        DmnExpressionLanguage.Resolve(bkm.ExpressionLanguage));
                 }
 
-                var engine = GetFeelEngine();
-                var ast = engine.ParseExpression(bkm.Expression, scope);
-                var result = engine.Evaluate(ast, child, DmnExpressionLanguage.Resolve(bkm.ExpressionLanguage));
-
-                // The body can declare its output type; a non-conforming value is
-                // the DMN null-coercion result.
-                if (!string.IsNullOrWhiteSpace(bkm.OutputTypeName)
-                    && !FeelTypeConformance.TryCoerce(result, bkm.OutputTypeName, Definition.ItemTypeNames, out result))
-                    return null;
-
-                return result;
+                return ConformBusinessKnowledgeModelResult(bkm, result);
             }, bkm.ParameterTypes, Definition.ItemTypeNames, true);
+        }
+
+        /// <summary>
+        /// Applies the declared types of a business knowledge model result. The body may
+        /// declare its own output type, and the model itself may be typed as a function
+        /// whose result type then converts the body value. A value that conforms to
+        /// neither is the DMN null-coercion result.
+        /// </summary>
+        private object ConformBusinessKnowledgeModelResult(DmnBusinessKnowledgeModel bkm, object result)
+        {
+            if (!string.IsNullOrWhiteSpace(bkm.OutputTypeName)
+                && !FeelTypeConformance.TryCoerce(result, bkm.OutputTypeName,
+                    Definition.ItemTypeNames, out result))
+                return null;
+
+            if (!string.IsNullOrWhiteSpace(bkm.ReturnTypeName)
+                && !FeelTypeConformance.TryCoerce(result, bkm.ReturnTypeName,
+                    Definition.ItemTypeNames, out result))
+                return null;
+
+            return result;
+        }
+
+        /// <summary>
+        /// Invokes a business knowledge model directly (not through a FEEL expression).
+        /// </summary>
+        /// <param name="bkmName">Name of the business knowledge model</param>
+        /// <param name="arguments">Positional argument values</param>
+        /// <returns>The value the model body produces, converted to the declared return type</returns>
+        /// <exception cref="DmnExecutorException">The model does not exist or the arguments do not match its parameters</exception>
+        public object InvokeBusinessKnowledgeModel(string bkmName, IReadOnlyList<object> arguments)
+        {
+            if (string.IsNullOrWhiteSpace(bkmName))
+                throw Logger.Fatal<ArgumentException>($"{nameof(bkmName)} is null or empty");
+            if (!Definition.BusinessKnowledgeModels.TryGetValue(bkmName, out var bkm))
+                throw Logger.Fatal<DmnExecutorException>(
+                    $"InvokeBusinessKnowledgeModel: business knowledge model {bkmName} not found");
+
+            var args = arguments?.ToArray() ?? Array.Empty<object>();
+            var result = CreateBusinessKnowledgeModelFunction(bkm).Invoke(args);
+            if (result == null && args.Length != bkm.ParameterNames.Count)
+                throw Logger.Fatal<DmnExecutorException>(
+                    $"Business knowledge model {bkmName} expects {bkm.ParameterNames.Count} argument(s) but got {args.Length}");
+
+            return result;
         }
 
         /// <summary>
