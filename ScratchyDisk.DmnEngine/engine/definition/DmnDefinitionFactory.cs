@@ -420,8 +420,8 @@ namespace ScratchyDisk.DmnEngine.Engine.Definition
 
         /// <summary>
         /// Builds executable business knowledge models from the parsed model.
-        /// Only literal-expression bodies are supported; other function bodies are
-        /// left out rather than failing the whole model.
+        /// The body of a BKM may be any boxed expression supported by
+        /// <see cref="BuildFunctionBody"/>, including a nested function definition.
         /// </summary>
         protected virtual void ProcessBusinessKnowledgeModelsSource()
         {
@@ -433,7 +433,10 @@ namespace ScratchyDisk.DmnEngine.Engine.Definition
                 if (string.IsNullOrWhiteSpace(name)) continue;
 
                 var logic = source.EncapsulatedLogic;
-                if (logic?.Expression == null || string.IsNullOrWhiteSpace(logic.Expression.Text)) continue;
+                if (logic == null) continue;
+
+                var body = BuildFunctionBody(logic);
+                if (string.IsNullOrWhiteSpace(body)) continue;
 
                 var parameters = logic.FormalParameters?
                     .Select(p => p.Name)
@@ -444,8 +447,8 @@ namespace ScratchyDisk.DmnEngine.Engine.Definition
                     name,
                     name,
                     parameters,
-                    logic.Expression.Text,
-                    logic.Expression.Language);
+                    body,
+                    logic.Expression?.Language);
                 if (SourceModel.ImportAliases?.BkmAliases.TryGetValue(name, out var bkmAliases) == true)
                     bkmDefinition.NameAliases = bkmAliases;
                 BusinessKnowledgeModels[name] = bkmDefinition;
@@ -483,6 +486,11 @@ namespace ScratchyDisk.DmnEngine.Engine.Definition
                     throw Logger.Fatal<DmnParserException>($"Duplicate input data name {variableName} (from {inputName})");
 
                 var variable = new DmnVariableDefinition(variableName, inputName, label: inputName);
+                if (!string.IsNullOrWhiteSpace(sourceInput.Variable?.TypeRef))
+                {
+                    try { CheckAndUpdateVariableType(variable, sourceInput.Variable.TypeRef); }
+                    catch (DmnParserException) { /* custom/unsupported type: keep it untyped */ }
+                }
                 InputData.Add(variableName, variable);
                 Variables.Add(variableName, variable);
                 InputDataById.Add(inputId, variable);
@@ -859,9 +867,15 @@ namespace ScratchyDisk.DmnEngine.Engine.Definition
             var entries = new List<string>();
             foreach (var entry in context.Entries ?? Enumerable.Empty<ContextEntry>())
             {
+                var value = BuildEntryValue(entry);
+                if (value == null) continue;
+
                 var key = entry.Variable?.Name;
-                if (string.IsNullOrWhiteSpace(key) || entry.Expression == null) continue;
-                entries.Add($"{QuoteFeelString(key)}: {BuildEntryValue(entry)}");
+                // An entry without a variable name is a result expression: it
+                // is emitted without a key and supplies the value of the context.
+                entries.Add(string.IsNullOrWhiteSpace(key)
+                    ? value
+                    : $"{QuoteFeelString(key)}: {value}");
             }
             return "{" + string.Join(", ", entries) + "}";
         }
@@ -888,6 +902,44 @@ namespace ScratchyDisk.DmnEngine.Engine.Definition
                 return $"{parameter}: {value}";
             });
             return $"{function}({string.Join(", ", args)})";
+        }
+
+        /// <summary>
+        /// Converts a boxed function definition to its FEEL body expression. The
+        /// function's own formal parameters are not part of the body.
+        /// </summary>
+        private static string BuildFunctionBody(FunctionDefinition function)
+        {
+            if (function == null) return null;
+
+            if (function.Expression != null && !string.IsNullOrWhiteSpace(function.Expression.Text))
+                return function.Expression.Text;
+            if (function.Context != null) return BuildContext(function.Context);
+            if (function.List != null)
+                return "[" + string.Join(", ", function.List.Expressions?
+                    .Select(e => e.Text) ?? Enumerable.Empty<string>()) + "]";
+            if (function.Relation != null) return BuildRelation(function.Relation);
+            if (function.Invocation != null) return BuildInvocation(function.Invocation);
+            if (function.Body != null)
+                return BuildFunctionExpression(function.Body);
+
+            return null;
+        }
+
+        /// <summary>
+        /// Converts a boxed function definition to a FEEL lambda expression,
+        /// including its formal parameter list.
+        /// </summary>
+        private static string BuildFunctionExpression(FunctionDefinition function)
+        {
+            var body = BuildFunctionBody(function);
+            if (body == null) return null;
+
+            var parameters = function.FormalParameters?
+                .Select(p => p.Name)
+                .Where(p => !string.IsNullOrWhiteSpace(p))
+                .ToList() ?? new List<string>();
+            return $"function({string.Join(", ", parameters)}) {body}";
         }
 
         private static string BuildRelation(RelationExpression relation)
@@ -952,13 +1004,9 @@ namespace ScratchyDisk.DmnEngine.Engine.Definition
             else
             {
                 var function = sourceDecision.FunctionDefinition;
-                if (function?.Expression == null || string.IsNullOrWhiteSpace(function.Expression.Text))
+                expr = BuildFunctionExpression(function);
+                if (string.IsNullOrWhiteSpace(expr))
                     throw Logger.Fatal<DmnParserException>($"Missing function body for decision {decisionName}");
-                var parameters = function.FormalParameters?
-                    .Select(p => p.Name)
-                    .Where(p => !string.IsNullOrWhiteSpace(p))
-                    .ToList() ?? new List<string>();
-                expr = $"function({string.Join(", ", parameters)}) {function.Expression.Text}";
                 if (variable.Type == null) variable.SetRecognizedType(typeof(FeelFunction));
             }
 

@@ -332,6 +332,32 @@ namespace ScratchyDisk.DmnEngine.Test.Unit.Feel
             result["result"].Should().Be(10m);
         }
 
+        [TestMethod]
+        public void EvalContextResultExpression()
+        {
+            // A trailing context entry without a name supplies the value of the context.
+            Eval("{ x: 5, x + 1 }").Should().Be(6m);
+        }
+
+        [TestMethod]
+        public void EvalFunctionReturningFunction()
+        {
+            Eval("(function(a) function(b) a + b)(2)(3)").Should().Be(5m);
+        }
+
+        [TestMethod]
+        public void EvalBuiltInFunctionAsValue()
+        {
+            Eval("(function(f) f(-5))(abs)").Should().Be(5m);
+        }
+
+        [TestMethod]
+        public void EvalBuiltInFunctionAsValueRejectsExtraArguments()
+        {
+            Action act = () => Eval("(function(f) f(4, 9))(sqrt)");
+            act.Should().Throw<FeelEvaluationException>();
+        }
+
         // ==================== Built-in String Functions ====================
 
         [TestMethod]

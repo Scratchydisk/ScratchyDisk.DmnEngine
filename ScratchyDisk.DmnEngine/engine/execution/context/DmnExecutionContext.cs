@@ -373,6 +373,13 @@ namespace ScratchyDisk.DmnEngine.Engine.Execution.Context
                 evalContext.SetVariable(bkm.Name, CreateBusinessKnowledgeModelFunction(bkm));
             }
 
+            // Decision services are FEEL functions too; they can be passed to a
+            // BKM as a lambda argument just like a BKM or a user-defined function.
+            foreach (var service in Definition.DecisionServices.Values)
+            {
+                evalContext.SetVariable(service.Name, CreateDecisionServiceFunction(service));
+            }
+
             return evalContext;
         }
 
@@ -431,6 +438,13 @@ namespace ScratchyDisk.DmnEngine.Engine.Execution.Context
         {
             return new FeelFunction(service.Name, service.ParameterNames, args =>
             {
+                var expectedArguments = service.ParameterVariables.Count;
+                if (args.Length != expectedArguments)
+                {
+                    throw Logger.Fatal<DmnExecutorException>(
+                        $"Decision service {service.Name} expects {expectedArguments} argument(s) but got {args.Length}");
+                }
+
                 var previousProvided = ProvidedDecisions.ToList();
                 ProvidedDecisions = previousProvided.Concat(service.ParameterDecisionNames).ToList();
                 try
@@ -439,6 +453,21 @@ namespace ScratchyDisk.DmnEngine.Engine.Execution.Context
                 {
                     if (!Variables.TryGetValue(service.ParameterVariables[i], out var variable)) continue;
                     var value = i < args.Length ? args[i] : null;
+
+                    // Arguments are bound to typed parameters: an incompatible
+                    // value is an error for an input decision and null (not a
+                    // silent conversion) for an input data parameter.
+                    if (!IsParameterValueCompatible(variable.Type, value))
+                    {
+                        if (service.ParameterDecisionNames.Contains(variable.Name))
+                        {
+                            throw Logger.Fatal<DmnExecutorException>(
+                                $"Decision service {service.Name}: parameter {variable.Name} expects " +
+                                $"{variable.Type?.Name ?? "any"} but got {value?.GetType().Name ?? "null"}");
+                        }
+                        value = null;
+                    }
+
                     if (variable.IsInputParameter) variable.SetInputParameterValue(value);
                     else variable.Value = value;
                 }
@@ -451,6 +480,32 @@ namespace ScratchyDisk.DmnEngine.Engine.Execution.Context
                     ProvidedDecisions = previousProvided;
                 }
             });
+        }
+
+        /// <summary>
+        /// Checks whether a value can be bound to a decision service parameter of
+        /// the given declared type. Values already of the target type, numbers
+        /// bound to numeric parameters and strings (which may be parsed) are
+        /// accepted; anything else is a type mismatch.
+        /// </summary>
+        private static bool IsParameterValueCompatible(Type targetType, object value)
+        {
+            if (targetType == null || value == null) return true;
+            if (targetType.IsInstanceOfType(value)) return true;
+
+            if (FeelValueComparer.IsNumeric(value))
+            {
+                return targetType == typeof(decimal) || targetType == typeof(double)
+                    || targetType == typeof(float) || targetType == typeof(int)
+                    || targetType == typeof(long) || targetType == typeof(short)
+                    || targetType == typeof(byte);
+            }
+
+            // A string may be parsed into the declared type by the regular
+            // variable coercion.
+            if (value is string) return true;
+
+            return FeelTypeCoercion.CoerceToClr(value, targetType) != null;
         }
 
         private static object ExtractDecisionValue(DmnDecisionResult result)

@@ -225,7 +225,7 @@ context
     ;
 
 contextEntry
-    : key COLON expression
+    : (key COLON)? expression
     ;
 
 key

@@ -146,6 +146,51 @@ namespace ScratchyDisk.DmnEngine.Feel.Functions
         public static FeelFunction GetFunction(string name) =>
             Functions.TryGetValue(name, out var fn) ? fn : null;
 
+        /// <summary>
+        /// Functions that accept a variable number of arguments. Their declared
+        /// parameter list describes the first argument rather than a maximum arity.
+        /// </summary>
+        private static readonly HashSet<string> VariadicFunctions = new()
+        {
+            "append", "concatenate", "union",
+            "min", "max", "sum", "mean", "all", "any",
+            "product", "median", "stddev", "mode",
+        };
+
+        /// <summary>
+        /// Functions whose implementation accepts more positional arguments than
+        /// their declared parameter list (for example the optional timezone of
+        /// "date and time").
+        /// </summary>
+        private static readonly Dictionary<string, int> MaxArity = new()
+        {
+            { "date and time", 3 },
+        };
+
+        /// <summary>
+        /// Gets a built-in function as a first-class FEEL value (a lambda that may
+        /// be passed to another function). The returned function rejects more
+        /// arguments than the built-in accepts.
+        /// </summary>
+        public static FeelFunction GetFunctionValue(string name)
+        {
+            if (!Functions.TryGetValue(name, out var fn)) return null;
+
+            var maxArgs = VariadicFunctions.Contains(name)
+                ? int.MaxValue
+                : MaxArity.TryGetValue(name, out var declared)
+                    ? declared
+                    : fn.ParameterNames.Count;
+
+            return new FeelFunction(fn.Name, fn.ParameterNames, args =>
+            {
+                if (args.Length > maxArgs)
+                    throw new FeelEvaluationException(
+                        $"Function '{name}' expects at most {maxArgs} argument(s) but got {args.Length}");
+                return fn.Invoke(args);
+            });
+        }
+
         private static void Register(string name, string[] paramNames, Func<object[], object> body)
         {
             Functions[name] = new FeelFunction(name, paramNames, body);

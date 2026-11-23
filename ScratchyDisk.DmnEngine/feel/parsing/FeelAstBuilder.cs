@@ -486,8 +486,14 @@ namespace ScratchyDisk.DmnEngine.Feel.Parsing
         {
             var entries = context.contextEntry()?.Select(e =>
             {
-                var key = e.key().simpleName()?.GetText() ?? UnescapeString(
-                    e.key().StringLiteral().GetText().Trim('"'));
+                // A context entry without a name is a result expression: the
+                // value of the context is the value of that entry.
+                string key = null;
+                if (e.key() != null)
+                {
+                    key = e.key().simpleName()?.GetText() ?? UnescapeString(
+                        e.key().StringLiteral().GetText().Trim('"'));
+                }
                 var value = Visit(e.expression());
                 return new ContextEntryNode(key, value);
             }).ToList() ?? new List<ContextEntryNode>();

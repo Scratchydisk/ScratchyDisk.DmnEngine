@@ -7,5 +7,10 @@
     /// </summary>
     public class InputData : NamedElement
     {
+        /// <summary>
+        /// Variable declaration of the input data (name and optional type).
+        /// </summary>
+        [System.Xml.Serialization.XmlElement("variable")]
+        public Variable Variable { get; set; }
     }
 }

@@ -136,7 +136,13 @@ namespace ScratchyDisk.DmnEngine.Feel.Eval
         {
             // Check special variables first
             if (name == "?") return context.InputValue;
-            return context.GetVariable(name);
+
+            // Variables shadow built-in functions.
+            if (context.TryGetVariable(name, out var value)) return value;
+
+            // Built-in functions are first-class values: they can be passed as
+            // arguments to other functions.
+            return FeelBuiltInFunctions.GetFunctionValue(name);
         }
 
         private object ResolveQualifiedName(QualifiedNameNode qn)
@@ -937,18 +943,31 @@ namespace ScratchyDisk.DmnEngine.Feel.Eval
         private object EvalContext(ContextNode ctx)
         {
             var result = new FeelContext();
+            object resultValue = null;
+            var hasResultEntry = false;
             var childScope = context.CreateChildScope();
             var childEval = new FeelEvaluator(childScope, functionResolver);
 
             foreach (var entry in ctx.Entries)
             {
-                if (result.ContainsKey(entry.Key)) return null;
+                if (entry.Key != null && result.ContainsKey(entry.Key)) return null;
+
                 var value = childEval.Evaluate(entry.Value);
+
+                // A context entry without a name is a result expression; the
+                // value of the context is the value of that entry.
+                if (entry.Key == null)
+                {
+                    resultValue = value;
+                    hasResultEntry = true;
+                    continue;
+                }
+
                 result.Put(entry.Key, value);
                 // Context entries are visible to subsequent entries
                 childScope.SetVariable(entry.Key, value);
             }
-            return result;
+            return hasResultEntry ? resultValue : result;
         }
 
         private object EvalRange(RangeNode range)
@@ -1180,12 +1199,15 @@ namespace ScratchyDisk.DmnEngine.Feel.Eval
                 namedArgs[name] = Evaluate(valueNode);
             }
 
+            // Built-ins validate the argument names and their declared order.
+            // A variable with the same name shadows the built-in.
+            if (nfi.Function is NameNode builtInName
+                && !context.TryGetVariable(builtInName.Name, out _)
+                && FeelBuiltInFunctions.HasFunction(builtInName.Name))
+                return FeelBuiltInFunctions.ResolveNamed(builtInName.Name, namedArgs);
+
             if (fnValue is FeelFunction fn)
                 return fn.InvokeNamed(namedArgs);
-
-            // Built-ins validate the argument names and their declared order.
-            if (nfi.Function is NameNode builtInName && FeelBuiltInFunctions.HasFunction(builtInName.Name))
-                return FeelBuiltInFunctions.ResolveNamed(builtInName.Name, namedArgs);
 
             // Named args with function resolver — pass as positional
             if (nfi.Function is NameNode nameNode && functionResolver != null)
