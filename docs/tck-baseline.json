@@ -1,25 +1,25 @@
 {
   "schemaVersion": 1,
-  "generatedUtc": "2026-11-23T14:05:49.8706700Z",
+  "generatedUtc": "2026-11-23T14:09:31.1518684Z",
   "tck": {
     "root": "artifacts/tck/TestCases",
     "commit": "a428da2f9c5ff2a4b8566ab511144e9022d743fe"
   },
   "engine": {
-    "version": "2.0.1\u002Bc2d47d8fe2ee648fc7e72f01124826b46d3b30da"
+    "version": "2.0.1\u002B484c37fff9d368f22dd67f5a7f0c19751918b1c9"
   },
   "totals": {
     "total": 3437,
-    "pass": 3180,
-    "fail": 100,
+    "pass": 3187,
+    "fail": 93,
     "parseFail": 30,
     "notFound": 19,
     "unsupported": 108,
     "fixtureError": 0,
     "blocked": 157,
     "executed": 3280,
-    "passRate": 0.9252254873436137,
-    "executedPassRate": 0.9695121951219512
+    "passRate": 0.927262147221414,
+    "executedPassRate": 0.9716463414634147
   },
   "cases": {
     "compliance-level-3/0002-string-functions/0002-string-functions-test-01.xml/001": {
@@ -681,34 +681,6 @@
     "compliance-level-3/1130-feel-interval/1130-feel-interval-test-01.xml/mmets": {
       "status": "UNSUPPORTED",
       "reason": "decision logic kind is not parsed by the engine"
-    },
-    "compliance-level-3/1140-feel-string-join-function/1140-feel-string-join-function-test-01.xml/001": {
-      "status": "FAIL",
-      "reason": "expected a value, got null"
-    },
-    "compliance-level-3/1140-feel-string-join-function/1140-feel-string-join-function-test-01.xml/004": {
-      "status": "FAIL",
-      "reason": "expected a value, got null"
-    },
-    "compliance-level-3/1140-feel-string-join-function/1140-feel-string-join-function-test-01.xml/005_a": {
-      "status": "FAIL",
-      "reason": "expected a value, got null"
-    },
-    "compliance-level-3/1140-feel-string-join-function/1140-feel-string-join-function-test-01.xml/006_a": {
-      "status": "FAIL",
-      "reason": "expected a value, got null"
-    },
-    "compliance-level-3/1140-feel-string-join-function/1140-feel-string-join-function-test-01.xml/006_b": {
-      "status": "FAIL",
-      "reason": "expected a value, got null"
-    },
-    "compliance-level-3/1140-feel-string-join-function/1140-feel-string-join-function-test-01.xml/007_a": {
-      "status": "FAIL",
-      "reason": "expected a value, got null"
-    },
-    "compliance-level-3/1140-feel-string-join-function/1140-feel-string-join-function-test-01.xml/010_a": {
-      "status": "FAIL",
-      "reason": "expected a value, got null"
     },
     "compliance-level-3/1141-feel-round-up-function/1141-feel-round-up-function-test-01.xml/009": {
       "status": "FAIL",

@@ -338,13 +338,19 @@ namespace ScratchyDisk.DmnEngine.Feel.Functions
 
             Register("string join", new[] { "list", "delimiter" }, args =>
             {
-                if (args.Length != 2) return null;
+                if (args.Length is < 1 or > 2) return null;
                 var list = ArgList(args, 0);
                 if (list == null) return null;
-                if (list.Any(item => item is not string)) return null;
-                var delim = ArgString(args, 1);
-                if (delim == null) return null;
-                return string.Join(delim, list.Cast<string>());
+                if (list.Any(item => item != null && item is not string)) return null;
+
+                var delimiter = "";
+                if (args.Length == 2 && Arg(args, 1) != null)
+                {
+                    delimiter = ArgString(args, 1);
+                    if (delimiter == null) return null;
+                }
+
+                return string.Join(delimiter, list.Where(item => item is string).Cast<string>());
             });
         }
 
