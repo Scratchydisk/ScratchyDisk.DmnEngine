@@ -29,11 +29,15 @@ namespace ScratchyDisk.DmnEngine.Feel.Types
         /// </summary>
         public string ZoneId { get; }
 
-        public FeelTime(TimeOnly time, TimeSpan? offset = null, string zoneId = null)
+        /// <summary>Original fractional-second digits (1-9), preserved for string().</summary>
+        public string Fraction { get; }
+
+        public FeelTime(TimeOnly time, TimeSpan? offset = null, string zoneId = null, string fraction = null)
         {
             Time = time;
             Offset = offset;
             ZoneId = zoneId;
+            Fraction = fraction;
         }
 
         public FeelTime(int hour, int minute, int second, TimeSpan? offset = null)
@@ -100,7 +104,9 @@ namespace ScratchyDisk.DmnEngine.Feel.Types
         public override string ToString()
         {
             var timeStr = Time.ToString("HH:mm:ss");
-            var fraction = Time.ToString("fffffff").TrimEnd('0');
+            var fraction = string.IsNullOrEmpty(Fraction)
+                ? Time.ToString("fffffff").TrimEnd('0')
+                : Fraction.TrimEnd('0');
             if (fraction.Length > 0) timeStr += "." + fraction;
 
             if (!string.IsNullOrWhiteSpace(ZoneId)) return $"{timeStr}@{ZoneId}";

@@ -102,6 +102,12 @@ namespace ScratchyDisk.DmnEngine.Engine.Execution.Context
             {
                 if (Type != null && value != null)
                 {
+                    // Expanded temporal values cannot be represented by the CLR
+                    // date types; keep them intact rather than failing the cast.
+                    if (value is ScratchyDisk.DmnEngine.Feel.Types.FeelExpandedDate
+                        or ScratchyDisk.DmnEngine.Feel.Types.FeelExpandedDateTime)
+                        return value;
+
                     // FEEL temporal values often need an explicit CLR mapping.
                     if (value is DateOnly dateOnlyValue)
                     {

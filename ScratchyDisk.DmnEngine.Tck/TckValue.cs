@@ -100,14 +100,51 @@ public static class TckValue
         }
     }
 
-    private static DateOnly ParseDate(string text)
+    private static object ParseDate(string text)
     {
-        // XSD allows negative years; DateOnly does not. Let the caller report a fixture error.
-        return DateOnly.ParseExact(text, "yyyy-MM-dd", CultureInfo.InvariantCulture);
+        if (DateOnly.TryParseExact(text, "yyyy-MM-dd", CultureInfo.InvariantCulture, DateTimeStyles.None, out var date))
+            return date;
+
+        // XSD allows negative/expanded years; DateOnly does not.
+        var match = Regex.Match(text, @"^(?<y>[+-]?\d{4,})-(?<mo>\d{2})-(?<d>\d{2})$");
+        if (match.Success)
+        {
+            return new FeelExpandedDate(
+                int.Parse(match.Groups["y"].Value, CultureInfo.InvariantCulture),
+                int.Parse(match.Groups["mo"].Value, CultureInfo.InvariantCulture),
+                int.Parse(match.Groups["d"].Value, CultureInfo.InvariantCulture));
+        }
+
+        throw new FormatException($"Invalid date '{text}'");
     }
 
-    private static TckDateTime ParseDateTime(string text)
+    private static object ParseDateTime(string text)
     {
+        var expanded = Regex.Match(text,
+            @"^(?<y>[+-]?\d{4,})-(?<mo>\d{2})-(?<d>\d{2})T(?<h>\d{2}):(?<mi>\d{2})(?::(?<sec>\d{2})(?:\.(?<f>\d{1,9}))?)?(?:(?<z>Z)|(?<off>[+-]\d{2}:\d{2}))?$");
+        if (expanded.Success && int.Parse(expanded.Groups["y"].Value, CultureInfo.InvariantCulture) is < 1 or > 9999)
+        {
+            var expandedDate = new FeelExpandedDate(
+                int.Parse(expanded.Groups["y"].Value, CultureInfo.InvariantCulture),
+                int.Parse(expanded.Groups["mo"].Value, CultureInfo.InvariantCulture),
+                int.Parse(expanded.Groups["d"].Value, CultureInfo.InvariantCulture));
+            var expandedSecond = expanded.Groups["sec"].Success ? int.Parse(expanded.Groups["sec"].Value) : 0;
+            var expandedFraction = expanded.Groups["f"].Success ? expanded.Groups["f"].Value : null;
+            var expandedTicks = expandedFraction == null ? 0L : long.Parse(expandedFraction.PadRight(7, '0')[..7], CultureInfo.InvariantCulture);
+            var expandedTime = new TimeOnly(int.Parse(expanded.Groups["h"].Value), int.Parse(expanded.Groups["mi"].Value), expandedSecond)
+                .Add(TimeSpan.FromTicks(expandedTicks));
+            var expandedOffset = TimeSpan.Zero;
+            var expandedHasOffset = expanded.Groups["z"].Success;
+            if (expanded.Groups["off"].Success)
+            {
+                var textOffset = expanded.Groups["off"].Value;
+                var sign = textOffset.StartsWith("-") ? -1 : 1;
+                expandedOffset = sign * TimeSpan.Parse(textOffset.TrimStart('+', '-'), CultureInfo.InvariantCulture);
+                expandedHasOffset = true;
+            }
+            return new FeelExpandedDateTime(expandedDate, expandedTime, expandedFraction, expandedOffset, null, expandedHasOffset);
+        }
+
         var match = Regex.Match(
             text,
             @"^(?<wall>\d{4}-\d{2}-\d{2}T\d{2}:\d{2}(:\d{2}(\.\d+)?)?)(?<offset>Z|[+-]\d{2}:\d{2})?$");
@@ -178,6 +215,33 @@ public static class TckValue
         if (expected == null && actual == null) return true;
         if (expected == null) { reason = "expected null, got a value"; return false; }
         if (actual == null) { reason = "expected a value, got null"; return false; }
+
+        if (expected is FeelExpandedDate expectedExpandedDate || actual is FeelExpandedDate)
+        {
+            if (!TryAsExpandedDate(expected, out var expectedDate) || !TryAsExpandedDate(actual, out var actualDate))
+            {
+                reason = $"date {Format(expected)} vs {Format(actual)}";
+                return false;
+            }
+            if (expectedDate.ToDayNumber() == actualDate.ToDayNumber()) return true;
+            reason = $"date {expectedDate} vs {actualDate}";
+            return false;
+        }
+
+        if (expected is FeelExpandedDateTime expectedExpandedDateTime || actual is FeelExpandedDateTime)
+        {
+            if (expected is not FeelExpandedDateTime expectedExpanded || actual is not FeelExpandedDateTime actualExpanded)
+            {
+                reason = $"date-time {Format(expected)} vs {Format(actual)}";
+                return false;
+            }
+            if (expectedExpanded.Date.ToDayNumber() == actualExpanded.Date.ToDayNumber()
+                && expectedExpanded.Time == actualExpanded.Time
+                && expectedExpanded.Offset == actualExpanded.Offset)
+                return true;
+            reason = $"date-time {Format(expected)} vs {Format(actual)}";
+            return false;
+        }
 
         // Range results are compared as the four FEEL range properties, which is
         // how the TCK expresses them.
@@ -401,6 +465,9 @@ public static class TckValue
             case FeelDateTime zoned:
                 date = DateOnly.FromDateTime(zoned.Value.DateTime);
                 return true;
+            case FeelExpandedDate expanded:
+                date = expanded.ToDateOnly();
+                return true;
             default:
                 date = default;
                 return false;
@@ -418,6 +485,12 @@ public static class TckValue
             case FeelDateTime zoned:
                 dateTime = zoned.Value;
                 hasOffset = true;
+                return true;
+            case FeelExpandedDateTime expanded:
+                dateTime = new DateTimeOffset(
+                    expanded.Date.ToDateOnly().ToDateTime(expanded.Time),
+                    expanded.Offset);
+                hasOffset = expanded.HasOffset;
                 return true;
             case DateTimeOffset dto:
                 dateTime = dto;
@@ -451,6 +524,25 @@ public static class TckValue
             default:
                 time = default;
                 hasOffset = false;
+                return false;
+        }
+    }
+
+    private static bool TryAsExpandedDate(object value, out FeelExpandedDate date)
+    {
+        switch (value)
+        {
+            case FeelExpandedDate expanded:
+                date = expanded;
+                return true;
+            case DateOnly d:
+                date = new FeelExpandedDate(d.Year, d.Month, d.Day);
+                return true;
+            case FeelExpandedDateTime expandedDateTime:
+                date = expandedDateTime.Date;
+                return true;
+            default:
+                date = default;
                 return false;
         }
     }
@@ -513,6 +605,8 @@ public static class TckValue
             case DateOnly date: return date.ToString("yyyy-MM-dd", CultureInfo.InvariantCulture);
             case TckDateTime tck: return tck.Value.ToString("O", CultureInfo.InvariantCulture);
             case FeelDateTime zonedDateTime: return zonedDateTime.ToString();
+            case FeelExpandedDate expandedDate: return expandedDate.ToString();
+            case FeelExpandedDateTime expandedDateTime: return expandedDateTime.ToString();
             case DateTimeOffset dto: return dto.ToString("O", CultureInfo.InvariantCulture);
             case DateTime dt: return dt.ToString("O", CultureInfo.InvariantCulture);
             case TimeSpan span: return XmlConvert.ToString(span);

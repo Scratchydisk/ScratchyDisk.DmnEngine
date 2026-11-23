@@ -1,25 +1,25 @@
 {
   "schemaVersion": 1,
-  "generatedUtc": "2026-11-23T12:49:04.2883293Z",
+  "generatedUtc": "2026-11-23T13:20:59.0318496Z",
   "tck": {
     "root": "artifacts/tck/TestCases",
     "commit": "a428da2f9c5ff2a4b8566ab511144e9022d743fe"
   },
   "engine": {
-    "version": "2.0.1\u002B42615e1ad91ebd71d6d69ebad9d511b16706fd21"
+    "version": "2.0.1\u002B5d15393fb119d9dc509b243e2790b804e4e8cac6"
   },
   "totals": {
     "total": 3437,
-    "pass": 3020,
-    "fail": 254,
+    "pass": 3100,
+    "fail": 180,
     "parseFail": 30,
     "notFound": 19,
     "unsupported": 108,
-    "fixtureError": 6,
-    "blocked": 163,
-    "executed": 3274,
-    "passRate": 0.8786732615653186,
-    "executedPassRate": 0.9224190592547342
+    "fixtureError": 0,
+    "blocked": 157,
+    "executed": 3280,
+    "passRate": 0.9019493744544661,
+    "executedPassRate": 0.9451219512195121
   },
   "cases": {
     "compliance-level-3/0002-string-functions/0002-string-functions-test-01.xml/001": {
@@ -690,6 +690,22 @@
       "status": "FAIL",
       "reason": "expected a value, got null"
     },
+    "compliance-level-3/0095-feel-day-of-year-function/0095-feel-day-of-year-function-test-01.xml/datetime_001": {
+      "status": "FAIL",
+      "reason": "expected a value, got null"
+    },
+    "compliance-level-3/0095-feel-day-of-year-function/0095-feel-day-of-year-function-test-01.xml/datetime_002": {
+      "status": "FAIL",
+      "reason": "expected a value, got null"
+    },
+    "compliance-level-3/0095-feel-day-of-year-function/0095-feel-day-of-year-function-test-01.xml/datetime_003": {
+      "status": "FAIL",
+      "reason": "expected a value, got null"
+    },
+    "compliance-level-3/0095-feel-day-of-year-function/0095-feel-day-of-year-function-test-01.xml/datetime_005": {
+      "status": "FAIL",
+      "reason": "expected a value, got null"
+    },
     "compliance-level-3/0095-feel-day-of-year-function/0095-feel-day-of-year-function-test-01.xml/null_008": {
       "status": "FAIL",
       "reason": "expected an error but a value was returned"
@@ -708,7 +724,7 @@
     },
     "compliance-level-3/0096-feel-day-of-week-function/0096-feel-day-of-week-function-test-01.xml/datetime_002": {
       "status": "FAIL",
-      "reason": "\u0022Tuesday\u0022 vs 2"
+      "reason": "expected a value, got null"
     },
     "compliance-level-3/0096-feel-day-of-week-function/0096-feel-day-of-week-function-test-01.xml/null_008": {
       "status": "FAIL",
@@ -728,7 +744,7 @@
     },
     "compliance-level-3/0097-feel-month-of-year-function/0097-feel-month-of-year-function-test-01.xml/datetime_002": {
       "status": "FAIL",
-      "reason": "\u0022September\u0022 vs 9"
+      "reason": "expected a value, got null"
     },
     "compliance-level-3/0097-feel-month-of-year-function/0097-feel-month-of-year-function-test-01.xml/null_008": {
       "status": "FAIL",
@@ -738,227 +754,15 @@
       "status": "UNSUPPORTED",
       "reason": "decision logic kind is not parsed by the engine"
     },
+    "compliance-level-3/0098-feel-week-of-year-function/0098-feel-week-of-year-function-test-01.xml/datetime_001": {
+      "status": "FAIL",
+      "reason": "expected a value, got null"
+    },
+    "compliance-level-3/0098-feel-week-of-year-function/0098-feel-week-of-year-function-test-01.xml/datetime_005": {
+      "status": "FAIL",
+      "reason": "expected a value, got null"
+    },
     "compliance-level-3/0098-feel-week-of-year-function/0098-feel-week-of-year-function-test-01.xml/null_008": {
-      "status": "FAIL",
-      "reason": "expected an error but a value was returned"
-    },
-    "compliance-level-3/0100-arithmetic/0100-arithmetic-test-01.xml/add_lhs_dateAndTime_to_rhs_ymDuration_010": {
-      "status": "FAIL",
-      "reason": "string \u0022-2021-02-01T10:10:10\u002B11:00\u0022 vs \u0022null\u0022"
-    },
-    "compliance-level-3/0100-arithmetic/0100-arithmetic-test-01.xml/add_lhs_dateAndTime_to_rhs_ymDuration_011": {
-      "status": "FAIL",
-      "reason": "string \u0022-2020-01-01T10:10:10\u002B11:00\u0022 vs \u0022null\u0022"
-    },
-    "compliance-level-3/0100-arithmetic/0100-arithmetic-test-01.xml/add_lhs_dateAndTime_to_rhs_ymDuration_012": {
-      "status": "FAIL",
-      "reason": "string \u0022-2022-12-01T10:10:10\u002B11:00\u0022 vs \u0022null\u0022"
-    },
-    "compliance-level-3/0100-arithmetic/0100-arithmetic-test-01.xml/add_lhs_dateAndTime_to_rhs_ymDuration_013": {
-      "status": "FAIL",
-      "reason": "string \u0022-2022-01-01T10:10:10\u002B11:00\u0022 vs \u0022null\u0022"
-    },
-    "compliance-level-3/0100-arithmetic/0100-arithmetic-test-01.xml/add_lhs_dateAndTime_to_rhs_ymDuration_014": {
-      "status": "FAIL",
-      "reason": "string \u0022-2021-02-01T10:10:10@Australia/Melbourne\u0022 vs \u0022null\u0022"
-    },
-    "compliance-level-3/0100-arithmetic/0100-arithmetic-test-01.xml/add_lhs_dateAndTime_to_rhs_ymDuration_015": {
-      "status": "FAIL",
-      "reason": "string \u0022-2020-01-01T10:10:10@Australia/Melbourne\u0022 vs \u0022null\u0022"
-    },
-    "compliance-level-3/0100-arithmetic/0100-arithmetic-test-01.xml/add_lhs_dateAndTime_to_rhs_ymDuration_016": {
-      "status": "FAIL",
-      "reason": "string \u0022-2022-12-01T10:10:10@Australia/Melbourne\u0022 vs \u0022null\u0022"
-    },
-    "compliance-level-3/0100-arithmetic/0100-arithmetic-test-01.xml/add_lhs_dateAndTime_to_rhs_ymDuration_017": {
-      "status": "FAIL",
-      "reason": "string \u0022-2022-01-01T10:10:10@Australia/Melbourne\u0022 vs \u0022null\u0022"
-    },
-    "compliance-level-3/0100-arithmetic/0100-arithmetic-test-01.xml/add_lhs_ymDuration_to_rhs_dateAndTime_010": {
-      "status": "FAIL",
-      "reason": "string \u0022-2021-02-01T10:10:10\u002B11:00\u0022 vs \u0022null\u0022"
-    },
-    "compliance-level-3/0100-arithmetic/0100-arithmetic-test-01.xml/add_lhs_ymDuration_to_rhs_dateAndTime_011": {
-      "status": "FAIL",
-      "reason": "string \u0022-2020-01-01T10:10:10\u002B11:00\u0022 vs \u0022null\u0022"
-    },
-    "compliance-level-3/0100-arithmetic/0100-arithmetic-test-01.xml/add_lhs_ymDuration_to_rhs_dateAndTime_012": {
-      "status": "FAIL",
-      "reason": "string \u0022-2022-12-01T10:10:10\u002B11:00\u0022 vs \u0022null\u0022"
-    },
-    "compliance-level-3/0100-arithmetic/0100-arithmetic-test-01.xml/add_lhs_ymDuration_to_rhs_dateAndTime_013": {
-      "status": "FAIL",
-      "reason": "string \u0022-2022-01-01T10:10:10\u002B11:00\u0022 vs \u0022null\u0022"
-    },
-    "compliance-level-3/0100-arithmetic/0100-arithmetic-test-01.xml/add_lhs_ymDuration_to_rhs_dateAndTime_014": {
-      "status": "FAIL",
-      "reason": "string \u0022-2021-02-01T10:10:10@Australia/Melbourne\u0022 vs \u0022null\u0022"
-    },
-    "compliance-level-3/0100-arithmetic/0100-arithmetic-test-01.xml/add_lhs_ymDuration_to_rhs_dateAndTime_015": {
-      "status": "FAIL",
-      "reason": "string \u0022-2020-01-01T10:10:10@Australia/Melbourne\u0022 vs \u0022null\u0022"
-    },
-    "compliance-level-3/0100-arithmetic/0100-arithmetic-test-01.xml/add_lhs_ymDuration_to_rhs_dateAndTime_016": {
-      "status": "FAIL",
-      "reason": "string \u0022-2022-12-01T10:10:10@Australia/Melbourne\u0022 vs \u0022null\u0022"
-    },
-    "compliance-level-3/0100-arithmetic/0100-arithmetic-test-01.xml/add_lhs_ymDuration_to_rhs_dateAndTime_017": {
-      "status": "FAIL",
-      "reason": "string \u0022-2022-01-01T10:10:10@Australia/Melbourne\u0022 vs \u0022null\u0022"
-    },
-    "compliance-level-3/0100-arithmetic/0100-arithmetic-test-01.xml/add_lhs_dateAndTime_to_rhs_dtDuration_014": {
-      "status": "FAIL",
-      "reason": "string \u0022-2021-01-01T11:10:10\u002B11:00\u0022 vs \u0022null\u0022"
-    },
-    "compliance-level-3/0100-arithmetic/0100-arithmetic-test-01.xml/add_lhs_dateAndTime_to_rhs_dtDuration_015": {
-      "status": "FAIL",
-      "reason": "string \u0022-2021-01-02T10:10:10\u002B11:00\u0022 vs \u0022null\u0022"
-    },
-    "compliance-level-3/0100-arithmetic/0100-arithmetic-test-01.xml/add_lhs_dateAndTime_to_rhs_dtDuration_016": {
-      "status": "FAIL",
-      "reason": "string \u0022-2021-01-01T09:10:10\u002B11:00\u0022 vs \u0022null\u0022"
-    },
-    "compliance-level-3/0100-arithmetic/0100-arithmetic-test-01.xml/add_lhs_dateAndTime_to_rhs_dtDuration_017": {
-      "status": "FAIL",
-      "reason": "string \u0022-2022-12-31T10:10:10\u002B11:00\u0022 vs \u0022null\u0022"
-    },
-    "compliance-level-3/0100-arithmetic/0100-arithmetic-test-01.xml/add_lhs_dateAndTime_to_rhs_dtDuration_018": {
-      "status": "FAIL",
-      "reason": "string \u0022-2021-01-01T11:10:10@Australia/Melbourne\u0022 vs \u0022null\u0022"
-    },
-    "compliance-level-3/0100-arithmetic/0100-arithmetic-test-01.xml/add_lhs_dateAndTime_to_rhs_dtDuration_019": {
-      "status": "FAIL",
-      "reason": "string \u0022-2021-01-02T10:10:10@Australia/Melbourne\u0022 vs \u0022null\u0022"
-    },
-    "compliance-level-3/0100-arithmetic/0100-arithmetic-test-01.xml/add_lhs_dateAndTime_to_rhs_dtDuration_020": {
-      "status": "FAIL",
-      "reason": "string \u0022-2021-01-01T09:10:10@Australia/Melbourne\u0022 vs \u0022null\u0022"
-    },
-    "compliance-level-3/0100-arithmetic/0100-arithmetic-test-01.xml/add_lhs_dateAndTime_to_rhs_dtDuration_021": {
-      "status": "FAIL",
-      "reason": "string \u0022-2022-12-31T10:10:10@Australia/Melbourne\u0022 vs \u0022null\u0022"
-    },
-    "compliance-level-3/0100-arithmetic/0100-arithmetic-test-01.xml/add_lhs_dtDuration_to_rhs_dateAndTime_014": {
-      "status": "FAIL",
-      "reason": "string \u0022-2021-01-01T11:10:10\u002B11:00\u0022 vs \u0022null\u0022"
-    },
-    "compliance-level-3/0100-arithmetic/0100-arithmetic-test-01.xml/add_lhs_dtDuration_to_rhs_dateAndTime_015": {
-      "status": "FAIL",
-      "reason": "string \u0022-2021-01-02T10:10:10\u002B11:00\u0022 vs \u0022null\u0022"
-    },
-    "compliance-level-3/0100-arithmetic/0100-arithmetic-test-01.xml/add_lhs_dtDuration_to_rhs_dateAndTime_016": {
-      "status": "FAIL",
-      "reason": "string \u0022-2021-01-01T09:10:10\u002B11:00\u0022 vs \u0022null\u0022"
-    },
-    "compliance-level-3/0100-arithmetic/0100-arithmetic-test-01.xml/add_lhs_dtDuration_to_rhs_dateAndTime_017": {
-      "status": "FAIL",
-      "reason": "string \u0022-2022-12-31T10:10:10\u002B11:00\u0022 vs \u0022null\u0022"
-    },
-    "compliance-level-3/0100-arithmetic/0100-arithmetic-test-01.xml/add_lhs_dtDuration_to_rhs_dateAndTime_018": {
-      "status": "FAIL",
-      "reason": "string \u0022-2021-01-01T11:10:10@Australia/Melbourne\u0022 vs \u0022null\u0022"
-    },
-    "compliance-level-3/0100-arithmetic/0100-arithmetic-test-01.xml/add_lhs_dtDuration_to_rhs_dateAndTime_019": {
-      "status": "FAIL",
-      "reason": "string \u0022-2021-01-02T10:10:10@Australia/Melbourne\u0022 vs \u0022null\u0022"
-    },
-    "compliance-level-3/0100-arithmetic/0100-arithmetic-test-01.xml/add_lhs_dtDuration_to_rhs_dateAndTime_020": {
-      "status": "FAIL",
-      "reason": "string \u0022-2021-01-01T09:10:10@Australia/Melbourne\u0022 vs \u0022null\u0022"
-    },
-    "compliance-level-3/0100-arithmetic/0100-arithmetic-test-01.xml/add_lhs_dtDuration_to_rhs_dateAndTime_021": {
-      "status": "FAIL",
-      "reason": "string \u0022-2022-12-31T10:10:10@Australia/Melbourne\u0022 vs \u0022null\u0022"
-    },
-    "compliance-level-3/0100-arithmetic/0100-arithmetic-test-01.xml/subtract_lhs_dateAndTime_minus_rhs_dateAndTime_002": {
-      "status": "FAIL",
-      "reason": "expected an error but a value was returned"
-    },
-    "compliance-level-3/0100-arithmetic/0100-arithmetic-test-01.xml/subtract_lhs_dateAndTime_minus_rhs_dateAndTime_003": {
-      "status": "FAIL",
-      "reason": "expected an error but a value was returned"
-    },
-    "compliance-level-3/0100-arithmetic/0100-arithmetic-test-01.xml/subtract_lhs_dateAndTime_minus_rhs_dateAndTime_004": {
-      "status": "FAIL",
-      "reason": "expected an error but a value was returned"
-    },
-    "compliance-level-3/0100-arithmetic/0100-arithmetic-test-01.xml/subtract_lhs_dateAndTime_minus_rhs_dateAndTime_005": {
-      "status": "FAIL",
-      "reason": "expected an error but a value was returned"
-    },
-    "compliance-level-3/0100-arithmetic/0100-arithmetic-test-01.xml/subtract_lhs_dateAndTime_minus_rhs_dateAndTime_009": {
-      "status": "FAIL",
-      "reason": "expected an error but a value was returned"
-    },
-    "compliance-level-3/0100-arithmetic/0100-arithmetic-test-01.xml/subtract_lhs_dateAndTime_minus_rhs_ymDuration_009": {
-      "status": "FAIL",
-      "reason": "string \u0022-2022-12-01T10:10:10\u002B11:00\u0022 vs \u0022null\u0022"
-    },
-    "compliance-level-3/0100-arithmetic/0100-arithmetic-test-01.xml/subtract_lhs_dateAndTime_minus_rhs_ymDuration_010": {
-      "status": "FAIL",
-      "reason": "string \u0022-2022-01-01T10:10:10\u002B11:00\u0022 vs \u0022null\u0022"
-    },
-    "compliance-level-3/0100-arithmetic/0100-arithmetic-test-01.xml/subtract_lhs_dateAndTime_minus_rhs_ymDuration_011": {
-      "status": "FAIL",
-      "reason": "string \u0022-2021-02-01T10:10:10\u002B11:00\u0022 vs \u0022null\u0022"
-    },
-    "compliance-level-3/0100-arithmetic/0100-arithmetic-test-01.xml/subtract_lhs_dateAndTime_minus_rhs_ymDuration_012": {
-      "status": "FAIL",
-      "reason": "string \u0022-2020-01-01T10:10:10\u002B11:00\u0022 vs \u0022null\u0022"
-    },
-    "compliance-level-3/0100-arithmetic/0100-arithmetic-test-01.xml/subtract_lhs_dateAndTime_minus_rhs_ymDuration_013": {
-      "status": "FAIL",
-      "reason": "string \u0022-2022-12-01T10:10:10@Australia/Melbourne\u0022 vs \u0022null\u0022"
-    },
-    "compliance-level-3/0100-arithmetic/0100-arithmetic-test-01.xml/subtract_lhs_dateAndTime_minus_rhs_ymDuration_014": {
-      "status": "FAIL",
-      "reason": "string \u0022-2022-01-01T10:10:10@Australia/Melbourne\u0022 vs \u0022null\u0022"
-    },
-    "compliance-level-3/0100-arithmetic/0100-arithmetic-test-01.xml/subtract_lhs_dateAndTime_minus_rhs_ymDuration_015": {
-      "status": "FAIL",
-      "reason": "string \u0022-2021-02-01T10:10:10@Australia/Melbourne\u0022 vs \u0022null\u0022"
-    },
-    "compliance-level-3/0100-arithmetic/0100-arithmetic-test-01.xml/subtract_lhs_dateAndTime_minus_rhs_ymDuration_016": {
-      "status": "FAIL",
-      "reason": "string \u0022-2020-01-01T10:10:10@Australia/Melbourne\u0022 vs \u0022null\u0022"
-    },
-    "compliance-level-3/0100-arithmetic/0100-arithmetic-test-01.xml/subtract_lhs_dateAndTime_minus_rhs_date_001": {
-      "status": "FAIL",
-      "reason": "expected an error but a value was returned"
-    },
-    "compliance-level-3/0100-arithmetic/0100-arithmetic-test-01.xml/subtract_lhs_dateAndTime_minus_rhs_dtDuration_010": {
-      "status": "FAIL",
-      "reason": "string \u0022-2021-01-01T09:10:10\u002B11:00\u0022 vs \u0022null\u0022"
-    },
-    "compliance-level-3/0100-arithmetic/0100-arithmetic-test-01.xml/subtract_lhs_dateAndTime_minus_rhs_dtDuration_011": {
-      "status": "FAIL",
-      "reason": "string \u0022-2022-12-31T10:10:10\u002B11:00\u0022 vs \u0022null\u0022"
-    },
-    "compliance-level-3/0100-arithmetic/0100-arithmetic-test-01.xml/subtract_lhs_dateAndTime_minus_rhs_dtDuration_012": {
-      "status": "FAIL",
-      "reason": "string \u0022-2021-01-01T11:10:10\u002B11:00\u0022 vs \u0022null\u0022"
-    },
-    "compliance-level-3/0100-arithmetic/0100-arithmetic-test-01.xml/subtract_lhs_dateAndTime_minus_rhs_dtDuration_013": {
-      "status": "FAIL",
-      "reason": "string \u0022-2021-01-02T10:10:10\u002B11:00\u0022 vs \u0022null\u0022"
-    },
-    "compliance-level-3/0100-arithmetic/0100-arithmetic-test-01.xml/subtract_lhs_dateAndTime_minus_rhs_dtDuration_014": {
-      "status": "FAIL",
-      "reason": "string \u0022-2021-01-01T09:10:10@Australia/Melbourne\u0022 vs \u0022null\u0022"
-    },
-    "compliance-level-3/0100-arithmetic/0100-arithmetic-test-01.xml/subtract_lhs_dateAndTime_minus_rhs_dtDuration_015": {
-      "status": "FAIL",
-      "reason": "string \u0022-2022-12-31T10:10:10@Australia/Melbourne\u0022 vs \u0022null\u0022"
-    },
-    "compliance-level-3/0100-arithmetic/0100-arithmetic-test-01.xml/subtract_lhs_dateAndTime_minus_rhs_dtDuration_016": {
-      "status": "FAIL",
-      "reason": "string \u0022-2021-01-01T11:10:10@Australia/Melbourne\u0022 vs \u0022null\u0022"
-    },
-    "compliance-level-3/0100-arithmetic/0100-arithmetic-test-01.xml/subtract_lhs_dateAndTime_minus_rhs_dtDuration_017": {
-      "status": "FAIL",
-      "reason": "string \u0022-2021-01-02T10:10:10@Australia/Melbourne\u0022 vs \u0022null\u0022"
-    },
-    "compliance-level-3/0100-arithmetic/0100-arithmetic-test-01.xml/subtract_lhs_date_minus_rhs_dateAndTime_001": {
       "status": "FAIL",
       "reason": "expected an error but a value was returned"
     },
@@ -967,130 +771,6 @@
       "reason": "string \u0022\u0022 vs \u0022 \u0022"
     },
     "compliance-level-3/1103-feel-substring-function/1103-feel-substring-function-test-01.xml/011_a559ce6410": {
-      "status": "FAIL",
-      "reason": "expected a value, got null"
-    },
-    "compliance-level-3/1115-feel-date-function/1115-feel-date-function-test-01.xml/013_d7e901ee86": {
-      "status": "FIXTURE-ERROR",
-      "reason": "expected value: String \u0027-2017-12-31\u0027 was not recognized as a valid DateOnly."
-    },
-    "compliance-level-3/1115-feel-date-function/1115-feel-date-function-test-01.xml/014_fad7e00633": {
-      "status": "FIXTURE-ERROR",
-      "reason": "expected value: String \u0027-2017-01-01\u0027 was not recognized as a valid DateOnly."
-    },
-    "compliance-level-3/1115-feel-date-function/1115-feel-date-function-test-01.xml/015_1dd66594cf": {
-      "status": "FAIL",
-      "reason": "string \u0022999999999-12-31\u0022 vs \u0022null\u0022"
-    },
-    "compliance-level-3/1115-feel-date-function/1115-feel-date-function-test-01.xml/016_31f3fef4a0": {
-      "status": "FAIL",
-      "reason": "string \u0022-999999999-12-31\u0022 vs \u0022null\u0022"
-    },
-    "compliance-level-3/1115-feel-date-function/1115-feel-date-function-test-01.xml/027_987c5be372": {
-      "status": "FIXTURE-ERROR",
-      "reason": "expected value: String \u0027-2017-12-31\u0027 was not recognized as a valid DateOnly."
-    },
-    "compliance-level-3/1115-feel-date-function/1115-feel-date-function-test-01.xml/028_35ca79a6cd": {
-      "status": "FIXTURE-ERROR",
-      "reason": "expected value: String \u0027-2017-01-01\u0027 was not recognized as a valid DateOnly."
-    },
-    "compliance-level-3/1115-feel-date-function/1115-feel-date-function-test-01.xml/029_88f5c7c90f": {
-      "status": "FAIL",
-      "reason": "expected a value, got null"
-    },
-    "compliance-level-3/1115-feel-date-function/1115-feel-date-function-test-01.xml/030_9184a7bfc3": {
-      "status": "FAIL",
-      "reason": "expected a value, got null"
-    },
-    "compliance-level-3/1115-feel-date-function/1115-feel-date-function-test-01.xml/050_8f1e299951": {
-      "status": "FAIL",
-      "reason": "expected a value, got null"
-    },
-    "compliance-level-3/1115-feel-date-function/1115-feel-date-function-test-01.xml/051_ad98079864": {
-      "status": "FAIL",
-      "reason": "expected a value, got null"
-    },
-    "compliance-level-3/1115-feel-date-function/1115-feel-date-function-test-01.xml/052_63457d78b7": {
-      "status": "FAIL",
-      "reason": "expected a value, got null"
-    },
-    "compliance-level-3/1117-feel-date-and-time-function/1117-feel-date-and-time-function-test-01.xml/010_59f5b47012": {
-      "status": "FIXTURE-ERROR",
-      "reason": "expected value: Invalid dateTime \u0027-2017-12-31T11:22:33\u0027"
-    },
-    "compliance-level-3/1117-feel-date-and-time-function/1117-feel-date-and-time-function-test-01.xml/011_eec2d5bdcd": {
-      "status": "FAIL",
-      "reason": "string \u002299999-12-31T11:22:33\u0022 vs \u0022null\u0022"
-    },
-    "compliance-level-3/1117-feel-date-and-time-function/1117-feel-date-and-time-function-test-01.xml/012_225a105eef": {
-      "status": "FAIL",
-      "reason": "string \u0022-99999-12-31T11:22:33\u0022 vs \u0022null\u0022"
-    },
-    "compliance-level-3/1117-feel-date-and-time-function/1117-feel-date-and-time-function-test-01.xml/022_b8b20f0328": {
-      "status": "FIXTURE-ERROR",
-      "reason": "expected value: Invalid dateTime \u0027-2017-12-31T11:22:33.456\u002B01:35\u0027"
-    },
-    "compliance-level-3/1117-feel-date-and-time-function/1117-feel-date-and-time-function-test-01.xml/026_5ba081cd5f": {
-      "status": "FAIL",
-      "reason": "string \u00222011-12-31T10:15:30.123456789@Europe/Paris\u0022 vs \u00222011-12-31T10:15:30.1234568@Europe/Paris\u0022"
-    },
-    "compliance-level-3/1117-feel-date-and-time-function/1117-feel-date-and-time-function-test-01.xml/027_ae365197dd": {
-      "status": "FAIL",
-      "reason": "string \u0022999999999-12-31T23:59:59.999999999@Europe/Paris\u0022 vs \u0022null\u0022"
-    },
-    "compliance-level-3/1117-feel-date-and-time-function/1117-feel-date-and-time-function-test-01.xml/028_1c3d56275f": {
-      "status": "FAIL",
-      "reason": "string \u0022-999999999-12-31T23:59:59.999999999\u002B02:00\u0022 vs \u0022null\u0022"
-    },
-    "compliance-level-3/1117-feel-date-and-time-function/1117-feel-date-and-time-function-test-01.xml/033_2fac4d6807": {
-      "status": "FAIL",
-      "reason": "string \u00222017-01-01T23:59:01.123456789@Europe/Paris\u0022 vs \u00222017-01-01T23:59:01.1234568@Europe/Paris\u0022"
-    },
-    "compliance-level-3/1117-feel-date-and-time-function/1117-feel-date-and-time-function-test-01.xml/040_d9116e1daa": {
-      "status": "FAIL",
-      "reason": "string \u00222017-09-05T09:15:30.987654321@Europe/Paris\u0022 vs \u00222017-09-05T09:15:30.9876543@Europe/Paris\u0022"
-    },
-    "compliance-level-3/1117-feel-date-and-time-function/1117-feel-date-and-time-function-test-01.xml/047_60ea7838ce": {
-      "status": "FAIL",
-      "reason": "string \u00222017-09-05T09:15:30.987654321@Europe/Paris\u0022 vs \u00222017-09-05T09:15:30.9876543@Europe/Paris\u0022"
-    },
-    "compliance-level-3/1117-feel-date-and-time-function/1117-feel-date-and-time-function-test-01.xml/054_2561a406fc": {
-      "status": "FAIL",
-      "reason": "string \u00222017-09-05T09:15:30.987654321@Europe/Paris\u0022 vs \u00222017-09-05T09:15:30.9876543@Europe/Paris\u0022"
-    },
-    "compliance-level-3/1117-feel-date-and-time-function/1117-feel-date-and-time-function-test-01.xml/058_588040ceaa": {
-      "status": "FAIL",
-      "reason": "expected an error but a value was returned"
-    },
-    "compliance-level-3/1117-feel-date-and-time-function/1117-feel-date-and-time-function-test-01.xml/066_e9f3d6d2c2": {
-      "status": "FAIL",
-      "reason": "expected an error but a value was returned"
-    },
-    "compliance-level-3/1117-feel-date-and-time-function/1117-feel-date-and-time-function-test-01.xml/067_35fef99b53": {
-      "status": "FAIL",
-      "reason": "expected an error but a value was returned"
-    },
-    "compliance-level-3/1117-feel-date-and-time-function/1117-feel-date-and-time-function-test-01.xml/080_69de952053": {
-      "status": "FAIL",
-      "reason": "expected an error but a value was returned"
-    },
-    "compliance-level-3/1117-feel-date-and-time-function/1117-feel-date-and-time-function-test-01.xml/081_e063215a7c": {
-      "status": "FAIL",
-      "reason": "expected an error but a value was returned"
-    },
-    "compliance-level-3/1117-feel-date-and-time-function/1117-feel-date-and-time-function-test-01.xml/082_5b6ed4e801": {
-      "status": "FAIL",
-      "reason": "expected an error but a value was returned"
-    },
-    "compliance-level-3/1117-feel-date-and-time-function/1117-feel-date-and-time-function-test-01.xml/086_12ca8ac1d3": {
-      "status": "FAIL",
-      "reason": "expected a value, got null"
-    },
-    "compliance-level-3/1117-feel-date-and-time-function/1117-feel-date-and-time-function-test-01.xml/087_e9fd32063a": {
-      "status": "FAIL",
-      "reason": "expected a value, got null"
-    },
-    "compliance-level-3/1117-feel-date-and-time-function/1117-feel-date-and-time-function-test-01.xml/088_1db0287718": {
       "status": "FAIL",
       "reason": "expected a value, got null"
     },

@@ -152,22 +152,21 @@ Captured 2026-11-23 against TCK `a428da2`, engine `2.0.1`.
 | Level | Cases | PASS | FAIL | PARSE-FAIL | NOT-FOUND | BLOCKED | Executed pass rate |
 | --- | ---: | ---: | ---: | ---: | ---: | ---: | ---: |
 | compliance-level-2 | 116 | 116 | 0 | 0 | 0 | 0 | 100.0% |
-| compliance-level-3 | 3,321 | 2,904 | 254 | 30 | 19 | 163 | 92.0% |
-| **Total** | **3,437** | **3,020** | **254** | **30** | **19** | **163** | **92.2%** |
+| compliance-level-3 | 3,321 | 2,984 | 180 | 30 | 19 | 163 | 94.3% |
+| **Total** | **3,437** | **3,100** | **180** | **30** | **19** | **163** | **94.5%** |
 
 `BLOCKED` is `PARSE-FAIL` + `NOT-FOUND` + `UNSUPPORTED` + `FIXTURE-ERROR`.
 3,274 cases reached a decision. Level 2 is fully cleared.
 
 The remaining blockers are now small: 30 import-related parse failures, 82
 cases using a decision logic kind the parser does not read (`context`,
-`invocation`, `relation`, `functionDefinition`, `list`), a handful of
-decision-service input bindings, and 6 values that cannot be represented
-(negative years in `DateOnly`).
+`invocation`, `relation`, `functionDefinition`, `list`), and a handful of
+decision-service input bindings.
 
-Of the cases that did execute, the 254 failures concentrate in timezone
-handling (`0100`), date/time/duration functions (`1115`–`1121`), imports
-(`1159`), ranges (`1156`), `instance of` (`0070`), coercion (`0082`), string
-functions (`matches`) and number functions.
+Of the cases that did execute, the 180 failures concentrate in imports
+(`1159`), range functions (`1156`), custom types in `instance of` (`0070`),
+output coercion (`0082`), years-and-months duration functions (`1121`),
+equality and date/time helper functions.
 
 ## Harness limitations
 
@@ -176,8 +175,8 @@ functions (`matches`) and number functions.
 - Business knowledge models are supported when their body is a literal
   expression. Decision services are not modelled, so those cases are
   `UNSUPPORTED` rather than failing.
-- XSD dates with negative years are not representable in `DateOnly`; those few
-  cases are fixture errors.
+- FEEL expanded years and 9-digit fractional seconds are represented by
+  `FeelExpandedDate`/`FeelExpandedDateTime`.
 - The runner is a local measurement, not a submission. Publishing results on the
   TCK site is a separate PR to `TestResults/<Vendor>/<version>`.
 

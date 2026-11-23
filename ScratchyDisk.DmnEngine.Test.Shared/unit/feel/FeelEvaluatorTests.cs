@@ -887,6 +887,28 @@ namespace ScratchyDisk.DmnEngine.Test.Unit.Feel
         [TestMethod]
         public void EvalForStringRangeIsNull() => Eval("for i in \"a\"..\"z\" return i").Should().BeNull();
 
+        [TestMethod]
+        public void EvalExpandedYearDateArithmetic() =>
+            Eval("string(@\"-2021-01-01\" + @\"P1M\")").Should().Be("-2021-02-01");
+
+        [TestMethod]
+        public void EvalExpandedYearDateTime() =>
+            Eval("string(@\"-2021-01-01T10:10:10\")").Should().Be("-2021-01-01T10:10:10");
+
+        [TestMethod]
+        public void EvalExpandedYearFunction() =>
+            Eval("string(date(999999999, 12, 31))").Should().Be("999999999-12-31");
+
+        [TestMethod]
+        public void EvalZonedDateTimePreservesNineDigitFraction() =>
+            Eval("string(@\"2011-12-31T10:15:30.123456789@Europe/Paris\")")
+                .Should().Be("2011-12-31T10:15:30.123456789@Europe/Paris");
+
+        [TestMethod]
+        public void EvalZonedMinusUnzonedIsNull() =>
+            Eval("@\"2021-01-02T10:10:10@Europe/Paris\" - @\"2021-01-01T10:10:10\"")
+                .Should().BeNull();
+
         // ==================== Duration arithmetic ====================
 
         [TestMethod]

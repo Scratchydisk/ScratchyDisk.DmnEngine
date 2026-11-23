@@ -24,6 +24,13 @@ namespace ScratchyDisk.DmnEngine.Feel.Types
             if (left is FeelDateTime leftZoned) left = leftZoned.Value;
             if (right is FeelDateTime rightZoned) right = rightZoned.Value;
 
+            if (left is FeelExpandedDate leftExpandedDate && right is FeelExpandedDate rightExpandedDate)
+                return leftExpandedDate.ToDayNumber() == rightExpandedDate.ToDayNumber();
+            if (left is FeelExpandedDateTime leftExpanded && right is FeelExpandedDateTime rightExpanded)
+                return leftExpanded.Date.ToDayNumber() == rightExpanded.Date.ToDayNumber()
+                       && leftExpanded.Time == rightExpanded.Time
+                       && leftExpanded.Offset == rightExpanded.Offset;
+
             // Numeric comparison with coercion
             if (IsNumeric(left) && IsNumeric(right))
                 return ToDecimal(left) == ToDecimal(right);
@@ -96,6 +103,14 @@ namespace ScratchyDisk.DmnEngine.Feel.Types
 
             if (left is FeelDateTime leftZoned) left = leftZoned.Value;
             if (right is FeelDateTime rightZoned) right = rightZoned.Value;
+
+            if (left is FeelExpandedDate leftExpandedDate && right is FeelExpandedDate rightExpandedDate)
+                return leftExpandedDate.CompareTo(rightExpandedDate);
+            if (left is FeelExpandedDateTime leftExpanded && right is FeelExpandedDateTime rightExpanded)
+            {
+                var dayComparison = leftExpanded.Date.CompareTo(rightExpanded.Date);
+                return dayComparison != 0 ? dayComparison : leftExpanded.Time.CompareTo(rightExpanded.Time);
+            }
 
             // Numeric comparison
             if (IsNumeric(left) && IsNumeric(right))

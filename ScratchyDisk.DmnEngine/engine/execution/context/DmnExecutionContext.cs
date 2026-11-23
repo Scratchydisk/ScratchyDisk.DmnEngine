@@ -509,6 +509,9 @@ namespace ScratchyDisk.DmnEngine.Engine.Execution.Context
             if (outputType == typeof(object)) return result;
             if (outputType.IsInstanceOfType(result)) return result;
 
+            if (result is FeelExpandedDate || result is FeelExpandedDateTime)
+                return result;
+
             // FEEL date/time values and their CLR counterparts.
             if (result is FeelDateTime zonedDateTime)
             {

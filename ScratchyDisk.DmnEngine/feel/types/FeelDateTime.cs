@@ -16,10 +16,14 @@ namespace ScratchyDisk.DmnEngine.Feel.Types
         /// <summary>The timezone identifier, for example "Europe/Paris".</summary>
         public string ZoneId { get; }
 
-        public FeelDateTime(DateTimeOffset value, string zoneId)
+        /// <summary>Original fractional-second digits (1-9), preserved for string().</summary>
+        public string Fraction { get; }
+
+        public FeelDateTime(DateTimeOffset value, string zoneId, string fraction = null)
         {
             Value = value;
             ZoneId = zoneId;
+            Fraction = fraction;
         }
 
         public bool HasZone => !string.IsNullOrWhiteSpace(ZoneId);
@@ -37,7 +41,9 @@ namespace ScratchyDisk.DmnEngine.Feel.Types
             var text = local.ToString("yyyy-MM-ddTHH:mm:ss", CultureInfo.InvariantCulture);
 
             // DateTimeOffset keeps 7 fractional digits; FEEL prints up to 9.
-            var fraction = local.ToString("fffffff", CultureInfo.InvariantCulture).TrimEnd('0');
+            var fraction = string.IsNullOrEmpty(Fraction)
+                ? local.ToString("fffffff", CultureInfo.InvariantCulture).TrimEnd('0')
+                : Fraction.TrimEnd('0');
             if (fraction.Length > 0) text += "." + fraction;
 
             return HasZone ? $"{text}@{ZoneId}" : text;

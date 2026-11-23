@@ -192,6 +192,30 @@ namespace ScratchyDisk.DmnEngine.Feel.Eval
                     "value" => (decimal)new DateTimeOffset(d.ToDateTime(TimeOnly.MinValue), TimeSpan.Zero).ToUnixTimeSeconds(),
                     _ => null
                 },
+                FeelExpandedDate ed => member switch
+                {
+                    "year" => (decimal)ed.Year,
+                    "month" => (decimal)ed.Month,
+                    "day" => (decimal)ed.Day,
+                    "weekday" => Weekday(ed),
+                    "value" => (decimal)(ed.ToDayNumber() * 86400),
+                    _ => null
+                },
+                FeelExpandedDateTime edt => member switch
+                {
+                    "year" => (decimal)edt.Date.Year,
+                    "month" => (decimal)edt.Date.Month,
+                    "day" => (decimal)edt.Date.Day,
+                    "weekday" => Weekday(edt.Date),
+                    "hour" => (decimal)edt.Time.Hour,
+                    "minute" => (decimal)edt.Time.Minute,
+                    "second" => (decimal)edt.Time.Second,
+                    "offset" => edt.Offset,
+                    "time offset" => edt.Offset,
+                    "timezone" => edt.ZoneId,
+                    "value" => (decimal)((edt.Date.ToDayNumber() * 86400) + edt.Time.Hour * 3600 + edt.Time.Minute * 60 + edt.Time.Second),
+                    _ => null
+                },
                 FeelDateTime zdt => member switch
                 {
                     "timezone" => zdt.ZoneId,
@@ -250,6 +274,13 @@ namespace ScratchyDisk.DmnEngine.Feel.Eval
             return date.DayOfWeek == DayOfWeek.Sunday ? 7m : (decimal)date.DayOfWeek;
         }
 
+        private static decimal Weekday(FeelExpandedDate date)
+        {
+            var day = (int)((date.ToDayNumber() + 4) % 7);
+            if (day < 0) day += 7;
+            return day == 0 ? 7m : day;
+        }
+
         // ==================== Arithmetic ====================
 
         private object EvalBinaryOp(BinaryOp bin)
@@ -277,6 +308,19 @@ namespace ScratchyDisk.DmnEngine.Feel.Eval
 
         private static object EvalAdd(object left, object right)
         {
+            if (left is FeelExpandedDateTime expandedLeft && right is FeelYmDuration ymdLeft)
+                return expandedLeft.Add(ymdLeft);
+            if (left is FeelExpandedDateTime expandedLeft2 && right is TimeSpan tsLeft)
+                return expandedLeft2.Add(tsLeft);
+            if (right is FeelExpandedDateTime expandedRight && left is FeelYmDuration ymdRight)
+                return expandedRight.Add(ymdRight);
+            if (right is FeelExpandedDateTime expandedRight2 && left is TimeSpan tsRight)
+                return expandedRight2.Add(tsRight);
+            if (left is FeelExpandedDate expandedDate && right is FeelYmDuration ymdDate)
+                return expandedDate.AddMonths(ymdDate.TotalMonths);
+            if (left is FeelExpandedDate expandedDate2 && right is TimeSpan tsDate)
+                return expandedDate2.AddDays((int)tsDate.TotalDays);
+
             var zoneId = left is FeelDateTime leftZone ? leftZone.ZoneId
                 : right is FeelDateTime rightZone ? rightZone.ZoneId : null;
             var result = EvalAddCore(
@@ -344,6 +388,24 @@ namespace ScratchyDisk.DmnEngine.Feel.Eval
 
         private static object EvalSub(object left, object right)
         {
+            static bool IsUnzonedDateTime(object value) => value is FeelDateTime dt && dt.ZoneId == "";
+            static bool IsDateTimeValue(object value) =>
+                value is FeelDateTime or FeelExpandedDateTime or DateTimeOffset;
+
+            if (IsUnzonedDateTime(left) && right is DateOnly) return null;
+            if (IsUnzonedDateTime(right) && left is DateOnly) return null;
+            if (IsUnzonedDateTime(left) && IsDateTimeValue(right) && !IsUnzonedDateTime(right)) return null;
+            if (IsUnzonedDateTime(right) && IsDateTimeValue(left) && !IsUnzonedDateTime(left)) return null;
+
+            if (left is FeelExpandedDateTime expandedLeft && right is FeelYmDuration ymdLeft)
+                return expandedLeft.Add(new FeelYmDuration(-ymdLeft.TotalMonths));
+            if (left is FeelExpandedDateTime expandedLeft2 && right is TimeSpan tsLeft)
+                return expandedLeft2.Add(-tsLeft);
+            if (left is FeelExpandedDate expandedDate && right is FeelYmDuration ymdDate)
+                return expandedDate.AddMonths(-ymdDate.TotalMonths);
+            if (left is FeelExpandedDate expandedDate2 && right is TimeSpan tsDate)
+                return expandedDate2.AddDays(-(int)tsDate.TotalDays);
+
             var zoneId = left is FeelDateTime leftZone ? leftZone.ZoneId
                 : right is FeelDateTime rightZone ? rightZone.ZoneId : null;
             var result = EvalSubCore(
@@ -635,9 +697,9 @@ namespace ScratchyDisk.DmnEngine.Feel.Eval
                 "number" => FeelValueComparer.IsNumeric(value),
                 "string" => value is string,
                 "boolean" => value is bool,
-                "date" => value is DateOnly,
+                "date" => value is DateOnly or FeelExpandedDate,
                 "time" => value is FeelTime,
-                "date and time" or "dateandtime" => value is DateTimeOffset or FeelDateTime,
+                "date and time" or "dateandtime" => value is DateTimeOffset or FeelDateTime or FeelExpandedDateTime,
                 "years and months duration" or "yearsandmonthsduration" => value is FeelYmDuration,
                 "days and time duration" or "daysandtimeduration" => value is TimeSpan,
                 "list" => value is List<object>,
@@ -1064,6 +1126,65 @@ namespace ScratchyDisk.DmnEngine.Feel.Eval
             var endOfDay = raw.Contains("T24:00");
             if (endOfDay) raw = raw.Replace("T24:00", "T00:00");
 
+            // Expanded years (outside DateOnly's 0001-9999 range).
+            var expandedDateTime = Regex.Match(raw,
+                @"^(?<y>[+-]?\d{4,})-(?<mo>\d{2})-(?<d>\d{2})T(?<h>\d{2}):(?<mi>\d{2})(?::(?<sec>\d{2})(?:\.(?<f>\d{1,9}))?)?(?:(?<z>Z)|(?<off>[+-]\d{2}:\d{2})|@(?<zone>.+))?$",
+                RegexOptions.None, RegexDefaults.Timeout);
+            if (expandedDateTime.Success)
+            {
+                if (expandedDateTime.Groups["y"].Value.StartsWith("+")) return null;
+                var year = int.Parse(expandedDateTime.Groups["y"].Value, CultureInfo.InvariantCulture);
+                if (Math.Abs((long)year) > 999999999) return null;
+                if (year is < 1 or > 9999)
+                {
+                    var month = int.Parse(expandedDateTime.Groups["mo"].Value, CultureInfo.InvariantCulture);
+                    var day = int.Parse(expandedDateTime.Groups["d"].Value, CultureInfo.InvariantCulture);
+                    var hour = int.Parse(expandedDateTime.Groups["h"].Value, CultureInfo.InvariantCulture);
+                    var minute = int.Parse(expandedDateTime.Groups["mi"].Value, CultureInfo.InvariantCulture);
+                    var second = expandedDateTime.Groups["sec"].Success
+                        ? int.Parse(expandedDateTime.Groups["sec"].Value, CultureInfo.InvariantCulture)
+                        : 0;
+                    var fraction = expandedDateTime.Groups["f"].Success ? expandedDateTime.Groups["f"].Value : null;
+                    var tickFraction = fraction == null ? 0L : long.Parse(fraction.PadRight(7, '0')[..7], CultureInfo.InvariantCulture);
+                    var expandedDateValue = new FeelExpandedDate(year, month, day);
+                    var expandedTimeValue = new TimeOnly(hour, minute, second).Add(TimeSpan.FromTicks(tickFraction));
+
+                    var offset = TimeSpan.Zero;
+                    string zoneId = null;
+                    if (expandedDateTime.Groups["off"].Success)
+                    {
+                        var text = expandedDateTime.Groups["off"].Value;
+                        var sign = text.StartsWith("-") ? -1 : 1;
+                        offset = sign * TimeSpan.Parse(text.TrimStart('+', '-'), CultureInfo.InvariantCulture);
+                    }
+                    else if (expandedDateTime.Groups["zone"].Success)
+                    {
+                        zoneId = expandedDateTime.Groups["zone"].Value;
+                    }
+                    else if (expandedDateTime.Groups["z"].Success)
+                    {
+                        offset = TimeSpan.Zero;
+                    }
+
+                    var expanded = new FeelExpandedDateTime(expandedDateValue, expandedTimeValue, fraction, offset, zoneId,
+                        expandedDateTime.Groups["z"].Success || expandedDateTime.Groups["off"].Success);
+                    if (endOfDay) expanded = expanded.Add(TimeSpan.FromDays(1));
+                    return expanded;
+                }
+            }
+
+            var expandedDate = Regex.Match(raw, @"^(?<y>[+-]?\d{4,})-(?<mo>\d{2})-(?<d>\d{2})$", RegexOptions.None, RegexDefaults.Timeout);
+            if (expandedDate.Success)
+            {
+                if (expandedDate.Groups["y"].Value.StartsWith("+")) return null;
+                var year = int.Parse(expandedDate.Groups["y"].Value, CultureInfo.InvariantCulture);
+                if (Math.Abs((long)year) > 999999999) return null;
+                if (year is < 1 or > 9999)
+                    return new FeelExpandedDate(year,
+                        int.Parse(expandedDate.Groups["mo"].Value, CultureInfo.InvariantCulture),
+                        int.Parse(expandedDate.Groups["d"].Value, CultureInfo.InvariantCulture));
+            }
+
             // Try ISO date: 2024-01-15
             if (DateOnly.TryParseExact(raw, "yyyy-MM-dd", CultureInfo.InvariantCulture, DateTimeStyles.None, out var date))
                 return date;
@@ -1083,12 +1204,19 @@ namespace ScratchyDisk.DmnEngine.Feel.Eval
                 if (zone.IsInvalidTime(local)) return null;
                 var zoned = new DateTimeOffset(local, zone.GetUtcOffset(local));
                 if (endOfDay) zoned = zoned.AddDays(1);
-                return new FeelDateTime(zoned, raw[(at + 1)..]);
+                var fractionMatch = Regex.Match(raw[..at], @"\.(\d{1,9})$", RegexOptions.None, RegexDefaults.Timeout);
+                return new FeelDateTime(zoned, raw[(at + 1)..],
+                    fractionMatch.Success ? fractionMatch.Groups[1].Value : null);
             }
 
-            // Try ISO date-time: 2024-01-15T10:30:00, etc.
+            // Try ISO date-time: 2024-01-15T10:30:00, etc. An unzoned date-time
+            // is marked with an empty zone id so FEEL can reject mixed arithmetic.
             if (DateTimeOffset.TryParse(raw, CultureInfo.InvariantCulture, DateTimeStyles.None, out var dto))
-                return endOfDay ? dto.AddDays(1) : dto;
+            {
+                if (endOfDay) dto = dto.AddDays(1);
+                var hasZone = raw.Contains('@') || raw.EndsWith("Z") || Regex.IsMatch(raw, @"[+-]\d{2}:\d{2}$");
+                return hasZone ? dto : new FeelDateTime(dto, "");
+            }
 
             // Try duration: P1Y2M, P3DT4H, PT1H30M, etc.
             if (TryParseDuration(raw, out var duration))
@@ -1149,7 +1277,8 @@ namespace ScratchyDisk.DmnEngine.Feel.Eval
                 offset = zone.GetUtcOffset(DateTime.Today);
             }
 
-            result = new FeelTime(time, offset, zoneId);
+            result = new FeelTime(time, offset, zoneId,
+                match.Groups[1].Value.Contains('.') ? match.Groups[1].Value.Split('.')[1] : null);
             return true;
         }
 
