@@ -187,7 +187,10 @@ namespace ScratchyDisk.DmnEngine.Engine.Execution.Context
 
             if (Definition.ImportAliases.TryGetValue(name, out var importedName))
                 name = importedName;
-            else if (!Variables.ContainsKey(name))
+
+            // Aliases usually map an import-qualified name onto a variable name;
+            // the target is then subject to the same normalization as a direct name.
+            if (!Variables.ContainsKey(name))
                 name = DmnVariableDefinition.NormalizeVariableName(name);
 
             var variable = Variables?.Values.FirstOrDefault(i => i.IsInputParameter && i.Name == name)
