@@ -469,9 +469,12 @@ namespace ScratchyDisk.DmnEngine.Feel.Parsing
             var paramList = context.formalParameterList();
             var parameters = paramList?.formalParameter().Select(p => p.NAME().GetText()).ToList()
                 ?? new List<string>();
+            var parameterTypes = paramList?.formalParameter()
+                .Select(p => p.feelType()?.GetText())
+                .ToList();
             var isExternal = context.EXTERNAL() != null;
             var body = Visit(context.expression());
-            return new FunctionDefinitionNode(parameters, body, isExternal);
+            return new FunctionDefinitionNode(parameters, body, isExternal, parameterTypes);
         }
 
         // ==================== Collections ====================

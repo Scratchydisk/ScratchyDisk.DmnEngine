@@ -1,4 +1,6 @@
-﻿namespace ScratchyDisk.DmnEngine.Parser.Dto
+﻿using System.Xml.Serialization;
+
+namespace ScratchyDisk.DmnEngine.Parser.Dto
 {
     /// <inheritdoc />
     /// <summary>
@@ -8,9 +10,10 @@
     public class InputData : NamedElement
     {
         /// <summary>
-        /// Variable declaration of the input data (name and optional type).
+        /// <summary>
+        /// Variable that carries the input data value (its typeRef declares the input type).
         /// </summary>
-        [System.Xml.Serialization.XmlElement("variable")]
+        [XmlElement("variable")]
         public Variable Variable { get; set; }
     }
 }

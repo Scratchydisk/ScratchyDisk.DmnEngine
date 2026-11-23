@@ -277,6 +277,56 @@ namespace ScratchyDisk.DmnEngine.Engine.Execution.Context
             return decisionResult;
         }
 
+        /// <summary>
+        /// Invokes a decision service as a function (direct invocation), passing the
+        /// values for its input parameters by name.
+        /// </summary>
+        /// <param name="serviceName">Name of the decision service</param>
+        /// <param name="inputs">Input values keyed by parameter name (missing parameters are null)</param>
+        /// <returns>Decision service output value</returns>
+        /// <exception cref="ArgumentException"><paramref name="serviceName"/> is null or empty</exception>
+        /// <exception cref="DmnExecutorException">Decision service not found</exception>
+        public virtual object ExecuteDecisionService(string serviceName, IReadOnlyDictionary<string, object> inputs = null)
+        {
+            if (string.IsNullOrWhiteSpace(serviceName))
+                throw Logger.Fatal<ArgumentException>($"{nameof(serviceName)} is null or empty");
+
+            var service = Definition.DecisionServices.Values.FirstOrDefault(s =>
+                              string.Equals(s.Name, serviceName, StringComparison.Ordinal))
+                          ?? Definition.DecisionServices.Values.FirstOrDefault(s =>
+                              string.Equals(s.Name, serviceName, StringComparison.OrdinalIgnoreCase))
+                          ?? Definition.DecisionServices.Values.FirstOrDefault(s =>
+                              string.Equals(s.Name, DmnVariableDefinition.NormalizeVariableName(serviceName),
+                                  StringComparison.Ordinal));
+            if (service == null)
+                throw Logger.Fatal<DmnExecutorException>($"ExecuteDecisionService: decision service {serviceName} not found");
+
+            var args = new object[service.ParameterNames.Count];
+            for (var i = 0; i < service.ParameterNames.Count; i++)
+            {
+                args[i] = FindServiceInput(inputs, service.ParameterNames[i]);
+            }
+
+            return CreateDecisionServiceFunction(service).Invoke(args);
+        }
+
+        private static object FindServiceInput(IReadOnlyDictionary<string, object> inputs, string parameterName)
+        {
+            if (inputs == null) return null;
+            if (inputs.TryGetValue(parameterName, out var value)) return value;
+
+            var normalized = DmnVariableDefinition.NormalizeVariableName(parameterName);
+            foreach (var input in inputs)
+            {
+                if (string.Equals(input.Key, parameterName, StringComparison.OrdinalIgnoreCase)
+                    || string.Equals(DmnVariableDefinition.NormalizeVariableName(input.Key), normalized,
+                        StringComparison.Ordinal))
+                    return input.Value;
+            }
+
+            return null;
+        }
+
         internal void UpdateDecisionAlias(IDmnDecision decision, DmnDecisionResult result)
         {
             if (decision == null || !Definition.DecisionAliases.TryGetValue(decision.Name, out var aliasName)) return;
@@ -473,14 +523,31 @@ namespace ScratchyDisk.DmnEngine.Engine.Execution.Context
                     else variable.Value = value;
                 }
 
+                if (service.OutputDecisionNames.Count > 1)
+                {
+                    var outputs = new FeelContext();
+                    foreach (var outputDecisionName in service.OutputDecisionNames)
+                    {
+                        var outputResult = ExecuteDecision(outputDecisionName);
+                        outputs.Put(outputDecisionName, ExtractDecisionValue(outputResult));
+                    }
+
+                    return outputs;
+                }
+
                 var result = ExecuteDecision(service.OutputDecisionName);
-                return ExtractDecisionValue(result);
+                var serviceResult = ExtractDecisionValue(result);
+                if (!string.IsNullOrWhiteSpace(service.OutputTypeName)
+                    && !FeelTypeConformance.TryCoerce(serviceResult, service.OutputTypeName,
+                        Definition.ItemTypeNames, out serviceResult))
+                    return null;
+                return serviceResult;
                 }
                 finally
                 {
                     ProvidedDecisions = previousProvided;
                 }
-            });
+            }, service.ParameterTypes, Definition.ItemTypeNames, true);
         }
 
         /// <summary>
@@ -552,7 +619,16 @@ namespace ScratchyDisk.DmnEngine.Engine.Execution.Context
                     // Boxed bodies (context, relation, list, invocation, decision table or
                     // literal expression) are evaluated against the function scope.
                     var runtime = new DmnBoxedExpressionRuntime(this, child, parameters, null);
-                    return runtime.Evaluate(bkm.Body);
+                    var boxedResult = runtime.Evaluate(bkm.Body);
+
+                    // The body can declare its output type; a non-conforming value is
+                    // the DMN null-coercion result.
+                    if (!string.IsNullOrWhiteSpace(bkm.OutputTypeName)
+                        && !FeelTypeConformance.TryCoerce(boxedResult, bkm.OutputTypeName,
+                            Definition.ItemTypeNames, out boxedResult))
+                        return null;
+
+                    return boxedResult;
                 }
 
                 var scope = BuildFeelScope();
@@ -563,8 +639,16 @@ namespace ScratchyDisk.DmnEngine.Engine.Execution.Context
 
                 var engine = GetFeelEngine();
                 var ast = engine.ParseExpression(bkm.Expression, scope);
-                return engine.Evaluate(ast, child, DmnExpressionLanguage.Resolve(bkm.ExpressionLanguage));
-            });
+                var result = engine.Evaluate(ast, child, DmnExpressionLanguage.Resolve(bkm.ExpressionLanguage));
+
+                // The body can declare its output type; a non-conforming value is
+                // the DMN null-coercion result.
+                if (!string.IsNullOrWhiteSpace(bkm.OutputTypeName)
+                    && !FeelTypeConformance.TryCoerce(result, bkm.OutputTypeName, Definition.ItemTypeNames, out result))
+                    return null;
+
+                return result;
+            }, bkm.ParameterTypes, Definition.ItemTypeNames, true);
         }
 
         /// <summary>
@@ -743,6 +827,43 @@ namespace ScratchyDisk.DmnEngine.Engine.Execution.Context
             }
 
             return resultConverted;
+        }
+
+        /// <summary>
+        /// Applies the declared FEEL type and the expected CLR type to a decision
+        /// result. A value that does not conform to the declared type becomes null
+        /// (the DMN null-coercion result).
+        /// </summary>
+        /// <param name="result">Raw FEEL result</param>
+        /// <param name="outputType">Expected CLR output type, if known</param>
+        /// <param name="declaredTypeName">Declared FEEL type name, if known</param>
+        public virtual object ConvertDecisionResult(object result, Type outputType, string declaredTypeName)
+        {
+            try
+            {
+                if (!string.IsNullOrWhiteSpace(declaredTypeName))
+                {
+                    if (!FeelTypeConformance.TryCoerce(result, declaredTypeName, Definition.ItemTypeNames,
+                            out var conformed))
+                    {
+                        throw Logger.Error<DmnEvaluationException>(
+                            $"Decision result does not conform to the declared type {declaredTypeName}");
+                    }
+
+                    result = conformed;
+                }
+
+                return ConvertResult(result, outputType);
+            }
+            catch (DmnEvaluationException)
+            {
+                throw;
+            }
+            catch (Exception exception)
+            {
+                throw Logger.Fatal<DmnEvaluationException>(
+                    $"Can't convert the expression result to {outputType?.Name ?? "any"}", exception);
+            }
         }
 
         /// <summary>

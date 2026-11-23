@@ -440,6 +440,12 @@ namespace ScratchyDisk.DmnEngine.Engine.Definition
                     .Select(p => p.Name)
                     .Where(p => !string.IsNullOrWhiteSpace(p))
                     .ToList() ?? new List<string>();
+                var parameterTypes = logic.FormalParameters?
+                    .Select(p => string.IsNullOrWhiteSpace(p.TypeRef) ? null : ResolveFeelTypeName(p.TypeRef))
+                    .ToList();
+                var outputTypeName = string.IsNullOrWhiteSpace(logic.Expression?.TypeRef)
+                    ? null
+                    : ResolveFeelTypeName(logic.Expression.TypeRef);
 
                 var bkmDefinition = new DmnBusinessKnowledgeModel(
                     name,
@@ -447,7 +453,9 @@ namespace ScratchyDisk.DmnEngine.Engine.Definition
                     parameters,
                     body,
                     logic.Expression?.Text,
-                    logic.Expression?.Language);
+                    logic.Expression?.Language,
+                    parameterTypes,
+                    outputTypeName);
                 if (SourceModel.ImportAliases?.BkmAliases.TryGetValue(name, out var bkmAliases) == true)
                     bkmDefinition.NameAliases = bkmAliases;
                 BusinessKnowledgeModels[name] = bkmDefinition;
@@ -906,17 +914,35 @@ namespace ScratchyDisk.DmnEngine.Engine.Definition
         private static string BuildContext(ContextExpression context)
         {
             var entries = new List<string>();
-            foreach (var entry in context.Entries ?? Enumerable.Empty<ContextEntry>())
+            var entryList = (context.Entries ?? Enumerable.Empty<ContextEntry>()).ToList();
+            for (var i = 0; i < entryList.Count; i++)
             {
-                var value = BuildEntryValue(entry);
-                if (value == null) continue;
+                var entry = entryList[i];
+                if (entry.Expression == null && entry.Context == null && entry.List == null
+                    && entry.Relation == null && entry.Invocation == null)
+                    continue;
 
                 var key = entry.Variable?.Name;
-                // An entry without a variable name is a result expression: it
-                // is emitted without a key and supplies the value of the context.
-                entries.Add(string.IsNullOrWhiteSpace(key)
-                    ? value
-                    : $"{QuoteFeelString(key)}: {value}");
+                if (string.IsNullOrWhiteSpace(key))
+                {
+                    // A context entry without a variable name is only allowed in
+                    // the last position; its value is the value of the context.
+                    // Keep the preceding entries in scope by evaluating the value
+                    // as a context entry and returning that entry.
+                    if (i == entryList.Count - 1)
+                    {
+                        var resultKey = "_contextResult";
+                        var suffix = 1;
+                        while (entryList.Any(e => string.Equals(e.Variable?.Name, resultKey, StringComparison.Ordinal)))
+                            resultKey = $"_contextResult{suffix++}";
+
+                        entries.Add($"{QuoteFeelString(resultKey)}: {BuildEntryValue(entry)}");
+                        return "{" + string.Join(", ", entries) + "}." + resultKey;
+                    }
+                    continue;
+                }
+
+                entries.Add($"{QuoteFeelString(key)}: {BuildEntryValue(entry)}");
             }
             return "{" + string.Join(", ", entries) + "}";
         }
@@ -1030,6 +1056,13 @@ namespace ScratchyDisk.DmnEngine.Engine.Definition
             variable.AddValueSetter($"Expression Decision {decisionName}");
             CheckAndUpdateVariableType(variable, sourceDecision.OutputVariable.TypeRef);
 
+            // A literal expression or invocation can declare the type of its own
+            // output even when the decision variable does not.
+            var expressionTypeRef = sourceDecision.Expression?.TypeRef
+                                    ?? sourceDecision.Invocation?.TypeRef;
+            if (variable.Type == null && !string.IsNullOrWhiteSpace(expressionTypeRef))
+                CheckAndUpdateVariableType(variable, expressionTypeRef);
+
             //prepare expression
             string expr;
             if (!string.IsNullOrWhiteSpace(expressionText))
@@ -1140,17 +1173,28 @@ namespace ScratchyDisk.DmnEngine.Engine.Definition
             if (variable == null) return;
 
             var parsedType = ParseTypeName(typeName);
+            var feelTypeName = ResolveFeelTypeName(typeName);
             if (variable.Type == null)
             {
                 //set (update)
-                variable.SetRecognizedType(parsedType);
+                variable.SetRecognizedType(parsedType, feelTypeName);
             }
             else
             {
                 //check
                 if (variable.Type != parsedType)
                     throw Logger.Fatal<DmnParserException>($"Types for variable {variable.Name} don't match: {variable.Type} vs. {parsedType}");
+                variable.SetRecognizedTypeName(feelTypeName);
             }
+        }
+
+        /// <summary>
+        /// Resolves a DMN typeRef to its structural FEEL type name.
+        /// </summary>
+        private string ResolveFeelTypeName(string typeRef)
+        {
+            if (string.IsNullOrWhiteSpace(typeRef)) return null;
+            return TypeRefFeelTypeName(typeRef, new HashSet<string>(StringComparer.OrdinalIgnoreCase));
         }
 
 
@@ -1188,12 +1232,17 @@ namespace ScratchyDisk.DmnEngine.Engine.Definition
                 var name = source.Name ?? source.Id;
                 if (string.IsNullOrWhiteSpace(name)) continue;
 
-                var output = ResolveDecisionRef(source.OutputDecision?.Ref);
-                if (output == null) continue;
+                var outputDecisionNames = (source.OutputDecisions ?? Enumerable.Empty<DecisionServiceReference>())
+                    .Select(reference => ResolveDecisionRef(reference?.Ref))
+                    .Where(decisionRef => decisionRef != null)
+                    .Select(decisionRef => decisionRef.Name)
+                    .ToList();
+                if (outputDecisionNames.Count == 0) continue;
 
                 var parameterNames = new List<string>();
                 var parameterVariables = new List<string>();
                 var parameterDecisions = new List<string>();
+                var parameterTypes = new List<string>();
 
                 foreach (var input in source.InputData ?? Enumerable.Empty<DecisionServiceReference>())
                 {
@@ -1202,6 +1251,8 @@ namespace ScratchyDisk.DmnEngine.Engine.Definition
                     {
                         parameterNames.Add(variable.Label);
                         parameterVariables.Add(variable.Name);
+                        var typeRef = SourceModel.InputData?.FirstOrDefault(i => i.Id == id)?.Variable?.TypeRef;
+                        parameterTypes.Add(string.IsNullOrWhiteSpace(typeRef) ? null : ResolveFeelTypeName(typeRef));
                     }
                 }
                 foreach (var input in source.InputDecisions ?? Enumerable.Empty<DecisionServiceReference>())
@@ -1211,11 +1262,42 @@ namespace ScratchyDisk.DmnEngine.Engine.Definition
                     parameterNames.Add(decision.Name);
                     parameterVariables.Add(decision.Name);
                     parameterDecisions.Add(decision.Name);
+
+                    var id = input.Ref?.TrimStart('#');
+                    var typeRef = SourceModel.Decisions?
+                        .FirstOrDefault(d => d.Id == id)?.OutputVariable?.TypeRef;
+                    parameterTypes.Add(string.IsNullOrWhiteSpace(typeRef) ? null : ResolveFeelTypeName(typeRef));
                 }
 
+                var outputTypeName = ResolveDecisionServiceOutputTypeName(source.OutputVariable?.TypeRef);
+
                 DecisionServices[name] = new DmnDecisionService(
-                    name, parameterNames, parameterVariables, output.Name, parameterDecisions);
+                    name, parameterNames, parameterVariables, outputDecisionNames[0], parameterDecisions,
+                    parameterTypes, outputTypeName, outputDecisionNames);
             }
+        }
+
+        /// <summary>
+        /// The output typeRef of a decision service describes the type of the
+        /// service function. A function item type constrains the service result by
+        /// its output type; other typeRefs describe the result directly.
+        /// </summary>
+        private string ResolveDecisionServiceOutputTypeName(string typeRef)
+        {
+            if (string.IsNullOrWhiteSpace(typeRef)) return null;
+
+            var localName = typeRef.Contains('.') ? typeRef[(typeRef.LastIndexOf('.') + 1)..] : typeRef;
+            EnsureItemDefinitionsIndexed();
+            if ((itemDefinitions.TryGetValue(typeRef, out var item)
+                 || itemDefinitions.TryGetValue(localName, out item))
+                && item.FunctionItem != null)
+            {
+                return string.IsNullOrWhiteSpace(item.FunctionItem.OutputTypeRef)
+                    ? null
+                    : ResolveFeelTypeName(item.FunctionItem.OutputTypeRef);
+            }
+
+            return ResolveFeelTypeName(typeRef);
         }
 
         private IDmnDecision ResolveDecisionRef(string reference)
@@ -1265,6 +1347,9 @@ namespace ScratchyDisk.DmnEngine.Engine.Definition
             {
                 if (item.IsCollection)
                     return $"list<{ElementFeelTypeName(item, visiting)}>";
+
+                if (item.FunctionItem != null)
+                    return "function";
 
                 if (item.ItemComponents != null && item.ItemComponents.Count > 0)
                 {
@@ -1350,6 +1435,10 @@ namespace ScratchyDisk.DmnEngine.Engine.Definition
                 if (item.IsCollection)
                 {
                     resolved = typeof(List<object>);
+                }
+                else if (item.FunctionItem != null)
+                {
+                    resolved = typeof(ScratchyDisk.DmnEngine.Feel.Types.FeelFunction);
                 }
                 else if (item.ItemComponents != null && item.ItemComponents.Count > 0)
                 {

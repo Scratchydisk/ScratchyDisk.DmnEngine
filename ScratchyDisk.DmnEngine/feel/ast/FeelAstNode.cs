@@ -273,11 +273,15 @@ namespace ScratchyDisk.DmnEngine.Feel.Ast
     public sealed class FunctionDefinitionNode : FeelAstNode
     {
         public IReadOnlyList<string> Parameters { get; }
+        /// <summary>Declared parameter types (parallel to <see cref="Parameters"/>), null entries mean "any".</summary>
+        public IReadOnlyList<string> ParameterTypes { get; }
         public FeelAstNode Body { get; }
         public bool IsExternal { get; }
-        public FunctionDefinitionNode(IReadOnlyList<string> parameters, FeelAstNode body, bool isExternal = false)
+        public FunctionDefinitionNode(IReadOnlyList<string> parameters, FeelAstNode body, bool isExternal = false,
+            IReadOnlyList<string> parameterTypes = null)
         {
             Parameters = parameters; Body = body; IsExternal = isExternal;
+            ParameterTypes = parameterTypes;
         }
     }
 

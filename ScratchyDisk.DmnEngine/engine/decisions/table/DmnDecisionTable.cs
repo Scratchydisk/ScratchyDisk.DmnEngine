@@ -113,10 +113,16 @@ namespace ScratchyDisk.DmnEngine.Engine.Decisions.Table
                     foreach (var output in Outputs)
                     {
                         var variable = context.GetVariable(output.Variable);
-                        variable.Value = string.IsNullOrWhiteSpace(output.DefaultExpression)
-                            ? null
-                            : context.EvalExpression(output.DefaultExpression,
-                                output.Variable.Type ?? typeof(object), executionId);
+                        if (string.IsNullOrWhiteSpace(output.DefaultExpression))
+                        {
+                            variable.Value = null;
+                        }
+                        else
+                        {
+                            var rawDefault = context.EvalExpression(output.DefaultExpression, null, executionId);
+                            variable.Value = context.ConvertDecisionResult(rawDefault,
+                                output.Variable.Type ?? typeof(object), output.Variable.TypeName);
+                        }
                         defaultResult += variable.Clone();
                     }
                     return new DmnDecisionResult(defaultResult);
@@ -491,7 +497,9 @@ namespace ScratchyDisk.DmnEngine.Engine.Decisions.Table
                         continue;
                     }
 
-                    var result = context.EvalExpression(ruleOutput.Expression, ruleOutput.Output.Variable.Type ?? typeof(object), executionId, ruleOutput.Dialect);
+                    var rawResult = context.EvalExpression(ruleOutput.Expression, null, executionId, ruleOutput.Dialect);
+                    var result = context.ConvertDecisionResult(rawResult,
+                        ruleOutput.Output.Variable.Type ?? typeof(object), ruleOutput.Output.Variable.TypeName);
 
                     // check allowed output values
                     var allowedValues = ruleOutput.Output.AllowedValues;
@@ -544,10 +552,10 @@ namespace ScratchyDisk.DmnEngine.Engine.Decisions.Table
                 }
                 else
                 {
-                    var result = context.EvalExpression(ruleOutput.Expression,
+                    var rawResult = context.EvalExpression(ruleOutput.Expression, null, executionId, ruleOutput.Dialect);
+                    var result = context.ConvertDecisionResult(rawResult,
                         ruleOutput.Output.Variable.Type ?? typeof(object),
-                        executionId,
-                        ruleOutput.Dialect);
+                        ruleOutput.Output.Variable.TypeName);
 
                     // check allowed output values
                     var allowedValues = ruleOutput.Output.AllowedValues;

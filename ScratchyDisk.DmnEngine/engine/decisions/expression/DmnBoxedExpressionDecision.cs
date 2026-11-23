@@ -52,7 +52,7 @@ namespace ScratchyDisk.DmnEngine.Engine.Decisions.Expression
             try
             {
                 result = runtime.Evaluate(Body);
-                result = DmnExecutionContext.ConvertToOutputType(result, Output.Type);
+                result = context.ConvertDecisionResult(result, Output.Type, Output.TypeName);
             }
             catch (DmnEvaluationException)
             {

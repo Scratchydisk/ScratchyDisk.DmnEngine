@@ -34,10 +34,31 @@ namespace ScratchyDisk.DmnEngine.Parser.Dto
         public List<ItemComponent> ItemComponents { get; set; }
 
         /// <summary>
+        /// Function item definition (a function type with formal parameters and an
+        /// optional output type).
+        /// </summary>
+        [XmlElement("functionItem")]
+        public FunctionItemDefinition FunctionItem { get; set; }
+
+        /// <summary>
         /// Referenced type, whichever representation the model uses.
         /// </summary>
         [XmlIgnore]
         public string TypeRef => TypeRefElement ?? TypeRefAttribute;
+    }
+
+    /// <summary>
+    /// A function item type: formal parameter types and an optional output type.
+    /// </summary>
+    public class FunctionItemDefinition
+    {
+        /// <summary>Declared output type of the function.</summary>
+        [XmlAttribute("outputTypeRef")]
+        public string OutputTypeRef { get; set; }
+
+        /// <summary>Formal parameters of the function type.</summary>
+        [XmlElement("formalParameter")]
+        public List<Variable> FormalParameters { get; set; }
     }
 
     /// <summary>

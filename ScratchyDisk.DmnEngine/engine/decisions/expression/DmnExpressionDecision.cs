@@ -63,7 +63,11 @@ namespace ScratchyDisk.DmnEngine.Engine.Decisions.Expression
             if (context == null) throw Logger.FatalCorr<ArgumentNullException>(executionId,$"{nameof(context)} is null");
 
             Logger.InfoCorr(executionId, $"Evaluating expressiong decision {Name} with expression {Expression}...");
-            var result = context.EvalExpression(Expression, Output.Type, executionId, Dialect);
+            // Evaluate the raw FEEL value first so the declared type is enforced
+            // before any CLR conversion (a number must not become "2" for a string
+            // output).
+            var rawResult = context.EvalExpression(Expression, null, executionId, Dialect);
+            var result = context.ConvertDecisionResult(rawResult, Output.Type, Output.TypeName);
             Logger.InfoCorr(executionId, $"Evaluated expressiong decision {Name} with expression {Expression}");
             var outVariable = context.GetVariable(Output);
             outVariable.Value = result;

@@ -14,6 +14,12 @@ namespace ScratchyDisk.DmnEngine.Engine.Definition
         Type Type { get; }
 
         /// <summary>
+        /// Declared FEEL type name of the variable ("number", "list&lt;string&gt;",
+        /// "context&lt;name:string&gt;", ...) or null when the model does not declare one.
+        /// </summary>
+        string TypeName { get; }
+
+        /// <summary>
         /// Flag whether the variable represents the input parameter of the decision model.
         /// Such variable will be read-only
         /// </summary>

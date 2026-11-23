@@ -1,4 +1,5 @@
 ﻿using System.Collections.Generic;
+using System.Linq;
 using System.Xml.Serialization;
 
 namespace ScratchyDisk.DmnEngine.Parser.Dto
@@ -10,7 +11,11 @@ namespace ScratchyDisk.DmnEngine.Parser.Dto
         public Variable OutputVariable { get; set; }
 
         [XmlElement("outputDecision")]
-        public DecisionServiceReference OutputDecision { get; set; }
+        public List<DecisionServiceReference> OutputDecisions { get; set; }
+
+        /// <summary>First output decision (convenience for single-output services).</summary>
+        [XmlIgnore]
+        public DecisionServiceReference OutputDecision => OutputDecisions?.FirstOrDefault();
 
         [XmlElement("encapsulatedDecision")]
         public List<DecisionServiceReference> EncapsulatedDecisions { get; set; }

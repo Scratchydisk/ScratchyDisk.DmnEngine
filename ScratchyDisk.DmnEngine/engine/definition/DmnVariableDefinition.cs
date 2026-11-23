@@ -32,6 +32,12 @@ namespace ScratchyDisk.DmnEngine.Engine.Definition
         public Type Type { get; protected set; }
 
         /// <summary>
+        /// Declared FEEL type name of the variable ("number", "list&lt;string&gt;",
+        /// "context&lt;name:string&gt;", ...) or null when the model does not declare one.
+        /// </summary>
+        public string TypeName { get; protected set; }
+
+        /// <summary>
         /// Flag whether the variable represents the input parameter of the decision model.
         /// Such variable will be read-only
         /// </summary>
@@ -131,12 +137,25 @@ namespace ScratchyDisk.DmnEngine.Engine.Definition
         /// When the type is already defined, the <see cref="InvalidOperationException"/> is thrown
         /// </summary>
         /// <param name="type">New Type of variable</param>
-        public void SetRecognizedType(Type type)
+        /// <param name="typeName">Declared FEEL type name, when known</param>
+        public void SetRecognizedType(Type type, string typeName = null)
         {
             if (Type != null)
                 throw new InvalidOperationException($"The type of variable {Name} can't be set as it's already defined");
 
             Type = type ?? throw new ArgumentNullException(nameof(type));
+            TypeName = typeName;
+        }
+
+        /// <summary>
+        /// Sets the declared FEEL type name when the CLR type was assigned
+        /// without it (the first declaration wins).
+        /// </summary>
+        /// <param name="typeName">Declared FEEL type name</param>
+        public void SetRecognizedTypeName(string typeName)
+        {
+            if (Type == null) throw new InvalidOperationException($"The type of variable {Name} is not defined");
+            if (string.IsNullOrWhiteSpace(TypeName)) TypeName = typeName;
         }
 
 

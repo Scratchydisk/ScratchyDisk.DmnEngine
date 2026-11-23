@@ -226,12 +226,15 @@ public sealed class TckRunner
         if (model.DecisionServiceNames.Contains(result.Name))
             return Node(result, TckStatus.Unsupported, "result is a decision service");
 
+        var isDecisionService = string.Equals(testCase.Type, "decisionService", StringComparison.OrdinalIgnoreCase);
+
         var decisionName = result.Name;
         if (!string.IsNullOrWhiteSpace(result.Namespace)
             && model.Definition.QualifiedDecisionNames.TryGetValue($"{result.Namespace}#{result.Name}", out var qualified))
             decisionName = qualified;
 
-        if (!model.Definition.Decisions.TryGetValue(decisionName, out var decision))
+        IDmnDecision decision = null;
+        if (!isDecisionService && !model.Definition.Decisions.TryGetValue(decisionName, out decision))
         {
             return Node(result, TckStatus.NotFound,
                 $"no decision '{decisionName}' (available: {string.Join(", ", model.Definition.Decisions.Keys)})");
@@ -252,25 +255,56 @@ public sealed class TckRunner
         try
         {
             var context = DmnExecutionContextFactory.CreateExecutionContext(model.Definition);
-            foreach (var input in testCase.Inputs)
-            {
-                object value;
-                try
-                {
-                    value = TckValue.Parse(input.Value);
-                }
-                catch (Exception ex)
-                {
-                    return Node(result, TckStatus.FixtureError, $"input '{input.Name}': {ex.Message}");
-                }
-                var inputKey = string.IsNullOrWhiteSpace(input.Namespace)
-                    ? input.Name
-                    : $"{input.Namespace}#{input.Name}";
-                context.WithInputParameter(inputKey, TckValue.ToEngineValue(value));
-            }
 
-            var actualResult = context.ExecuteDecision(decisionName);
-            actual = Extract(actualResult, result.Name, AlwaysReturnsList(decision));
+            if (isDecisionService)
+            {
+                var serviceInputs = new Dictionary<string, object>(StringComparer.Ordinal);
+                foreach (var input in testCase.Inputs)
+                {
+                    object value;
+                    try
+                    {
+                        value = TckValue.Parse(input.Value);
+                    }
+                    catch (Exception ex)
+                    {
+                        return Node(result, TckStatus.FixtureError, $"input '{input.Name}': {ex.Message}");
+                    }
+                    var inputKey = string.IsNullOrWhiteSpace(input.Namespace)
+                        ? input.Name
+                        : $"{input.Namespace}#{input.Name}";
+                    serviceInputs[inputKey] = TckValue.ToEngineValue(value);
+                }
+
+                actual = context.ExecuteDecisionService(testCase.InvocableName ?? result.Name, serviceInputs);
+
+                // A service with several output decisions returns a context of
+                // their values; the result node names the component it asserts.
+                if (actual is FeelContext serviceOutput && serviceOutput.ContainsKey(result.Name))
+                    actual = serviceOutput[result.Name];
+            }
+            else
+            {
+                foreach (var input in testCase.Inputs)
+                {
+                    object value;
+                    try
+                    {
+                        value = TckValue.Parse(input.Value);
+                    }
+                    catch (Exception ex)
+                    {
+                        return Node(result, TckStatus.FixtureError, $"input '{input.Name}': {ex.Message}");
+                    }
+                    var inputKey = string.IsNullOrWhiteSpace(input.Namespace)
+                        ? input.Name
+                        : $"{input.Namespace}#{input.Name}";
+                    context.WithInputParameter(inputKey, TckValue.ToEngineValue(value));
+                }
+
+                var actualResult = context.ExecuteDecision(decisionName);
+                actual = Extract(actualResult, result.Name, AlwaysReturnsList(decision));
+            }
         }
         catch (Exception ex)
         {

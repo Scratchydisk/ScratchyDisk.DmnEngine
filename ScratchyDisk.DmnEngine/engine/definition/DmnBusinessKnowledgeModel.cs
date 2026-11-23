@@ -19,11 +19,17 @@ namespace ScratchyDisk.DmnEngine.Engine.Definition
         /// <summary>Formal parameter names, in declaration order.</summary>
         public IReadOnlyList<string> ParameterNames { get; }
 
+        /// <summary>Declared FEEL types of the formal parameters, in declaration order.</summary>
+        public IReadOnlyList<string> ParameterTypes { get; }
+
         /// <summary>FEEL expression that forms the function body.</summary>
         public string Expression { get; }
 
         /// <summary>Expression language URI, if present.</summary>
         public string ExpressionLanguage { get; }
+
+        /// <summary>Declared FEEL output type of the function body, if any.</summary>
+        public string OutputTypeName { get; }
 
         /// <summary>
         /// Executable function body. A literal expression body is wrapped as a
@@ -41,11 +47,13 @@ namespace ScratchyDisk.DmnEngine.Engine.Definition
             string label,
             IReadOnlyList<string> parameterNames,
             string expression,
-            string expressionLanguage = null)
+            string expressionLanguage = null,
+            IReadOnlyList<string> parameterTypes = null,
+            string outputTypeName = null)
             : this(name, label, parameterNames,
                 new DmnLiteralBoxedExpression(expression,
                     Parser.DmnExpressionLanguage.Resolve(expressionLanguage)),
-                expression, expressionLanguage)
+                expression, expressionLanguage, parameterTypes, outputTypeName)
         {
         }
 
@@ -55,14 +63,18 @@ namespace ScratchyDisk.DmnEngine.Engine.Definition
             IReadOnlyList<string> parameterNames,
             DmnBoxedExpression body,
             string expression = null,
-            string expressionLanguage = null)
+            string expressionLanguage = null,
+            IReadOnlyList<string> parameterTypes = null,
+            string outputTypeName = null)
         {
             Name = name;
             Label = label;
             ParameterNames = parameterNames ?? new List<string>();
+            ParameterTypes = parameterTypes;
             Body = body;
             Expression = expression ?? (body as DmnLiteralBoxedExpression)?.Text;
             ExpressionLanguage = expressionLanguage;
+            OutputTypeName = outputTypeName;
         }
     }
 }

@@ -72,6 +72,10 @@ namespace ScratchyDisk.DmnEngine.Parser.Dto
     /// <summary>Boxed invocation expression.</summary>
     public class InvocationExpression : IdedElement
     {
+        /// <summary>Optional data type of the invocation result.</summary>
+        [XmlAttribute("typeRef")]
+        public string TypeRef { get; set; }
+
         [XmlElement("literalExpression")]
         public Expression Function { get; set; }
 

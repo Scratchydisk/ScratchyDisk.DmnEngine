@@ -1095,6 +1095,7 @@ namespace ScratchyDisk.DmnEngine.Feel.Eval
             // Capture the current scope for closure
             var closureScope = context;
             var closureResolver = functionResolver;
+            var typeAliases = context.TypeAliases;
 
             return new FeelFunction(
                 "anonymous",
@@ -1108,7 +1109,10 @@ namespace ScratchyDisk.DmnEngine.Feel.Eval
                     }
                     var childEval = new FeelEvaluator(childScope, closureResolver);
                     return childEval.Evaluate(fd.Body);
-                });
+                },
+                fd.ParameterTypes,
+                typeAliases,
+                true);
         }
 
         // Common CLR type aliases for static method resolution (C# compat)

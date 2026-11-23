@@ -71,6 +71,8 @@ public static class TestSuiteReader
             testFile.Cases.Add(new TckTestCase
             {
                 Id = (string)testCase.Attribute("id") ?? "",
+                Type = (string)testCase.Attribute("type"),
+                InvocableName = (string)testCase.Attribute("invocableName"),
                 Description = Child(testCase, "description")?.Value,
                 Inputs = Children(testCase, "inputNode")
                     .Select(i => new TckInput((string)i.Attribute("name"), (string)i.Attribute("namespace"), i))
@@ -117,6 +119,13 @@ public sealed class TckTestFile
 public sealed class TckTestCase
 {
     public string Id { get; init; }
+
+    /// <summary>Test case type from the TCK XML ("decision" or "decisionService").</summary>
+    public string Type { get; init; }
+
+    /// <summary>Name of the invocable for direct decision-service invocation.</summary>
+    public string InvocableName { get; init; }
+
     public string Description { get; init; }
     public IReadOnlyList<TckInput> Inputs { get; init; } = Array.Empty<TckInput>();
     public IReadOnlyList<TckResult> Results { get; init; } = Array.Empty<TckResult>();
