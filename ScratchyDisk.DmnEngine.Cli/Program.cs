@@ -751,7 +751,7 @@ static void PrintUsage()
     Console.WriteLine("  -c, --csv <file.csv>          CSV file with input parameters");
     Console.WriteLine("  -t, --template <file.csv>     Generate a template CSV from the DMN inputs");
     Console.WriteLine("  -d, --decision <name>         Decision to execute (default: auto-detect root)");
-    Console.WriteLine("  -v, --version <ver>           Override DMN version (1.1, 1.3, 1.3ext, 1.4, 1.5)");
+    Console.WriteLine("  -v, --version <ver>           Override DMN version (1.1, 1.3, 1.3ext, 1.4, 1.5, 1.6)");
     Console.WriteLine("  -h, --help                    Show this help");
     Console.WriteLine();
     Console.WriteLine("Supported types: string, integer, long, double, number, boolean, date");

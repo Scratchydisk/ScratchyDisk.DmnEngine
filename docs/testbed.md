@@ -144,7 +144,7 @@ When testing a DRD in Full DRD mode, results are grouped by decision, showing wh
 ### Execution Trace
 
 Expand the **Execution trace** accordion to see a step-by-step breakdown:
-- Each step shows the decision name and type (table/expression)
+- Each step shows the decision name and type (table, expression or boxed logic)
 - Hit rules for that step
 - Variable changes — which variables were set or modified
 

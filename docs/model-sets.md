@@ -131,8 +131,10 @@ For each `<import>` of a model in the set:
   model in the set. Versioned model sets should use separate folders.
 - Imported models are flattened into the root definition; their names are
   internal implementation details.
-- Unsupported DMN constructs (decision services, `context`/`invocation`/
-  `relation`/`list` decision logic) remain unsupported after import.
+- Imported models may use any decision logic the engine supports (expression,
+  decision table, context, relation, list, invocation, conditional, iteration,
+  filter, business knowledge models, decision services); imports change names,
+  not capabilities.
 - The set indexes metadata at load; parsing happens on demand. Large folders
   are best split by domain or loaded with a narrower directory.
 

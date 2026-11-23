@@ -4,11 +4,11 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## Project Overview
 
-ScratchyDisk.DmnEngine is a .NET rule engine that executes decisions defined in DMN (Decision Model and Notation) models. It evaluates decision tables and expression decisions from OMG-standard DMN XML files (versions 1.1, 1.3, 1.3ext, 1.4, 1.5) or programmatically built definitions. Expressions are evaluated using a full FEEL (Friendly Enough Expression Language) evaluator built with ANTLR4.
+ScratchyDisk.DmnEngine is a .NET rule engine that executes decisions defined in DMN (Decision Model and Notation) models. It evaluates decision tables, expression decisions, boxed expressions (contexts, relations, lists, invocations, iterations, nested tables), business knowledge models and decision services from OMG-standard DMN XML files (versions 1.1, 1.3, 1.3ext, 1.4, 1.5, 1.6) or programmatically built definitions. Expressions are evaluated using a full FEEL (Friendly Enough Expression Language) evaluator built with ANTLR4.
 
 **NuGet package:** `ScratchyDisk.DmnEngine`
 **Target framework:** .NET 10.0
-**Current version:** 2.0.0
+**Current version:** 2.0.1
 
 ## Build and Test Commands
 
@@ -24,6 +24,10 @@ dotnet test ScratchyDisk.DmnEngine.Tests/ScratchyDisk.DmnEngine.Tests.csproj --f
 
 # Run a single test class
 dotnet test ScratchyDisk.DmnEngine.Tests/ScratchyDisk.DmnEngine.Tests.csproj --filter "FullyQualifiedName~SfeelExpressionsTests"
+
+# Run the OMG DMN TCK against the committed baseline
+./scripts/fetch-tck.sh   # one-off: fetch the pinned TCK snapshot into artifacts/tck
+dotnet run --project ScratchyDisk.DmnEngine.Tck -- --tck artifacts/tck/TestCases --baseline docs/tck-baseline.json
 ```
 
 ## Solution Structure
@@ -32,7 +36,8 @@ dotnet test ScratchyDisk.DmnEngine.Tests/ScratchyDisk.DmnEngine.Tests.csproj --f
 - **ScratchyDisk.DmnEngine.Tests/** - Consolidated test project (.NET 10.0)
 - **ScratchyDisk.DmnEngine.Test.Shared/** - Shared test code (linked into test project)
 - **ScratchyDisk.DmnEngine.Testbed/** - Web-based test lab (ASP.NET Core + Nuxt SPA). See [docs/testbed.md](docs/testbed.md).
-- **ScratchyDisk.DmnEngine.Cli/** - Command-line DMN runner
+- **ScratchyDisk.DmnEngine.Cli/** - Command-line DMN runner (`dmnrunner`)
+- **ScratchyDisk.DmnEngine.Tck/** - OMG DMN TCK conformance runner and baseline reporter
 - **build/** and **build.tasks/** - Custom MSBuild process (safe to ignore for development)
 
 ## Architecture
@@ -45,10 +50,10 @@ DMN XML ──DmnParser──▶ DmnModel ──DmnDefinitionFactory──▶ Dm
 Code ──DmnDefinitionBuilder──▶ DmnDefinition ──────────────────────────────────────────────────────────────────┘
 ```
 
-1. **Parsing** (`parser/`): `DmnParser` deserializes DMN XML (v1.1, 1.3, 1.3ext, 1.4, 1.5) into `DmnModel` DTOs. Supports auto-detection of DMN version from XML namespace.
-2. **Definition** (`engine/definition/`): `DmnDefinitionFactory` transforms `DmnModel` into `DmnDefinition` — validation, variable type resolution, and dependency tree construction. Definitions are "virtually immutable" (exposed via read-only interfaces).
+1. **Parsing** (`parser/`): `DmnParser` deserializes DMN XML (v1.1, 1.3, 1.3ext, 1.4, 1.5, 1.6) into `DmnModel` DTOs. Supports auto-detection of DMN version from XML namespace.
+2. **Definition** (`engine/definition/`): `DmnDefinitionFactory` transforms `DmnModel` into `DmnDefinition` — validation, variable type resolution, declared FEEL type conformance, and dependency tree construction. `ModelImportResolver` flattens imported models into the root definition, and `DmnModelSet` indexes a folder of models by namespace. Definitions are "virtually immutable" (exposed via read-only interfaces).
 3. **Builder** (`engine/definition/builder/`): `DmnDefinitionBuilder` provides a fluent API to create `DmnDefinition` programmatically without XML.
-4. **Decisions** (`engine/decisions/`): Two types — `DmnExpressionDecision` (single expression → output) and `DmnDecisionTable` (rules with inputs, outputs, hit policies).
+4. **Decisions** (`engine/decisions/`): Three types — `DmnExpressionDecision` (single expression → output), `DmnDecisionTable` (rules with inputs, outputs, hit policies) and `DmnBoxedExpressionDecision` (context, relation, list, invocation, conditional, iteration, filter, nested function or nested table body, built by `DmnBoxedExpressionBuilder` into a `DmnBoxedExpression` tree). Business knowledge models and decision services are callable FEEL functions over decisions.
 5. **Execution** (`engine/execution/`): `DmnExecutionContext` manages variables, resolves decision dependencies recursively, evaluates expressions via the FEEL evaluator, and returns `DmnDecisionResult`. Decision table input entries use `ParseSimpleUnaryTests` first, with an automatic fallback to `ParseExpression` (full FEEL grammar) for compatibility with Camunda-style expressions that use `or`/`and` operators.
 
 ### FEEL Evaluator Pipeline
@@ -72,7 +77,7 @@ FEEL expression string
   - `FeelEvaluationContext` — variable scope chain with nested context support
   - `FeelEvaluator` — tree-walking interpreter with FEEL three-valued logic and null propagation
 - **Functions** (`feel/functions/`): `FeelBuiltInFunctions` — ~80 built-in FEEL functions (string, numeric, list, date/time, context, range, boolean, conversion)
-- **Types** (`feel/types/`): `FeelTime`, `FeelYmDuration`, `FeelRange`, `FeelContext`, `FeelFunction`, `FeelTypeCoercion`, `FeelValueComparer`
+- **Types** (`feel/types/`): `FeelTime`, `FeelYmDuration`, `FeelRange`, `FeelContext`, `FeelFunction`, `FeelTypeCoercion`, `FeelTypeConformance`, `FeelValueComparer`
 - **Facade** (`feel/FeelEngine.cs`): Public API — `EvaluateExpression()`, `EvaluateSimpleUnaryTests()`, `ParseExpression()`, `ParseSimpleUnaryTests()`
 
 ### FEEL Type Mappings

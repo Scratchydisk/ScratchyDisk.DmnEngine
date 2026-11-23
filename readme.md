@@ -1,6 +1,6 @@
 # ScratchyDisk.DmnEngine
 
-A .NET rule engine that executes decisions defined in [DMN (Decision Model and Notation)](https://www.omg.org/spec/DMN/) models. It evaluates decision tables and expression decisions from OMG-standard DMN XML files (versions 1.1, 1.3, 1.3ext, 1.4, 1.5 and 1.6), or from definitions built programmatically using a fluent API. Expressions are evaluated using a full [FEEL](https://www.omg.org/spec/DMN/) (Friendly Enough Expression Language) interpreter built on ANTLR4.
+A .NET rule engine that executes decisions defined in [DMN (Decision Model and Notation)](https://www.omg.org/spec/DMN/) models. It evaluates decision tables, expression decisions, boxed expressions, business knowledge models and decision services from OMG-standard DMN XML files (versions 1.1, 1.3, 1.3ext, 1.4, 1.5 and 1.6), or from definitions built programmatically using a fluent API. Expressions are evaluated using a full [FEEL](https://www.omg.org/spec/DMN/) (Friendly Enough Expression Language) interpreter built on ANTLR4.
 
 **NuGet package ID:** `ScratchyDisk.DmnEngine`
 **Target framework:** .NET 10.0
@@ -16,31 +16,41 @@ See the latest changes in the [changelog](changelog.md).
 - **DMN 1.6 error handling** — lenient diagnostics by default, with an opt-in strict mode
 - **Decision tables** with all standard hit policies (Unique, First, Priority, Any, Collect, RuleOrder, OutputOrder)
 - **Expression decisions** — single FEEL expression producing an output
+- **Boxed decision logic** — decision and business knowledge model bodies may be a context, relation, list, invocation, conditional, `for`, `some`, `every`, filter, nested function definition or nested decision table
+- **Business knowledge models and decision services** — reusable FEEL functions and multi-output services, invokable from expressions by position or by name
+- **DMN imports and model sets** — `DmnModelSet` indexes a folder by namespace so imports resolve across files
+- **Declared type conformance** — decision, table, business knowledge model and decision service results are checked against their declared FEEL types; non-conforming results are DMN errors, not silent coercions
+- **FEEL functions as values** — functions can be returned, passed as arguments and invoked again (curried lambdas)
 - **Decision requirement graphs (DRDs)** — complex models with dependent decisions resolved automatically
 - **Fluent builder API** — create decision definitions programmatically without XML
 - **CLR interop** — call .NET instance and static methods from FEEL expressions for backward compatibility
 - **Expression caching** — parsed AST nodes cached at configurable scope (Execution, Context, Definition, Global)
 - **Thread-safe definitions** — definitions are immutable after creation, safe for concurrent execution contexts
 - **Web-based testbed** — interactive test lab with regression test suite management
-- **CLI tool** — `dmnrunner` for batch execution and CI integration
+- **CLI tool** — `dmnrunner` for smoke-testing DMN files from the command line or CSV inputs
 
 ## DMN and FEEL support
 
 | Area | Status |
 |---|---|
-| DMN 1.1, 1.3, 1.3ext, 1.4, 1.5 | Supported |
-| DMN 1.6 model namespace and parsing | Supported |
+| DMN 1.1, 1.3, 1.3ext, 1.4, 1.5, 1.6 model namespaces and parsing | Supported, with auto-detection |
 | FEEL 1.6 descendant expressions, `.value`, rounding overloads, zoned date-time, numeric literals, decimal-to-integer conversion | Supported |
 | DMN 1.6 lenient/strict error handling | Supported |
 | FEEL 1.5 gap closure (list replace, range, overlaps before/after, temporal and range properties, IANA timezones) | Supported |
+| Business knowledge models and decision services | Supported, including direct invocation |
+| Boxed decision logic (context, relation, list, invocation, conditional, `for`, `some`, `every`, filter, function definitions, nested decision tables) | Supported |
+| DMN imports and multi-model folders (`DmnModelSet`) | Supported |
+| Declared FEEL type conformance at decision, parameter and result boundaries | Supported |
+| OMG DMN TCK (pinned snapshot, committed baseline) | 3,419 of 3,437 cases; remaining 18 need external Java classes |
 | B-FEEL dialect | Detection and fail-fast only; full chapter 11 semantics deferred |
 | ONNX external functions | Deferred (optional for Level 3 conformance) |
 
 Canonical references:
 
-- [DMN 1.6 specification](https://www.omg.org/spec/DMN/1.6/PDF) (`formal/25-12-02`)
+- [DMN 1.6 specification](https://www.omg.org/spec/DMN/1.6) (`formal/25-12-02`)
 - [DMN 1.6 XSD](https://www.omg.org/spec/DMN/20240513/DMN16.xsd)
-- [DMN 1.5 specification](https://www.omg.org/spec/DMN/1.5/PDF)
+- [DMN 1.5 specification](https://www.omg.org/spec/DMN/1.5)
+- [DMN 1.4 specification](https://www.omg.org/spec/DMN/1.4)
 - [B-FEEL language URI](https://www.omg.org/spec/DMN/20240513/B-FEEL/)
 - [Conformance test policy](docs/conformance-test-policy.md)
 
@@ -59,12 +69,24 @@ Every conformance test records its canonical source in its name or metadata, for
 
 The canonical sources are:
 
-- [DMN 1.6 specification](https://www.omg.org/spec/DMN/1.6/PDF) (`formal/25-12-02`)
+- [DMN 1.6 specification](https://www.omg.org/spec/DMN/1.6) (`formal/25-12-02`)
 - [DMN 1.6 XSD](https://www.omg.org/spec/DMN/20240513/DMN16.xsd)
-- [DMN 1.5 specification](https://www.omg.org/spec/DMN/1.5/PDF)
+- [DMN 1.5 specification](https://www.omg.org/spec/DMN/1.5)
+- [DMN 1.4 specification](https://www.omg.org/spec/DMN/1.4)
 - [B-FEEL language URI](https://www.omg.org/spec/DMN/20240513/B-FEEL/)
 
 The full policy and required evidence are in [docs/conformance-test-policy.md](docs/conformance-test-policy.md). CI runs the DMN 1.5/1.6 conformance subset and then the full regression suite via `.github/workflows/conformance.yml`.
+
+### OMG DMN TCK
+
+The [OMG DMN Technology Compatibility Kit](https://github.com/dmn-tck/tck) is the external conformance measure. The repository carries a local runner (`ScratchyDisk.DmnEngine.Tck`) and a committed ratchet baseline:
+
+```bash
+./scripts/fetch-tck.sh
+dotnet run --project ScratchyDisk.DmnEngine.Tck -- --tck artifacts/tck/TestCases --baseline docs/tck-baseline.json
+```
+
+The current result is 3,419 of 3,437 cases, with level 2 fully cleared. Every case that reaches a decision produces the expected value or the expected error; the 18 remaining cases invoke Java classes shipped with the TCK and cannot run on .NET, so they are reported as unsupported rather than passed. See [docs/tck.md](docs/tck.md) for the result vocabulary, comparison rules and baseline workflow.
 
 ## Quick Start
 
@@ -75,12 +97,22 @@ ctx.WithInputParameter("input name", inputValue);
 var result = ctx.ExecuteDecision("decision name");
 ```
 
+For a folder of DMN files with namespace-resolved imports, use a model set:
+
+```csharp
+var models = DmnModelSet.LoadDirectory("models");
+var def = models.CreateDefinition("https://example.org/orders");
+```
+
+See [Model sets and metadata-driven loading](docs/model-sets.md) for folder conventions, import behaviour and the full API.
+
 ![DMN engine blocks](docs/img/blocks.png)
 
 ## Tools
 
 - **[DMN Testbed](docs/testbed.md)** — A web-based test lab for interactively executing decisions, testing full DRD trees, and managing regression test suites. Start it with `dotnet run --project ScratchyDisk.DmnEngine.Testbed -- --dmn-dir=/path/to/dmn/files` and open `http://localhost:5000`.
-- **[CLI Tool](docs/cli-tool.md)** — `dmnrunner` command-line tool for batch execution and CI integration.
+- **[CLI Tool](ScratchyDisk.DmnEngine.Cli/README.md)** — `dmnrunner` for smoke-testing DMN files from the command line or CSV inputs.
+- **[TCK Runner](docs/tck.md)** — `ScratchyDisk.DmnEngine.Tck` runs the OMG DMN TCK and compares results against the committed baseline.
 
 ## Architecture
 
@@ -93,9 +125,9 @@ Code --> DmnDefinitionBuilder --> DmnDefinition --------------------------------
 ```
 
 1. **Parsing** (`parser/`): `DmnParser` deserialises DMN XML (v1.1, 1.3, 1.3ext, 1.4, 1.5, 1.6) into `DmnModel` DTOs. Supports auto-detection of DMN version from the XML namespace.
-2. **Definition** (`engine/definition/`): `DmnDefinitionFactory` transforms `DmnModel` into `DmnDefinition` — validation, variable type resolution, and dependency tree construction. Definitions are "virtually immutable" (exposed via read-only interfaces).
+2. **Definition** (`engine/definition/`): `DmnDefinitionFactory` transforms `DmnModel` into `DmnDefinition` — validation, variable type resolution, declared-type conformance, and dependency tree construction. `ModelImportResolver` flattens imported models, and `DmnModelSet` indexes a folder of models by namespace so imports resolve without hard-coded paths. Definitions are "virtually immutable" (exposed via read-only interfaces).
 3. **Builder** (`engine/definition/builder/`): `DmnDefinitionBuilder` provides a fluent API to create `DmnDefinition` programmatically without XML.
-4. **Decisions** (`engine/decisions/`): Two types — `DmnExpressionDecision` (single expression to output) and `DmnDecisionTable` (rules with inputs, outputs, hit policies).
+4. **Decisions** (`engine/decisions/`): Three types — `DmnExpressionDecision` (single expression to output), `DmnDecisionTable` (rules with inputs, outputs, hit policies) and `DmnBoxedExpressionDecision` (a context, relation, list, invocation, conditional, iteration or nested table body). Business knowledge models and decision services are executable FEEL functions over these decisions.
 5. **Execution** (`engine/execution/`): `DmnExecutionContext` manages variables, resolves decision dependencies recursively, evaluates expressions via the FEEL evaluator, and returns `DmnDecisionResult`.
 
 ### FEEL Evaluator Pipeline
@@ -157,11 +189,14 @@ Unique, First, Priority, Any, Collect (with aggregations: List, Sum, Min, Max, C
 # Build the solution
 dotnet build ScratchyDisk.DmnEngine.sln
 
-# Run all tests (4,100+)
+# Run all tests (4,400+)
 dotnet test ScratchyDisk.DmnEngine.Tests/ScratchyDisk.DmnEngine.Tests.csproj
 
 # Run a single test by name
 dotnet test ScratchyDisk.DmnEngine.Tests/ScratchyDisk.DmnEngine.Tests.csproj --filter "FullyQualifiedName~TestMethodName"
+
+# Run the OMG DMN TCK against the committed baseline
+dotnet run --project ScratchyDisk.DmnEngine.Tck -- --tck artifacts/tck/TestCases --baseline docs/tck-baseline.json
 ```
 
 Tests are implemented using [MSTest](https://github.com/microsoft/testfx) with [FluentAssertions](https://fluentassertions.com/). The test code is in a shared project linked into the consolidated test project `ScratchyDisk.DmnEngine.Tests` targeting .NET 10.0.
@@ -204,17 +239,13 @@ npm run generate
 
 | Document | Description |
 |----------|-------------|
-| [Decision Model](docs/decision-model.md) | Parsing DMN XML, DmnDefinitionBuilder, inputs, decisions, dependency tree |
-| [Variables](docs/variables.md) | Variable names, types, normalisation, complex objects |
-| [Expressions](docs/expressions.md) | FEEL expressions, simple unary tests, built-in functions |
-| [Expression Decisions](docs/expression-decisions.md) | Expression decisions in XML and via builder |
-| [Decision Tables](docs/decision-tables.md) | Inputs, outputs, rules, SFeel helper, allowed values, hit policies |
-| [Decision Results](docs/decision-results.md) | Working with DmnDecisionResult |
-| [Extensions](docs/extensions.md) | Definition extensions and diagram extensions |
-| [Advanced Execution](docs/advanced-execution.md) | Execution context options, snapshots, expression cache |
-| [CLI Tool](docs/cli-tool.md) | dmnrunner command-line tool for testing DMN files |
+| [Model sets](docs/model-sets.md) | Loading a folder of models by namespace, import resolution, metadata rules |
+| [DMN TCK baseline](docs/tck.md) | Conformance runner, result vocabulary, comparison rules, ratchet workflow |
+| [Conformance test policy](docs/conformance-test-policy.md) | Test-first rule, canonical sources, citation and traceability requirements |
 | [Testbed](docs/testbed.md) | Web-based test lab for DMN files |
+| [CSV batch testing](docs/csv-batch-testing.md) | Batch API, CSV format, Katalon integration, import/export |
+| [CLI Tool](ScratchyDisk.DmnEngine.Cli/README.md) | dmnrunner command-line tool for testing DMN files |
 
 ## Acknowledgements
 
-This project originated as a fork of [Common.DMN.Engine](https://github.com/adamecr/Common.DMN.Engine) (v1.1.1) by Radek Adamec. The v2.0 release replaced the expression evaluation engine entirely (DynamicExpresso with a custom ANTLR4-based FEEL interpreter), added DMN 1.4/1.5 support, introduced FEEL-native types, a web-based testbed, a CLI tool, and 4,100+ tests. See the [changelog](changelog.md) for the full list of changes.
+This project originated as a fork of [Common.DMN.Engine](https://github.com/adamecr/Common.DMN.Engine) (v1.1.1) by Radek Adamec. The v2.0 release replaced the expression evaluation engine entirely (DynamicExpresso with a custom ANTLR4-based FEEL interpreter), added DMN 1.4/1.5 support, introduced FEEL-native types, a web-based testbed, a CLI tool, and 4,400+ tests. See the [changelog](changelog.md) for the full list of changes.

@@ -1,3 +1,11 @@
+> **Archived documentation.** This is the v1.x readme of the upstream
+> [Common.DMN.Engine](https://github.com/adamecr/Common.DMN.Engine) project that
+> this repository forked. It is kept for historical reference only. Its relative
+> links point at files that existed in the upstream v1 repository and do not
+> resolve here, and its feature list (DynamicExpresso expressions, DMN 1.1-1.5)
+> no longer describes this engine. For the current documentation see
+> [readme.md](readme.md) and [docs/](docs/).
+
 # DMN Engine #
 DMN Engine is a rule engine allowing to execute and evaluate the decisions defined in a DMN  model. Its primary target is to evaluate the decision tables that transform the inputs into the output(s) using the decision rules. Simple expression decisions are also supported as well as the complex decision models containing set of dependent decisions (tables or expressions).
 

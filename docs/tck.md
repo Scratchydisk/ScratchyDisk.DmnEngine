@@ -19,8 +19,8 @@ behaviour and DMN 1.4 for 1.4-specific parsing or model behaviour.
 
 This repository carries a local runner (`ScratchyDisk.DmnEngine.Tck`) and a
 committed baseline (`docs/tck-baseline.json`). The baseline is a ratchet, not a
-certification: it makes regressions visible while conformance work is in
-progress.
+certification: it records the expected result case by case, so a regression is
+always reported as a new failure rather than hidden in a total.
 
 ## Suite snapshot
 
@@ -31,8 +31,9 @@ itself is version-agnostic.
 
 Covered:
 
-- `compliance-level-2` — 28 models, 116 cases.
-- `compliance-level-3` — 180 models, 3,321 cases.
+- `compliance-level-2` — 29 suites, 28 model files, 116 cases.
+- `compliance-level-3` — 124 suites, 180 model files, 3,321 cases (some suites
+  carry several models so imports can be exercised).
 
 `non-compliant` is deliberately excluded: those cases are known to have no
 passing implementation.
@@ -49,7 +50,8 @@ dotnet run --project ScratchyDisk.DmnEngine.Tck -- --tck artifacts/tck/TestCases
 
 The download lands in `artifacts/tck`, which is already gitignored. The script
 writes the pinned commit to `artifacts/tck/.commit`; the runner records it in the
-baseline.
+baseline. The TCK is not part of CI — it downloads an external repository — so run
+it locally before and after a change to conformance behaviour.
 
 Useful options:
 
@@ -84,7 +86,7 @@ failures or new failures, `2` setup/usage error.
 | `FAIL` | Evaluation ran and the answer was wrong, or an error was raised where a value was expected |
 | `PARSE-FAIL` | The model or test XML could not be read |
 | `NOT-FOUND` | The result node names a decision the engine did not produce |
-| `UNSUPPORTED` | The engine cannot evaluate the construct at all (import, unparsed logic kind) |
+| `UNSUPPORTED` | The engine cannot evaluate the construct at all (an external Java function) |
 | `FIXTURE-ERROR` | The test value cannot be represented (for example a negative year) |
 
 `PARSE-FAIL`, `NOT-FOUND`, `UNSUPPORTED` and `FIXTURE-ERROR` are **blocked**:
@@ -163,13 +165,13 @@ Java classes from a Java library shipped with the TCK. A .NET engine cannot load
 them, so they are reported as `UNSUPPORTED` rather than as failures. Supporting
 them would need a bridge to a JVM, which is out of scope for this engine.
 
-## Harness limitations
+## Harness notes and limitations
 
-- One model per test file. Imported models are resolved from the directory of the
-  model under test: `DmnModelSet` indexes that directory by namespace, and the
-  definition factory flattens the imported models into a single executable model
-  with deterministic `mN.` name prefixes and per-element aliases (see
-  [model-sets.md](model-sets.md)).
+- Each test file is executed against its own model; parsed definitions are not
+  shared between suites. Imports declared by the model under test are resolved
+  from its directory, and the definition factory flattens the imported models
+  into a single executable model with deterministic `mN.` name prefixes and
+  per-element aliases (see [model-sets.md](model-sets.md)).
 - Business knowledge models may have any boxed body (literal expression, context,
   relation, list, invocation, nested function definition or decision table) and
   can be invoked directly as well as from FEEL. Decision services are modelled as

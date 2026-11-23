@@ -4,6 +4,7 @@
 # Local tool config
 .claude/
 .playwright-mcp/
+.maximkeep/
 
 # User-specific files
 *.suo

@@ -169,7 +169,7 @@ The trace shows that `MainDT` depends on two expression decisions (`Age +10` and
 
 ## DMN version support
 
-The tool auto-detects the DMN version from the XML namespace. Supported versions: 1.1, 1.3, 1.3ext, 1.4, 1.5.
+The tool auto-detects the DMN version from the XML namespace. Supported versions: 1.1, 1.3, 1.3ext, 1.4, 1.5, 1.6.
 
 Use `--version` to override when the auto-detected version doesn't match the file's conventions. This is common with **Camunda exports**, which use the DMN 1.3 namespace but follow 1.3ext variable naming (output `name` attribute takes priority over `label`):
 
