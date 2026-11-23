@@ -1,25 +1,25 @@
 {
   "schemaVersion": 1,
-  "generatedUtc": "2026-11-23T14:32:04.7788451Z",
+  "generatedUtc": "2026-11-23T14:40:46.8777159Z",
   "tck": {
     "root": "artifacts/tck/TestCases",
     "commit": "a428da2f9c5ff2a4b8566ab511144e9022d743fe"
   },
   "engine": {
-    "version": "2.0.1\u002B85699d27678fdd072e3ce6910df20f60210d791f"
+    "version": "2.0.1\u002Bf38d22bfbd07c6b64bd43003f60248482477865f"
   },
   "totals": {
     "total": 3437,
-    "pass": 3196,
-    "fail": 84,
+    "pass": 3200,
+    "fail": 80,
     "parseFail": 30,
     "notFound": 19,
     "unsupported": 108,
     "fixtureError": 0,
     "blocked": 157,
     "executed": 3280,
-    "passRate": 0.9298807099214431,
-    "executedPassRate": 0.974390243902439
+    "passRate": 0.9310445155659005,
+    "executedPassRate": 0.975609756097561
   },
   "cases": {
     "compliance-level-3/0002-string-functions/0002-string-functions-test-01.xml/001": {
@@ -534,10 +534,6 @@
       "status": "PARSE-FAIL",
       "reason": "model: Decision with reference _96df766e-23e1-4aa6-9d5d-545fbe2f1e23 for Model C Decision based on Bs not found"
     },
-    "compliance-level-3/0092-feel-lambda/0092-feel-lambda-test-01.xml/002": {
-      "status": "FAIL",
-      "reason": "expected a value, got null"
-    },
     "compliance-level-3/0092-feel-lambda/0092-feel-lambda-test-01.xml/004": {
       "status": "FAIL",
       "reason": "expected a value, got null"
@@ -786,19 +782,7 @@
       "status": "NOT-FOUND",
       "reason": "no decision \u0027decision007\u0027 (available: )"
     },
-    "compliance-level-3/1155-list-replace-function/1155-list-replace-function-test-01.xml/013": {
-      "status": "FAIL",
-      "reason": "expected a value, got null"
-    },
-    "compliance-level-3/1155-list-replace-function/1155-list-replace-function-test-01.xml/017": {
-      "status": "FAIL",
-      "reason": "expected an error but a value was returned"
-    },
-    "compliance-level-3/1155-list-replace-function/1155-list-replace-function-test-01.xml/018": {
-      "status": "FAIL",
-      "reason": "expected an error but a value was returned"
-    },
-    "compliance-level-3/1155-list-replace-function/1155-list-replace-function-test-01.xml/019": {
+    "compliance-level-3/1155-list-replace-function/1155-list-replace-function-test-01.xml/016": {
       "status": "FAIL",
       "reason": "expected an error but a value was returned"
     },

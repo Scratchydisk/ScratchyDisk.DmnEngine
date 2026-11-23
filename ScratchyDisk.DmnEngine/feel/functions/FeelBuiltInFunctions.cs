@@ -69,6 +69,17 @@ namespace ScratchyDisk.DmnEngine.Feel.Functions
                 return fn.Invoke(new[] { date, time });
             }
 
+            if (name == "list replace")
+            {
+                var listReplaceArgs = new[]
+                {
+                    ValueOrNull(namedArgs, "list"),
+                    namedArgs.TryGetValue("match", out var matchArg) ? matchArg : ValueOrNull(namedArgs, "position"),
+                    ValueOrNull(namedArgs, "newItem")
+                };
+                return fn.Invoke(listReplaceArgs);
+            }
+
             if (name == "time")
             {
                 object[] timeArgs;
@@ -119,6 +130,7 @@ namespace ScratchyDisk.DmnEngine.Feel.Functions
         {
             if (parameters.Contains(key)) return true;
             if (function == "context put" && key == "keys") return true;
+            if (function == "list replace" && key == "match") return true;
             if (function == "date and time" && key is "date" or "timezone") return true;
             return false;
         }
@@ -698,11 +710,12 @@ namespace ScratchyDisk.DmnEngine.Feel.Functions
 
                 if (selector is FeelFunction match)
                 {
+                    if (match.ParameterNames.Count != 2) return null;
                     var result = new List<object>(list);
                     for (var i = 0; i < list.Count; i++)
                     {
-                        if (match.Invoke(list[i], newItem) is bool replace && replace)
-                            result[i] = newItem;
+                        if (match.Invoke(list[i], newItem) is not bool replace) return null;
+                        if (replace) result[i] = newItem;
                     }
                     return (object)result;
                 }

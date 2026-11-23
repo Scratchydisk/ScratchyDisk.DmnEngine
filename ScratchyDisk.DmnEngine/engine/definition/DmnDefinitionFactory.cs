@@ -51,6 +51,8 @@ namespace ScratchyDisk.DmnEngine.Engine.Definition
             { "years and months duration", typeof(FeelYmDuration) },
             { "yearmonthduration", typeof(FeelYmDuration) },
             { "context", typeof(FeelContext) },
+            { "range", typeof(FeelRange) },
+            { "function", typeof(FeelFunction) },
             { "list", typeof(List<object>) }
         };
 
@@ -570,7 +572,7 @@ namespace ScratchyDisk.DmnEngine.Engine.Definition
                 //decision table
                 decision = CreateDecisionTable(sourceDecision.DecisionTable, decisionName, requiredInputs, requiredDecisions);
             }
-            else if (sourceDecision.Expression != null)
+            else if (sourceDecision.Expression != null || sourceDecision.FunctionDefinition != null)
             {
                 //expression
                 decision = CreateExpressionDecision(sourceDecision, decisionName, requiredInputs, requiredDecisions);
@@ -854,15 +856,32 @@ namespace ScratchyDisk.DmnEngine.Engine.Definition
             CheckAndUpdateVariableType(variable, sourceDecision.OutputVariable.TypeRef);
 
             //prepare expression
-            if (string.IsNullOrWhiteSpace(sourceDecision.Expression.Text))
-                throw Logger.Fatal<DmnParserException>($"Missing expression for expression decision {decisionName}");
-            var expr = $"{sourceDecision.Expression.Text}";
+            string expr;
+            if (sourceDecision.Expression != null)
+            {
+                if (string.IsNullOrWhiteSpace(sourceDecision.Expression.Text))
+                    throw Logger.Fatal<DmnParserException>($"Missing expression for expression decision {decisionName}");
+                expr = sourceDecision.Expression.Text;
+            }
+            else
+            {
+                var function = sourceDecision.FunctionDefinition;
+                if (function?.Expression == null || string.IsNullOrWhiteSpace(function.Expression.Text))
+                    throw Logger.Fatal<DmnParserException>($"Missing function body for decision {decisionName}");
+                var parameters = function.FormalParameters?
+                    .Select(p => p.Name)
+                    .Where(p => !string.IsNullOrWhiteSpace(p))
+                    .ToList() ?? new List<string>();
+                expr = $"function({string.Join(", ", parameters)}) {function.Expression.Text}";
+                if (variable.Type == null) variable.SetRecognizedType(typeof(FeelFunction));
+            }
 
             //create
             var expressionDecision = new DmnExpressionDecision(
                 decisionName, expr, variable, requiredInputs, requiredDecisions,
                 label: decisionName,
-                dialect: DmnExpressionLanguage.Resolve(sourceDecision.Expression.Language));
+                dialect: DmnExpressionLanguage.Resolve(
+                    sourceDecision.Expression?.Language ?? sourceDecision.FunctionDefinition?.Expression?.Language));
             return expressionDecision;
         }
 

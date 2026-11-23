@@ -39,6 +39,10 @@ namespace ScratchyDisk.DmnEngine.Parser.Dto
         [XmlElement("literalExpression")]
         public Expression Expression { get; set; }
 
+        /// <summary>Function body of a decision that evaluates to a function.</summary>
+        [XmlElement("functionDefinition")]
+        public FunctionDefinition FunctionDefinition { get; set; }
+
         //------------------------------------
         //Decision table
         //------------------------------------
