@@ -4,6 +4,8 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 ## [Unreleased] ##
 ### Added ###
+- **Executable boxed expressions** — decision and business knowledge model bodies may be a context, relation, list, invocation or decision table. Context entries may hold nested decision tables and function definitions, and a trailing context entry without a variable provides the context value (`0031`, `0035`, `0040`, `0041`, `0087` TCK suites).
+- **FEEL names containing `-`** — the name resolver now matches known model names against the raw tokens, so names such as `Pre-bureau risk category` resolve inside table expressions.
 - **DMN 1.6 support** — `20240513/MODEL/` namespace, `Parse16`/`ParseString16`, CLI/testbed version metadata and 1.6 fixtures.
 - **FEEL 1.6 additions** — descendant expressions (`...`), temporal `.value`, single-parameter rounding, `date and time(date, time, timezone)`, exponential/leading-dot numeric literals and decimal-to-integer conversion.
 - **DMN 1.6 error handling** — lenient diagnostics by default and opt-in strict mode.

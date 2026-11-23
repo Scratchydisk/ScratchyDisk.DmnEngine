@@ -419,9 +419,9 @@ namespace ScratchyDisk.DmnEngine.Engine.Definition
         }
 
         /// <summary>
-        /// Builds executable business knowledge models from the parsed model.
-        /// The body of a BKM may be any boxed expression supported by
-        /// <see cref="BuildFunctionBody"/>, including a nested function definition.
+        /// Builds executable business knowledge models from the parsed model. The body may be
+        /// a literal expression or any DMN boxed expression (context, relation, list,
+        /// invocation, nested function definition or decision table).
         /// </summary>
         protected virtual void ProcessBusinessKnowledgeModelsSource()
         {
@@ -433,10 +433,8 @@ namespace ScratchyDisk.DmnEngine.Engine.Definition
                 if (string.IsNullOrWhiteSpace(name)) continue;
 
                 var logic = source.EncapsulatedLogic;
-                if (logic == null) continue;
-
-                var body = BuildFunctionBody(logic);
-                if (string.IsNullOrWhiteSpace(body)) continue;
+                var body = DmnBoxedExpressionBuilder.BuildFunctionBody(logic);
+                if (body == null) continue;
 
                 var parameters = logic.FormalParameters?
                     .Select(p => p.Name)
@@ -448,6 +446,7 @@ namespace ScratchyDisk.DmnEngine.Engine.Definition
                     name,
                     parameters,
                     body,
+                    logic.Expression?.Text,
                     logic.Expression?.Language);
                 if (SourceModel.ImportAliases?.BkmAliases.TryGetValue(name, out var bkmAliases) == true)
                     bkmDefinition.NameAliases = bkmAliases;
@@ -591,13 +590,28 @@ namespace ScratchyDisk.DmnEngine.Engine.Definition
                 //decision table
                 decision = CreateDecisionTable(sourceDecision.DecisionTable, decisionName, requiredInputs, requiredDecisions);
             }
-            else if (sourceDecision.Expression != null || sourceDecision.FunctionDefinition != null
-                     || sourceDecision.Context != null || sourceDecision.Relation != null
+            else if (sourceDecision.Expression != null)
+            {
+                //literal expression decision
+                decision = CreateExpressionDecision(sourceDecision, decisionName, requiredInputs, requiredDecisions);
+            }
+            else if (sourceDecision.FunctionDefinition != null
+                     && (sourceDecision.FunctionDefinition.Expression == null
+                         || string.IsNullOrWhiteSpace(sourceDecision.FunctionDefinition.Expression.Text)))
+            {
+                //function definition with a boxed body
+                decision = CreateBoxedExpressionDecision(sourceDecision, decisionName, requiredInputs, requiredDecisions);
+            }
+            else if (sourceDecision.FunctionDefinition != null)
+            {
+                //function definition with a literal body (text form)
+                decision = CreateExpressionDecision(sourceDecision, decisionName, requiredInputs, requiredDecisions);
+            }
+            else if (sourceDecision.Context != null || sourceDecision.Relation != null
                      || sourceDecision.List != null || sourceDecision.Invocation != null)
             {
-                //expression / boxed expression
-                decision = CreateExpressionDecision(sourceDecision, decisionName, requiredInputs, requiredDecisions,
-                    BuildBoxedExpression(sourceDecision));
+                //boxed expression decision
+                decision = CreateBoxedExpressionDecision(sourceDecision, decisionName, requiredInputs, requiredDecisions);
             }else 
             {
                 //unsupported decision type
@@ -840,26 +854,53 @@ namespace ScratchyDisk.DmnEngine.Engine.Definition
 
 
         /// <summary>
-        /// Validates the <paramref name="sourceDecision"/> within the <see cref="DmnModel"/>
-        /// and creates <see cref="DmnExpressionDecision"/>
+        /// Validates the <paramref name="sourceDecision"/> and creates a
+        /// <see cref="DmnBoxedExpressionDecision"/> for its boxed expression body.
         /// </summary>
         /// <param name="sourceDecision">Decision source parsed from XML</param>
         /// <param name="decisionName">Unique name of decision</param>
         /// <param name="requiredInputs">Inputs required by decision</param>
-        /// <param name="requiredDecisions">Decisions, the decision table depends on</param>
+        /// <param name="requiredDecisions">Decisions, the decision depends on</param>
         /// <exception cref="ArgumentNullException"><paramref name="sourceDecision"/>, <paramref name="decisionName"/>, <paramref name="requiredInputs"/> or <paramref name="requiredDecisions"/> is null.</exception>
-        /// <exception cref="ArgumentException"><paramref name="decisionName"/> is empty</exception>    
-        /// <exception cref="DmnParserException">Missing expression for expression decision</exception> 
-        /// <exception cref="DmnParserException">Missing output variable for expression decision</exception> 
-        private static string BuildBoxedExpression(Decision decision)
+        /// <exception cref="ArgumentException"><paramref name="decisionName"/> is empty</exception>
+        /// <exception cref="DmnParserException">Missing boxed expression body for decision</exception>
+        /// <exception cref="DmnParserException">Missing output variable for expression decision</exception>
+        protected virtual DmnBoxedExpressionDecision CreateBoxedExpressionDecision(
+            Decision sourceDecision,
+            string decisionName,
+            IReadOnlyCollection<IDmnVariable> requiredInputs,
+            IReadOnlyCollection<IDmnDecision> requiredDecisions)
         {
-            if (decision.Context != null) return BuildContext(decision.Context);
-            if (decision.Relation != null) return BuildRelation(decision.Relation);
-            if (decision.List != null) return "[" + string.Join(", ", decision.List.Expressions?
-                .Select(e => e.Text) ?? Enumerable.Empty<string>()) + "]";
-            if (decision.Invocation != null)
-                return BuildInvocation(decision.Invocation);
-            return null;
+            if (sourceDecision == null) throw Logger.Fatal<ArgumentNullException>($"{nameof(sourceDecision)} is null");
+            if (decisionName == null) throw Logger.Fatal<ArgumentNullException>($"{nameof(decisionName)} is null");
+            if (string.IsNullOrWhiteSpace(decisionName)) throw Logger.Fatal<ArgumentException>($"{nameof(decisionName)} is empty");
+            if (requiredInputs == null) throw Logger.Fatal<ArgumentNullException>($"{nameof(requiredInputs)} is null");
+            if (requiredDecisions == null) throw Logger.Fatal<ArgumentNullException>($"{nameof(requiredDecisions)} is null");
+
+            var body = DmnBoxedExpressionBuilder.BuildDecisionBody(sourceDecision);
+            if (body == null)
+                throw Logger.Fatal<DmnParserException>($"Missing boxed expression body for decision {decisionName}");
+
+            //prepare output variable
+            if (sourceDecision.OutputVariable == null) throw Logger.Fatal<DmnParserException>($"Missing output variable for expression decision {decisionName}");
+            var sourceVariableName = !string.IsNullOrWhiteSpace(sourceDecision.OutputVariable.Name)
+                ? sourceDecision.OutputVariable.Name
+                : sourceDecision.OutputVariable.Id;
+            var variableName = NormalizeName(sourceVariableName);
+            if (!Variables.TryGetValue(variableName, out var variable))
+            {
+                //create variable
+                variable = new DmnVariableDefinition(variableName, label: sourceVariableName);
+                Variables.Add(variableName, variable);
+            }
+
+            variable.AddValueSetter($"Boxed Expression Decision {decisionName}");
+            CheckAndUpdateVariableType(variable, sourceDecision.OutputVariable.TypeRef);
+            if (variable.Type == null && body is DmnFunctionDefinitionBoxedExpression)
+                variable.SetRecognizedType(typeof(FeelFunction));
+
+            return new DmnBoxedExpressionDecision(
+                decisionName, body, variable, requiredInputs, requiredDecisions, label: decisionName);
         }
 
         private static string BuildContext(ContextExpression context)

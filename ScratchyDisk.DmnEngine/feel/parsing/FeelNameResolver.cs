@@ -53,7 +53,10 @@ namespace ScratchyDisk.DmnEngine.Feel.Parsing
 
             if (NameLikeTokens.Contains(token.Type))
             {
-                var merged = TryMergeMultiWordName(position);
+                // FEEL names may contain additional name symbols (for example '-'),
+                // which are separate lexer tokens. Match the raw input text against
+                // the known names first, then fall back to word-based merging.
+                var merged = TryMergeNameByText(position) ?? TryMergeMultiWordName(position);
                 if (merged != null)
                 {
                     return merged;
@@ -62,6 +65,72 @@ namespace ScratchyDisk.DmnEngine.Feel.Parsing
 
             position++;
             return token;
+        }
+
+        /// <summary>
+        /// Merges the tokens that spell one known name, matching the raw input text.
+        /// This resolves names that contain additional name symbols (such as
+        /// <c>Pre-bureau risk category</c>) which the lexer splits into several tokens.
+        /// </summary>
+        private IToken TryMergeNameByText(int startPos)
+        {
+            var firstToken = fullStream.Get(startPos);
+            var input = firstToken.InputStream;
+            if (input == null) return null;
+
+            var start = firstToken.StartIndex;
+            if (start < 0 || start >= input.Size) return null;
+            var tail = input.GetText(Antlr4.Runtime.Misc.Interval.Of(start, input.Size - 1));
+            if (string.IsNullOrEmpty(tail)) return null;
+
+            string bestMatch = null;
+            foreach (var name in scope.Names)
+            {
+                if (name.Length < 2 || name.Length > tail.Length) continue;
+                if (string.CompareOrdinal(tail, 0, name, 0, name.Length) != 0) continue;
+                if (bestMatch != null && name.Length <= bestMatch.Length) continue;
+
+                var next = name.Length < tail.Length ? tail[name.Length] : '\0';
+                if (IsNameContinuation(next)) continue;
+                bestMatch = name;
+            }
+
+            if (bestMatch == null) return null;
+
+            var end = start + bestMatch.Length;
+            var pos = startPos;
+            var tokenCount = 0;
+            IToken lastMatched = null;
+            while (pos < fullStream.Size)
+            {
+                var token = fullStream.Get(pos);
+                if (token.Type == TokenConstants.EOF) break;
+                if (token.Channel == Lexer.DefaultTokenChannel)
+                {
+                    tokenCount++;
+                    lastMatched = token;
+                    if (token.StopIndex >= end - 1) break;
+                }
+                pos++;
+            }
+
+            // Only treat it as a name merge when several tokens are involved;
+            // single-token names are already lexed correctly.
+            if (tokenCount <= 1 || lastMatched == null || lastMatched.StopIndex != end - 1) return null;
+
+            position = pos + 1;
+            return new CommonToken(firstToken)
+            {
+                Type = FeelLexer.NAME,
+                Text = bestMatch,
+                StopIndex = end - 1
+            };
+        }
+
+        private static bool IsNameContinuation(char c)
+        {
+            if (c == '\0') return false;
+            return char.IsLetterOrDigit(c) || c == '_' || c == '-' || c == '\'' || c == '\u00B7';
         }
 
         /// <summary>

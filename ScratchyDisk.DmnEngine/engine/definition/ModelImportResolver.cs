@@ -509,22 +509,84 @@ namespace ScratchyDisk.DmnEngine.Engine.Definition
                 foreach (var decision in model.Decisions ?? Enumerable.Empty<Decision>())
                 {
                     if (decision.Expression != null) decision.Expression.Text = Rewrite(decision.Expression.Text);
-                    var table = decision.DecisionTable;
-                    if (table == null) continue;
-                    foreach (var input in table.Inputs ?? Enumerable.Empty<DecisionTableInput>())
-                        if (input.InputExpression != null) input.InputExpression.Text = Rewrite(input.InputExpression.Text);
-                    foreach (var rule in table.Rules ?? Enumerable.Empty<DecisionRule>())
-                    {
-                        foreach (var entry in rule.InputEntries ?? Enumerable.Empty<Expression>())
-                            entry.Text = Rewrite(entry.Text);
-                        foreach (var entry in rule.OutputEntries ?? Enumerable.Empty<Expression>())
-                            entry.Text = Rewrite(entry.Text);
-                    }
+                    RewriteTable(decision.DecisionTable, Rewrite);
+                    RewriteBoxed(decision.Context, decision.Relation, decision.List,
+                        decision.Invocation, decision.FunctionDefinition, Rewrite);
                 }
                 foreach (var bkm in model.BusinessKnowledgeModels ?? Enumerable.Empty<BusinessKnowledgeModel>())
                 {
                     var logic = bkm.EncapsulatedLogic;
-                    if (logic?.Expression != null) logic.Expression.Text = Rewrite(logic.Expression.Text);
+                    if (logic == null) continue;
+                    if (logic.Expression != null) logic.Expression.Text = Rewrite(logic.Expression.Text);
+                    RewriteTable(logic.DecisionTable, Rewrite);
+                    RewriteBoxed(logic.Context, logic.Relation, logic.List,
+                        logic.Invocation, null, Rewrite);
+                }
+            }
+
+            private static void RewriteBoxed(
+                ContextExpression context,
+                RelationExpression relation,
+                ListExpression list,
+                InvocationExpression invocation,
+                FunctionDefinition function,
+                Func<string, string> rewrite)
+            {
+                if (context != null)
+                {
+                    foreach (var entry in context.Entries ?? Enumerable.Empty<ContextEntry>())
+                    {
+                        if (entry.Expression != null) entry.Expression.Text = rewrite(entry.Expression.Text);
+                        RewriteTable(entry.DecisionTable, rewrite);
+                        RewriteBoxed(entry.Context, entry.Relation, entry.List, entry.Invocation,
+                            entry.FunctionDefinition, rewrite);
+                    }
+                }
+
+                if (relation != null)
+                {
+                    foreach (var row in relation.Rows ?? Enumerable.Empty<RelationRow>())
+                        foreach (var expression in row.Expressions ?? new List<Expression>())
+                            expression.Text = rewrite(expression.Text);
+                }
+
+                if (list != null)
+                {
+                    foreach (var expression in list.Expressions ?? new List<Expression>())
+                        expression.Text = rewrite(expression.Text);
+                }
+
+                if (invocation != null)
+                {
+                    if (invocation.Function != null) invocation.Function.Text = rewrite(invocation.Function.Text);
+                    foreach (var binding in invocation.Bindings ?? Enumerable.Empty<InvocationBinding>())
+                        if (binding.Expression != null) binding.Expression.Text = rewrite(binding.Expression.Text);
+                }
+
+                if (function == null) return;
+                if (function.Expression != null) function.Expression.Text = rewrite(function.Expression.Text);
+                RewriteTable(function.DecisionTable, rewrite);
+                RewriteBoxed(function.Context, function.Relation, function.List, function.Invocation,
+                    null, rewrite);
+            }
+
+            private static void RewriteTable(DecisionTable table, Func<string, string> rewrite)
+            {
+                if (table == null) return;
+                foreach (var input in table.Inputs ?? Enumerable.Empty<DecisionTableInput>())
+                    if (input.InputExpression != null) input.InputExpression.Text = rewrite(input.InputExpression.Text);
+                foreach (var output in table.Outputs ?? Enumerable.Empty<DecisionTableOutput>())
+                {
+                    if (output.DefaultOutputEntry != null)
+                        output.DefaultOutputEntry.Text = rewrite(output.DefaultOutputEntry.Text);
+                    if (output.DefaultText != null) output.DefaultText = rewrite(output.DefaultText);
+                }
+                foreach (var rule in table.Rules ?? Enumerable.Empty<DecisionRule>())
+                {
+                    foreach (var entry in rule.InputEntries ?? Enumerable.Empty<Expression>())
+                        entry.Text = rewrite(entry.Text);
+                    foreach (var entry in rule.OutputEntries ?? Enumerable.Empty<Expression>())
+                        entry.Text = rewrite(entry.Text);
                 }
             }
 

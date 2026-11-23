@@ -4,6 +4,7 @@ using System.Collections.Generic;
 using System.Linq;
 using NLog;
 using ScratchyDisk.DmnEngine.Engine.Decisions;
+using ScratchyDisk.DmnEngine.Engine.Decisions.Expression;
 using ScratchyDisk.DmnEngine.Utils;
 using ScratchyDisk.DmnEngine.Engine.Definition;
 using ScratchyDisk.DmnEngine.Engine.Execution.Result;
@@ -20,7 +21,7 @@ namespace ScratchyDisk.DmnEngine.Engine.Execution.Context
     /// <summary>
     /// Context where is the DMN model executed
     /// </summary>
-    public class DmnExecutionContext
+    public class DmnExecutionContext : IDmnBoxedExpressionHost
     {
         /// <summary>
         /// Logger
@@ -546,6 +547,14 @@ namespace ScratchyDisk.DmnEngine.Engine.Execution.Context
                     child.SetVariable(parameters[i], i < args.Length ? args[i] : null);
                 }
 
+                if (bkm.Body != null)
+                {
+                    // Boxed bodies (context, relation, list, invocation, decision table or
+                    // literal expression) are evaluated against the function scope.
+                    var runtime = new DmnBoxedExpressionRuntime(this, child, parameters, null);
+                    return runtime.Evaluate(bkm.Body);
+                }
+
                 var scope = BuildFeelScope();
                 foreach (var parameter in parameters)
                 {
@@ -556,6 +565,109 @@ namespace ScratchyDisk.DmnEngine.Engine.Execution.Context
                 var ast = engine.ParseExpression(bkm.Expression, scope);
                 return engine.Evaluate(ast, child, DmnExpressionLanguage.Resolve(bkm.ExpressionLanguage));
             });
+        }
+
+        /// <summary>
+        /// Creates a runtime for evaluating a boxed expression against the current variables.
+        /// </summary>
+        internal DmnBoxedExpressionRuntime CreateBoxedExpressionRuntime(string executionId)
+        {
+            return new DmnBoxedExpressionRuntime(this, BuildFeelEvaluationContext(), null, executionId);
+        }
+
+        /// <summary>
+        /// Converts a FEEL result to the declared CLR output type of a variable.
+        /// </summary>
+        internal static object ConvertToOutputType(object result, Type outputType)
+        {
+            return ConvertResult(result, outputType);
+        }
+
+        /// <inheritdoc />
+        object IDmnBoxedExpressionHost.EvaluateBoxedExpression(string expression, FeelDialect dialect,
+            FeelEvaluationContext scope, IReadOnlyCollection<string> localNames)
+        {
+            if (string.IsNullOrWhiteSpace(expression)) return null;
+
+            expression = PreProcessExpression(expression);
+            var feelScope = BuildFeelScope();
+            if (localNames != null)
+            {
+                foreach (var name in localNames) feelScope.AddName(name);
+            }
+
+            FeelAstNode parsedAst;
+            try
+            {
+                parsedAst = GetFeelEngine().ParseExpression(expression, feelScope);
+            }
+            catch (Exception exception)
+            {
+                throw Logger.Fatal<DmnEvaluationException>(
+                    $"Exception while parsing the expression {expression}", exception);
+            }
+
+            try
+            {
+                return GetFeelEngine().Evaluate(parsedAst, scope ?? BuildFeelEvaluationContext(), dialect);
+            }
+            catch (Exception exception)
+            {
+                throw Logger.Fatal<DmnEvaluationException>(
+                    $"Exception while invoking the expression {expression}", exception);
+            }
+        }
+
+        /// <inheritdoc />
+        bool IDmnBoxedExpressionHost.EvaluateBoxedExpressionUnaryTest(string expression, object inputValue,
+            FeelDialect dialect, FeelEvaluationContext scope, IReadOnlyCollection<string> localNames)
+        {
+            if (string.IsNullOrWhiteSpace(expression))
+                throw Logger.Fatal<ArgumentException>($"{nameof(expression)} is null or empty");
+
+            expression = PreProcessExpression(expression);
+            var feelScope = BuildFeelScope();
+            if (localNames != null)
+            {
+                foreach (var name in localNames) feelScope.AddName(name);
+            }
+
+            FeelAstNode parsedAst;
+            try
+            {
+                parsedAst = GetFeelEngine().ParseSimpleUnaryTests(expression, feelScope);
+            }
+            catch
+            {
+                // Camunda and other tools allow full FEEL expressions (with or/and
+                // operators) in input entries, not just simple unary tests.
+                try
+                {
+                    parsedAst = GetFeelEngine().ParseExpression(expression, feelScope);
+                }
+                catch (Exception fallbackException)
+                {
+                    throw Logger.Fatal<DmnEvaluationException>(
+                        $"Exception while parsing the unary tests expression {expression}", fallbackException);
+                }
+            }
+
+            var evalContext = scope ?? BuildFeelEvaluationContext();
+            evalContext.InputValue = FeelTypeCoercion.CoerceToFeel(inputValue);
+
+            try
+            {
+                if (dialect == FeelDialect.BFeel)
+                    throw new NotSupportedException("B-FEEL evaluation is not implemented. Supported dialect: FEEL.");
+                var evaluator = new FeelEvaluator(evalContext,
+                    ScratchyDisk.DmnEngine.Feel.Functions.FeelBuiltInFunctions.Resolve);
+                return evaluator.EvaluateAsUnaryTest(parsedAst);
+            }
+            catch (Exception exception)
+            {
+                throw Logger.Fatal<DmnEvaluationException>(
+                    $"Exception while evaluating the unary tests expression {expression}", exception);
+            }
         }
 
         /// <summary>

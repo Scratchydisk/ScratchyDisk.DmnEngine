@@ -31,22 +31,31 @@ namespace ScratchyDisk.DmnEngine.Parser.Dto
         /// </summary>
         [XmlElement("literalExpression")]
         public Expression Expression { get; set; }
+
         /// <summary>
         /// Function body when it is itself a function definition (a curried lambda).
         /// </summary>
         [XmlElement("functionDefinition")]
         public FunctionDefinition Body { get; set; }
-        /// <summary>Function body when it is a boxed context.</summary>
+
+        /// <summary>Function body when expressed as a boxed context.</summary>
         [XmlElement("context")]
         public ContextExpression Context { get; set; }
-        /// <summary>Function body when it is a boxed list.</summary>
-        [XmlElement("list")]
-        public ListExpression List { get; set; }
-        /// <summary>Function body when it is a boxed relation.</summary>
+
+        /// <summary>Function body when expressed as a boxed relation.</summary>
         [XmlElement("relation")]
         public RelationExpression Relation { get; set; }
-        /// <summary>Function body when it is a boxed invocation.</summary>
+
+        /// <summary>Function body when expressed as a boxed list.</summary>
+        [XmlElement("list")]
+        public ListExpression List { get; set; }
+
+        /// <summary>Function body when expressed as a boxed invocation.</summary>
         [XmlElement("invocation")]
         public InvocationExpression Invocation { get; set; }
+
+        /// <summary>Function body when expressed as a decision table.</summary>
+        [XmlElement("decisionTable")]
+        public DecisionTable DecisionTable { get; set; }
     }
 }

@@ -107,6 +107,11 @@ namespace ScratchyDisk.DmnEngine.Feel.Parsing
         public bool ContainsName(string name) => allNames.Contains(name);
 
         /// <summary>
+        /// All names known in this scope (single and multi-word).
+        /// </summary>
+        public IReadOnlyCollection<string> Names => allNames;
+
+        /// <summary>
         /// Given a starting word, find all multi-word names that begin with that word.
         /// Returns candidate name parts arrays for longest-match resolution.
         /// </summary>

@@ -30,6 +30,14 @@ namespace ScratchyDisk.DmnEngine.Parser.Dto
 
         [XmlElement("invocation")]
         public InvocationExpression Invocation { get; set; }
+
+        /// <summary>Nested function definition (a context entry holding a FEEL function).</summary>
+        [XmlElement("functionDefinition")]
+        public FunctionDefinition FunctionDefinition { get; set; }
+
+        /// <summary>Nested decision table (a context entry calculated by a table).</summary>
+        [XmlElement("decisionTable")]
+        public DecisionTable DecisionTable { get; set; }
     }
 
     /// <summary>Boxed relation expression (a decision returning a list of contexts).</summary>
