@@ -5,6 +5,7 @@ using System.Linq;
 using System.Text.RegularExpressions;
 using ScratchyDisk.DmnEngine.Feel.Ast;
 using ScratchyDisk.DmnEngine.Feel.Types;
+using ScratchyDisk.DmnEngine.Feel.Functions;
 using ScratchyDisk.DmnEngine.Utils;
 
 namespace ScratchyDisk.DmnEngine.Feel.Eval
@@ -973,6 +974,10 @@ namespace ScratchyDisk.DmnEngine.Feel.Eval
 
             if (fnValue is FeelFunction fn)
                 return fn.InvokeNamed(namedArgs);
+
+            // Built-ins validate the argument names and their declared order.
+            if (nfi.Function is NameNode builtInName && FeelBuiltInFunctions.HasFunction(builtInName.Name))
+                return FeelBuiltInFunctions.ResolveNamed(builtInName.Name, namedArgs);
 
             // Named args with function resolver — pass as positional
             if (nfi.Function is NameNode nameNode && functionResolver != null)

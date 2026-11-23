@@ -78,7 +78,8 @@ StringLiteral
     ;
 
 fragment EscapeSequence
-    : '\\' ["\\/bfnrtu]
+    : '\\' '\\'
+    | '\\' ~["\\\r\n]
     ;
 
 fragment Digits

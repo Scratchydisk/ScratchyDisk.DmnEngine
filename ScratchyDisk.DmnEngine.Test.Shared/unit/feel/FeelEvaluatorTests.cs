@@ -820,6 +820,48 @@ namespace ScratchyDisk.DmnEngine.Test.Unit.Feel
         [TestMethod]
         public void EvalInstanceOfParameterizedRange() => Eval("[1..3] instance of range<number>").Should().Be(true);
 
+        [TestMethod]
+        public void EvalModuloUsesDivisorSign()
+        {
+            Eval("modulo(-12, 5)").Should().Be(3m);
+            Eval("modulo(10, -4)").Should().Be(-2m);
+        }
+
+        [TestMethod]
+        public void EvalNumberWithSeparators() =>
+            Eval("number(\"1.000.000,01\", \".\", \",\")").Should().Be(1000000.01m);
+
+        [TestMethod]
+        public void EvalMatchesExtendedFlag() =>
+            Eval("matches(\"hello world\", \"hello\\ sworld\", \"x\")").Should().Be(true);
+
+        [TestMethod]
+        public void EvalSubstringCountsCodePoints() =>
+            Eval("substring(\"\U0001F40Efoo\", 2)").Should().Be("foo");
+
+        [TestMethod]
+        public void EvalStringLengthCountsCodePoints() =>
+            Eval("string length(\"\U0001F40E\")", scope: new FeelScope()).Should().Be(1m);
+
+        [TestMethod]
+        public void EvalContextPutNestedPath()
+        {
+            var result = Eval("context put({x:1, y: {a: 0}}, [\"y\", \"a\"], 2)", scope: new FeelScope());
+            var expected = new FeelContext();
+            expected.Put("x", 1m);
+            var y = new FeelContext();
+            y.Put("a", 2m);
+            expected.Put("y", y);
+            result.Should().Be(expected);
+        }
+
+        [TestMethod]
+        public void EvalIsDistinguishesTypes()
+        {
+            Eval("is(@\"2021-02-13\", @\"2021-02-13\")").Should().Be(true);
+            Eval("is(@\"2021-02-13\", @\"2021-02-13T00:00:00\")").Should().Be(false);
+        }
+
         // ==================== Duration arithmetic ====================
 
         [TestMethod]

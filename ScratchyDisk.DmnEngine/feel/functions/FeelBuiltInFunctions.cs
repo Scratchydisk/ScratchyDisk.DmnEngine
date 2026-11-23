@@ -41,6 +41,49 @@ namespace ScratchyDisk.DmnEngine.Feel.Functions
         }
 
         /// <summary>
+        /// Resolves a built-in call with named arguments. Unknown argument names are
+        /// rejected, and arguments are reordered to the declared parameter order.
+        /// </summary>
+        public static object ResolveNamed(string name, IDictionary<string, object> namedArgs)
+        {
+            if (namedArgs == null || !Functions.TryGetValue(name, out var fn)) return null;
+
+            if (name == "context put")
+            {
+                if (namedArgs.TryGetValue("key", out var keyArg) && keyArg is List<object>) return null;
+                if (namedArgs.TryGetValue("keys", out var keysArg) && keysArg is not List<object>) return null;
+            }
+
+            foreach (var key in namedArgs.Keys)
+            {
+                if (!IsAcceptedArgumentName(name, key, fn.ParameterNames)) return null;
+            }
+
+            var positional = new object[fn.ParameterNames.Count];
+            for (var i = 0; i < fn.ParameterNames.Count; i++)
+            {
+                var parameter = fn.ParameterNames[i];
+                if (namedArgs.TryGetValue(parameter, out var value))
+                {
+                    positional[i] = value;
+                }
+                else if (name == "context put" && parameter == "key" && namedArgs.TryGetValue("keys", out var keys))
+                {
+                    positional[i] = keys;
+                }
+            }
+
+            return fn.Invoke(positional);
+        }
+
+        private static bool IsAcceptedArgumentName(string function, string key, IReadOnlyList<string> parameters)
+        {
+            if (parameters.Contains(key)) return true;
+            // The list-path form of context put names its second argument "keys".
+            return function == "context put" && key == "keys";
+        }
+
+        /// <summary>
         /// Checks if a function with the given name exists.
         /// </summary>
         public static bool HasFunction(string name) => Functions.ContainsKey(name);
@@ -111,25 +154,24 @@ namespace ScratchyDisk.DmnEngine.Feel.Functions
                 var s = ArgString(args, 0);
                 var start = ArgDecimal(args, 1);
                 if (s == null || start == null) return null;
+
+                // FEEL string positions count Unicode code points, not UTF-16 units.
+                var runes = s.EnumerateRunes().ToList();
                 var startIdx = (int)start.Value;
-                // FEEL is 1-based
-                var clrStart = startIdx > 0 ? startIdx - 1 : s.Length + startIdx;
-                if (clrStart < 0) clrStart = 0;
-                if (clrStart >= s.Length) return "";
+                var index = startIdx > 0 ? startIdx - 1 : runes.Count + startIdx;
+                if (index < 0) index = 0;
+                if (index >= runes.Count) return "";
+
                 var length = ArgDecimal(args, 2);
-                if (length != null)
-                {
-                    var len = (int)length.Value;
-                    if (len < 0) return null;
-                    return s.Substring(clrStart, Math.Min(len, s.Length - clrStart));
-                }
-                return s.Substring(clrStart);
+                var count = length != null ? (int)length.Value : runes.Count - index;
+                if (count < 0) return null;
+                return string.Concat(runes.Skip(index).Take(Math.Min(count, runes.Count - index)).Select(r => r.ToString()));
             });
 
             Register("string length", new[] { "string" }, args =>
             {
                 var s = ArgString(args, 0);
-                return s != null ? (decimal)s.Length : null;
+                return s != null ? (decimal)s.EnumerateRunes().Count() : null;
             });
 
             Register("upper case", new[] { "string" }, args =>
@@ -188,17 +230,24 @@ namespace ScratchyDisk.DmnEngine.Feel.Functions
 
             Register("matches", new[] { "input", "pattern", "flags" }, args =>
             {
+                if (args.Length > 3) return null;
                 var input = ArgString(args, 0);
                 var pattern = ArgString(args, 1);
                 if (input == null || pattern == null) return null;
+                if (args.Length >= 3 && Arg(args, 2) != null && Arg(args, 2) is not string) return null;
                 var flags = ArgString(args, 2);
                 var regexOpts = RegexOptions.None;
                 if (flags != null)
                 {
+                    if (flags.Any(c => c is not ('i' or 'm' or 's' or 'x'))) return null;
                     if (flags.Contains('i')) regexOpts |= RegexOptions.IgnoreCase;
                     if (flags.Contains('m')) regexOpts |= RegexOptions.Multiline;
                     if (flags.Contains('s')) regexOpts |= RegexOptions.Singleline;
+                    if (flags.Contains('x')) pattern = StripPatternWhitespace(pattern);
                 }
+                if (HasInvalidBackreference(pattern)) return null;
+                if (flags == null || !flags.Contains('s')) pattern = RewriteDotOutsideClasses(pattern);
+
                 try
                 {
                     return (object)Regex.IsMatch(input, pattern, regexOpts, RegexDefaults.Timeout);
@@ -263,19 +312,23 @@ namespace ScratchyDisk.DmnEngine.Feel.Functions
                 return Math.Round(n.Value, (int)scale.Value, MidpointRounding.ToEven);
             });
 
-            Register("floor", new[] { "n" }, args =>
+            Register("floor", new[] { "n", "scale" }, args =>
             {
+                if (args.Length > 2) return null;
                 var n = ArgDecimal(args, 0);
                 if (n == null) return null;
+                if (args.Length == 2 && ArgDecimal(args, 1) == null) return null;
                 return args.Length > 1 && ArgDecimal(args, 1) is decimal scale
                     ? Math.Floor(n.Value * PowerOf10(scale)) / PowerOf10(scale)
                     : Math.Floor(n.Value);
             });
 
-            Register("ceiling", new[] { "n" }, args =>
+            Register("ceiling", new[] { "n", "scale" }, args =>
             {
+                if (args.Length > 2) return null;
                 var n = ArgDecimal(args, 0);
                 if (n == null) return null;
+                if (args.Length == 2 && ArgDecimal(args, 1) == null) return null;
                 return args.Length > 1 && ArgDecimal(args, 1) is decimal scale
                     ? Math.Ceiling(n.Value * PowerOf10(scale)) / PowerOf10(scale)
                     : Math.Ceiling(n.Value);
@@ -331,10 +384,11 @@ namespace ScratchyDisk.DmnEngine.Feel.Functions
 
             Register("modulo", new[] { "dividend", "divisor" }, args =>
             {
+                if (args.Length != 2) return null;
                 var a = ArgDecimal(args, 0);
                 var b = ArgDecimal(args, 1);
                 if (a == null || b == null || b == 0) return null;
-                return a.Value % b.Value;
+                return a.Value - b.Value * Math.Floor(a.Value / b.Value);
             });
 
             Register("sqrt", new[] { "number" }, args =>
@@ -796,7 +850,17 @@ namespace ScratchyDisk.DmnEngine.Feel.Functions
             {
                 var a = Arg(args, 0);
                 var b = Arg(args, 1);
-                return FeelValueComparer.FeelEqual(a, b);
+                if (a == null || b == null) return a == null && b == null;
+                if (!Equals(TypeName(a), TypeName(b))) return false;
+
+                // "is" is stricter than "=": timezone presence and the wall-clock
+                // components matter, not just the instant.
+                if (a is DateTimeOffset da && b is DateTimeOffset db)
+                    return da.DateTime == db.DateTime && da.Offset == db.Offset;
+                if (a is FeelTime ta && b is FeelTime tb)
+                    return ta.Time == tb.Time && ta.Offset == tb.Offset;
+
+                return FeelValueComparer.FeelEqual(a, b) == true;
             });
         }
 
@@ -1042,16 +1106,31 @@ namespace ScratchyDisk.DmnEngine.Feel.Functions
         {
             Register("number", new[] { "from", "grouping separator", "decimal separator" }, args =>
             {
+                if (args.Length > 3) return null;
                 var val = Arg(args, 0);
                 if (val == null) return null;
+                if (args.Length > 1 && Arg(args, 1) != null && Arg(args, 1) is not string) return null;
+                if (args.Length > 2 && Arg(args, 2) != null && Arg(args, 2) is not string) return null;
+
+                var groupSeparator = ArgString(args, 1);
+                var decimalSeparator = ArgString(args, 2);
+                if (groupSeparator != null && decimalSeparator != null && groupSeparator == decimalSeparator) return null;
+
                 if (FeelValueComparer.IsNumeric(val)) return FeelValueComparer.ToDecimal(val);
+
                 if (val is string s)
                 {
-                    var groupSep = ArgString(args, 1);
-                    var decSep = ArgString(args, 2);
+                    var groupSep = groupSeparator;
+                    var decSep = decimalSeparator;
+                    if (decSep != null && decSep != "." && s.Contains('.') && groupSep != ".") return null;
                     if (groupSep != null) s = s.Replace(groupSep, "");
                     if (decSep != null && decSep != ".") s = s.Replace(decSep, ".");
-                    if (decimal.TryParse(s, NumberStyles.Any, CultureInfo.InvariantCulture, out var d))
+
+                    // Anything left other than a simple decimal literal means the
+                    // supplied separators did not describe the input.
+                    if (!Regex.IsMatch(s, @"^[+-]?\d+(\.\d+)?$", RegexOptions.None, RegexDefaults.Timeout))
+                        return null;
+                    if (decimal.TryParse(s, NumberStyles.Float, CultureInfo.InvariantCulture, out var d))
                         return d;
                 }
                 return null;
@@ -1155,23 +1234,23 @@ namespace ScratchyDisk.DmnEngine.Feel.Functions
 
             Register("context put", new[] { "context", "key", "value" }, args =>
             {
+                if (args.Length != 3) return null;
                 var ctx = Arg(args, 0) as FeelContext;
                 if (ctx == null) return null;
-                var result = new FeelContext();
-                result.Merge(ctx);
 
-                if (args.Length >= 3)
+                var keyArg = Arg(args, 1);
+                if (keyArg is string key)
                 {
-                    var key = ArgString(args, 1);
-                    if (key == null) return null;
+                    var result = new FeelContext();
+                    result.Merge(ctx);
                     result.Put(key, Arg(args, 2));
-                }
-                else if (Arg(args, 1) is FeelContext additions)
-                {
-                    result.Merge(additions);
+                    return result;
                 }
 
-                return result;
+                if (keyArg is List<object> path && path.Count > 0)
+                    return ContextPutPath(ctx, path, 0, Arg(args, 2));
+
+                return null;
             });
 
             Register("context merge", new[] { "contexts" }, args =>
@@ -1185,6 +1264,87 @@ namespace ScratchyDisk.DmnEngine.Feel.Functions
                 }
                 return result;
             });
+        }
+
+        private static object ContextPutPath(FeelContext context, IReadOnlyList<object> path, int index, object value)
+        {
+            var key = path[index] as string ?? path[index]?.ToString();
+            if (key == null) return null;
+
+            var result = new FeelContext();
+            result.Merge(context);
+
+            if (index == path.Count - 1)
+            {
+                result.Put(key, value);
+                return result;
+            }
+
+            if (!context.TryGetValue(key, out var existing) || existing is not FeelContext child)
+                return null;
+
+            var updated = ContextPutPath(child, path, index + 1, value);
+            if (updated == null) return null;
+
+            result.Put(key, updated);
+            return result;
+        }
+
+        private static bool HasInvalidBackreference(string pattern)
+        {
+            var inCharacterClass = false;
+            for (var i = 0; i < pattern.Length - 1; i++)
+            {
+                var c = pattern[i];
+                if (c == '[') inCharacterClass = true;
+                else if (c == ']') inCharacterClass = false;
+                else if (c == '\\')
+                {
+                    var next = pattern[i + 1];
+                    if (next == '0') return true;
+                    if (inCharacterClass && char.IsDigit(next)) return true;
+                    i++;
+                }
+            }
+            return false;
+        }
+
+        private static string RewriteDotOutsideClasses(string pattern)
+        {
+            var builder = new System.Text.StringBuilder(pattern.Length);
+            var inCharacterClass = false;
+            for (var i = 0; i < pattern.Length; i++)
+            {
+                var c = pattern[i];
+                if (c == '\\' && i + 1 < pattern.Length)
+                {
+                    builder.Append(c).Append(pattern[++i]);
+                    continue;
+                }
+                if (c == '[') inCharacterClass = true;
+                if (c == ']') inCharacterClass = false;
+                builder.Append(!inCharacterClass && c == '.' ? "[^\\r\\n]" : c.ToString());
+            }
+            return builder.ToString();
+        }
+
+        private static string StripPatternWhitespace(string pattern)
+        {
+            var builder = new System.Text.StringBuilder(pattern.Length);
+            var inCharacterClass = false;
+
+            foreach (var c in pattern)
+            {
+                if (c == '[') inCharacterClass = true;
+                if (c == ']') inCharacterClass = false;
+
+                // FEEL's x flag ignores whitespace outside character classes,
+                // including whitespace that follows a backslash (\ s -> \s).
+                if (!inCharacterClass && char.IsWhiteSpace(c)) continue;
+                builder.Append(c);
+            }
+
+            return builder.ToString();
         }
 
         // ==================== Range Functions ====================

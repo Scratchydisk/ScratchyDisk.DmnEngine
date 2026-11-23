@@ -53,6 +53,8 @@ namespace ScratchyDisk.DmnEngine.Feel.Parsing
             "date and time",
             "years and months duration",
             "days and time duration",
+            "grouping separator",
+            "decimal separator",
             "day of year",
             "day of week",
             "month of year",

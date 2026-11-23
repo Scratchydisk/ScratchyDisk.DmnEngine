@@ -515,14 +515,76 @@ namespace ScratchyDisk.DmnEngine.Feel.Parsing
         private static string UnescapeString(string s)
         {
             if (s == null) return null;
-            return s.Replace("\\\"", "\"")
-                    .Replace("\\\\", "\\")
-                    .Replace("\\n", "\n")
-                    .Replace("\\r", "\r")
-                    .Replace("\\t", "\t")
-                    .Replace("\\/", "/")
-                    .Replace("\\b", "\b")
-                    .Replace("\\f", "\f");
+
+            var builder = new System.Text.StringBuilder(s.Length);
+            for (var i = 0; i < s.Length; i++)
+            {
+                if (s[i] != '\\' || i + 1 >= s.Length)
+                {
+                    builder.Append(s[i]);
+                    continue;
+                }
+
+                var escape = s[i + 1];
+                switch (escape)
+                {
+                    case '"': builder.Append('"'); i++; break;
+                    case '\\': builder.Append('\\'); i++; break;
+                    case 'n': builder.Append('\n'); i++; break;
+                    case 'r': builder.Append('\r'); i++; break;
+                    case 't': builder.Append('\t'); i++; break;
+                    case '/': builder.Append('/'); i++; break;
+                    case 'b': builder.Append('\b'); i++; break;
+                    case 'f': builder.Append('\f'); i++; break;
+                    case 'u' when i + 5 < s.Length:
+                        if (int.TryParse(s.AsSpan(i + 2, 4), System.Globalization.NumberStyles.HexNumber,
+                                System.Globalization.CultureInfo.InvariantCulture, out var codeUnit))
+                        {
+                            builder.Append((char)codeUnit);
+                            i += 5;
+                        }
+                        else
+                        {
+                            builder.Append(escape);
+                            i++;
+                        }
+                        break;
+                    case 'U' when i + 2 < s.Length:
+                    {
+                        // The TCK uses \U with 6 hex digits (e.g. \U01F40E), while
+                        // standard \U escapes use 8. Prefer 8 when it is zero-padded.
+                        var start = i + 2;
+                        var end = start + 6;
+                        if (end + 2 <= s.Length && s[start] == '0' && s[start + 1] == '0'
+                            && Uri.IsHexDigit(s[end]) && Uri.IsHexDigit(s[end + 1]))
+                            end = start + 8;
+
+                        if (end - start >= 4
+                            && int.TryParse(s.AsSpan(start, end - start), System.Globalization.NumberStyles.HexNumber,
+                                System.Globalization.CultureInfo.InvariantCulture, out var codePoint)
+                            && codePoint >= 0 && codePoint <= 0x10FFFF)
+                        {
+                            builder.Append(char.ConvertFromUtf32(codePoint));
+                            i = end - 1;
+                        }
+                        else
+                        {
+                            builder.Append('\\');
+                            builder.Append(escape);
+                            i++;
+                        }
+                        break;
+                    }
+                    default:
+                        // Unknown escapes are preserved: regex patterns need
+                        // sequences such as \1, \p{...} and \ .
+                        builder.Append('\\');
+                        builder.Append(escape);
+                        i++;
+                        break;
+                }
+            }
+            return builder.ToString();
         }
     }
 }
