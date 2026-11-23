@@ -164,6 +164,7 @@ namespace ScratchyDisk.DmnEngine.Engine.Execution.Context
 
             Snapshots.Reset();
             diagnostics.Clear();
+            providedDecisions.Clear();
             return this;
         }
 
@@ -450,6 +451,10 @@ namespace ScratchyDisk.DmnEngine.Engine.Execution.Context
                 {
                     evalContext.SetVariable(alias.Key, CreateBusinessKnowledgeModelFunction(bkm));
                 }
+                else if (Definition.DecisionServices.TryGetValue(alias.Value, out var service))
+                {
+                    evalContext.SetVariable(alias.Key, CreateDecisionServiceFunction(service));
+                }
             }
         }
 
@@ -485,95 +490,209 @@ namespace ScratchyDisk.DmnEngine.Engine.Execution.Context
             return scope;
         }
 
+        /// <summary>
+        /// Creates a callable FEEL function for a decision service. The function binds
+        /// its arguments to the input data / input decision variables, executes the
+        /// output decisions and restores the execution context afterwards so that a
+        /// decision service call never leaks its parameters into the surrounding scope.
+        /// </summary>
         private FeelFunction CreateDecisionServiceFunction(DmnDecisionService service)
         {
-            return new FeelFunction(service.Name, service.ParameterNames, args =>
-            {
-                var expectedArguments = service.ParameterVariables.Count;
-                if (args.Length != expectedArguments)
-                {
-                    throw Logger.Fatal<DmnExecutorException>(
-                        $"Decision service {service.Name} expects {expectedArguments} argument(s) but got {args.Length}");
-                }
-
-                var previousProvided = ProvidedDecisions.ToList();
-                ProvidedDecisions = previousProvided.Concat(service.ParameterDecisionNames).ToList();
-                try
-                {
-                for (var i = 0; i < service.ParameterVariables.Count; i++)
-                {
-                    if (!Variables.TryGetValue(service.ParameterVariables[i], out var variable)) continue;
-                    var value = i < args.Length ? args[i] : null;
-
-                    // Arguments are bound to typed parameters: an incompatible
-                    // value is an error for an input decision and null (not a
-                    // silent conversion) for an input data parameter.
-                    if (!IsParameterValueCompatible(variable.Type, value))
-                    {
-                        if (service.ParameterDecisionNames.Contains(variable.Name))
-                        {
-                            throw Logger.Fatal<DmnExecutorException>(
-                                $"Decision service {service.Name}: parameter {variable.Name} expects " +
-                                $"{variable.Type?.Name ?? "any"} but got {value?.GetType().Name ?? "null"}");
-                        }
-                        value = null;
-                    }
-
-                    if (variable.IsInputParameter) variable.SetInputParameterValue(value);
-                    else variable.Value = value;
-                }
-
-                if (service.OutputDecisionNames.Count > 1)
-                {
-                    var outputs = new FeelContext();
-                    foreach (var outputDecisionName in service.OutputDecisionNames)
-                    {
-                        var outputResult = ExecuteDecision(outputDecisionName);
-                        outputs.Put(outputDecisionName, ExtractDecisionValue(outputResult));
-                    }
-
-                    return outputs;
-                }
-
-                var result = ExecuteDecision(service.OutputDecisionName);
-                var serviceResult = ExtractDecisionValue(result);
-                if (!string.IsNullOrWhiteSpace(service.OutputTypeName)
-                    && !FeelTypeConformance.TryCoerce(serviceResult, service.OutputTypeName,
-                        Definition.ItemTypeNames, out serviceResult))
-                    return null;
-                return serviceResult;
-                }
-                finally
-                {
-                    ProvidedDecisions = previousProvided;
-                }
-            }, service.ParameterTypes, Definition.ItemTypeNames, true);
+            return new FeelFunction(service.Name, service.ParameterNames,
+                args => InvokeDecisionServiceAsFunction(service, args),
+                service.ParameterTypes, Definition.ItemTypeNames, true,
+                namedBody: namedArguments => InvokeDecisionServiceAsFunction(
+                    service, BindNamedArguments(service, namedArguments)));
         }
 
         /// <summary>
-        /// Checks whether a value can be bound to a decision service parameter of
-        /// the given declared type. Values already of the target type, numbers
-        /// bound to numeric parameters and strings (which may be parsed) are
-        /// accepted; anything else is a type mismatch.
+        /// Maps named arguments (FEEL <c>f(p: v)</c>) onto the parameter order.
+        /// Unknown or missing parameter names are errors: a decision service is
+        /// only invocable when every parameter has a value.
         /// </summary>
-        private static bool IsParameterValueCompatible(Type targetType, object value)
+        private static object[] BindNamedArguments(DmnDecisionService service,
+            IReadOnlyDictionary<string, object> namedArguments)
         {
-            if (targetType == null || value == null) return true;
-            if (targetType.IsInstanceOfType(value)) return true;
+            return BindArguments(service, namedArguments, message => new DmnEvaluationException(message));
+        }
 
-            if (FeelValueComparer.IsNumeric(value))
+        /// <summary>
+        /// Maps arguments supplied by name onto the parameter order. Unknown,
+        /// duplicate or missing parameters are errors.
+        /// </summary>
+        private static object[] BindArguments(DmnDecisionService service,
+            IEnumerable<KeyValuePair<string, object>> arguments, Func<string, Exception> error)
+        {
+            var args = new object[service.Parameters.Count];
+            var supplied = new bool[args.Length];
+
+            foreach (var argument in arguments ?? Enumerable.Empty<KeyValuePair<string, object>>())
             {
-                return targetType == typeof(decimal) || targetType == typeof(double)
-                    || targetType == typeof(float) || targetType == typeof(int)
-                    || targetType == typeof(long) || targetType == typeof(short)
-                    || targetType == typeof(byte);
+                var index = service.IndexOfParameter(argument.Key);
+                if (index < 0)
+                    throw error($"Decision service {service.Name} has no parameter named '{argument.Key}'"
+                                + (service.Parameters.Count > 0
+                                    ? $" (parameters: {string.Join(", ", service.ParameterNames)})"
+                                    : " (it has no parameters)"));
+                if (supplied[index])
+                    throw error(
+                        $"Decision service {service.Name}: parameter '{service.Parameters[index].Name}' is supplied more than once");
+                args[index] = argument.Value;
+                supplied[index] = true;
             }
 
-            // A string may be parsed into the declared type by the regular
-            // variable coercion.
-            if (value is string) return true;
+            for (var i = 0; i < supplied.Length; i++)
+            {
+                if (!supplied[i])
+                    throw error(
+                        $"Decision service {service.Name} requires a value for parameter '{service.Parameters[i].Name}'");
+            }
 
-            return FeelTypeCoercion.CoerceToClr(value, targetType) != null;
+            return args;
+        }
+
+        private object InvokeDecisionServiceAsFunction(DmnDecisionService service, object[] args)
+        {
+            var outputs = ExecuteDecisionService(service, args);
+
+            if (service.OutputDecisionNames.Count == 1)
+                return ConformServiceOutput(service, outputs[service.OutputDecisionNames[0]]);
+
+            var context = new FeelContext();
+            foreach (var output in outputs) context.Put(output.Key, output.Value);
+            return context;
+        }
+
+        /// <summary>
+        /// Invokes a decision service directly (not through a FEEL expression).
+        /// Inputs are matched to parameters by name.
+        /// </summary>
+        /// <param name="serviceName">Name of the decision service</param>
+        /// <param name="inputs">Parameter values by name</param>
+        /// <returns>Output decision values by decision name</returns>
+        /// <exception cref="DmnExecutorException">The decision service does not exist or a parameter cannot be bound</exception>
+        public IReadOnlyDictionary<string, object> InvokeDecisionService(string serviceName,
+            IReadOnlyDictionary<string, object> inputs)
+        {
+            if (string.IsNullOrWhiteSpace(serviceName))
+                throw Logger.Fatal<ArgumentException>($"{nameof(serviceName)} is null or empty");
+            if (!Definition.DecisionServices.TryGetValue(serviceName, out var service))
+                throw Logger.Fatal<DmnExecutorException>(
+                    $"InvokeDecisionService: decision service {serviceName} not found");
+
+            var args = BindArguments(service, inputs,
+                message => Logger.Fatal<DmnExecutorException>("InvokeDecisionService: " + message));
+
+            var outputs = ExecuteDecisionService(service, args);
+            if (service.OutputDecisionNames.Count != 1) return outputs;
+
+            // A decision service is directly invocable only when its result conforms
+            // to the declared output type; a non-conforming result is an error.
+            var outputName = service.OutputDecisionNames[0];
+            return new Dictionary<string, object>(StringComparer.Ordinal)
+            {
+                [outputName] = ConformServiceOutput(service, outputs[outputName],
+                    message => Logger.Fatal<DmnEvaluationException>(message))
+            };
+        }
+
+        /// <summary>
+        /// Applies the declared FEEL output type of the decision service. A result that
+        /// does not conform becomes null (the DMN null-coercion result), or is reported
+        /// through <paramref name="onTypeError"/> when the caller treats it as an error.
+        /// </summary>
+        private object ConformServiceOutput(DmnDecisionService service, object value,
+            Func<string, Exception> onTypeError = null)
+        {
+            if (string.IsNullOrWhiteSpace(service.OutputTypeName)) return value;
+            if (FeelTypeConformance.TryCoerce(value, service.OutputTypeName, Definition.ItemTypeNames,
+                    out var conformed))
+                return conformed;
+
+            return onTypeError != null
+                ? throw onTypeError(
+                    $"Decision service {service.Name}: result does not conform to the declared type {service.OutputTypeName}")
+                : null;
+        }
+
+        /// <summary>
+        /// Binds <paramref name="args"/> to the decision service parameters, runs the
+        /// output decisions and restores every touched variable (and the provided
+        /// decision set) before returning.
+        /// </summary>
+        private IReadOnlyDictionary<string, object> ExecuteDecisionService(DmnDecisionService service, object[] args)
+        {
+            var expected = service.Parameters.Count;
+            if (args == null || args.Length != expected)
+                throw new DmnEvaluationException(
+                    $"Decision service {service.Name} expects {expected} parameter(s) but got {args?.Length ?? 0}");
+
+            var savedVariables = new List<KeyValuePair<DmnExecutionVariable, object>>();
+            var previousProvided = providedDecisions.ToList();
+            try
+            {
+                for (var i = 0; i < expected; i++)
+                {
+                    var parameter = service.Parameters[i];
+                    if (!Variables.TryGetValue(parameter.VariableName, out var variable))
+                        throw new DmnEvaluationException(
+                            $"Decision service {service.Name}: parameter '{parameter.Name}' has no variable '{parameter.VariableName}'");
+
+                    var value = CheckArgumentType(service, parameter, args[i]);
+                    savedVariables.Add(new KeyValuePair<DmnExecutionVariable, object>(variable, variable.Value));
+                    SetVariableValue(variable, value);
+
+                    // A provided decision must not be executed: its supplied value is
+                    // the value the output decision sees.
+                    if (parameter.IsDecision) providedDecisions.Add(parameter.DecisionName);
+                }
+
+                var outputs = new Dictionary<string, object>(StringComparer.Ordinal);
+                foreach (var outputDecisionName in service.OutputDecisionNames)
+                {
+                    outputs[outputDecisionName] = ExtractDecisionValue(ExecuteDecision(outputDecisionName));
+                }
+                return outputs;
+            }
+            finally
+            {
+                for (var i = savedVariables.Count - 1; i >= 0; i--)
+                {
+                    SetVariableValue(savedVariables[i].Key, savedVariables[i].Value);
+                }
+                ProvidedDecisions = previousProvided;
+            }
+        }
+
+        /// <summary>
+        /// Checks an argument against the declared parameter type. FEEL converts a
+        /// singleton list to the value it contains; any other incompatible value
+        /// binds null to an input data parameter (the value FEEL coercion produces)
+        /// but makes the service not invocable when an input decision is missing a
+        /// value of its declared type.
+        /// </summary>
+        private static object CheckArgumentType(DmnDecisionService service,
+            DmnDecisionServiceParameter parameter, object value)
+        {
+            if (value == null || parameter.IsAnyType) return value;
+
+            var feelType = FeelTypeCoercion.GetFeelTypeName(FeelTypeCoercion.CoerceToFeel(value));
+            if (string.Equals(feelType, parameter.FeelTypeName, StringComparison.Ordinal)) return value;
+
+            // FEEL treats a singleton list as the value it contains.
+            if (value is List<object> list && list.Count == 1)
+                return CheckArgumentType(service, parameter, list[0]);
+
+            if (!parameter.IsDecision) return null;
+
+            throw new DmnEvaluationException(
+                $"Decision service {service.Name}: parameter '{parameter.Name}' expects {parameter.FeelTypeName} but got {feelType}");
+        }
+
+        private static void SetVariableValue(DmnExecutionVariable variable, object value)
+        {
+            if (variable.IsInputParameter) variable.SetInputParameterValue(value);
+            else variable.Value = value;
         }
 
         private static object ExtractDecisionValue(DmnDecisionResult result)

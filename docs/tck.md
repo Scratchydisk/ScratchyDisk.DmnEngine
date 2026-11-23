@@ -84,7 +84,7 @@ failures or new failures, `2` setup/usage error.
 | `FAIL` | Evaluation ran and the answer was wrong, or an error was raised where a value was expected |
 | `PARSE-FAIL` | The model or test XML could not be read |
 | `NOT-FOUND` | The result node names a decision the engine did not produce |
-| `UNSUPPORTED` | The engine cannot evaluate the construct at all (decision service, import, unparsed logic kind) |
+| `UNSUPPORTED` | The engine cannot evaluate the construct at all (import, unparsed logic kind) |
 | `FIXTURE-ERROR` | The test value cannot be represented (for example a negative year) |
 
 `PARSE-FAIL`, `NOT-FOUND`, `UNSUPPORTED` and `FIXTURE-ERROR` are **blocked**:

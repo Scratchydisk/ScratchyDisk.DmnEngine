@@ -228,6 +228,11 @@ public sealed class TckRunner
 
         var isDecisionService = string.Equals(testCase.Type, "decisionService", StringComparison.OrdinalIgnoreCase);
 
+        // A test case may invoke a decision service directly (invocableName +
+        // type="decisionService"); the input nodes are then parameter values.
+        if (isDecisionService && !string.IsNullOrWhiteSpace(testCase.InvocableName))
+            return RunDecisionServiceInvocation(model, testCase, result);
+
         var decisionName = result.Name;
         if (!string.IsNullOrWhiteSpace(result.Namespace)
             && model.Definition.QualifiedDecisionNames.TryGetValue($"{result.Namespace}#{result.Name}", out var qualified))
@@ -308,24 +313,106 @@ public sealed class TckRunner
         }
         catch (Exception ex)
         {
-            var message = Shorten(ex.Message);
-
-            // The engine failing before it can evaluate is a capability gap, not a
-            // wrong answer. Reporting it as unsupported keeps the failure list
-            // focused on behaviour that actually ran.
-            if (IsInfrastructureError(ex))
-            {
-                return Node(result, TckStatus.Unsupported,
-                    "engine cannot evaluate: " + message, expectedText, "<error>", null);
-            }
-
-            if (result.ExpectsError)
-                return Node(result, TckStatus.Pass, "", expectedText, "<error>",
-                    "error as expected: " + message);
-
-            return Node(result, TckStatus.Fail, "threw: " + message, expectedText, "<error>", null);
+            return ErrorNode(result, expectedText, ex);
         }
 
+        return CompareNode(result, expected, actual, expectedText);
+    }
+
+    private TckModel GetModel(string path)
+    {
+        if (!_models.TryGetValue(path, out var model))
+        {
+            model = TckModel.Load(path);
+            _models[path] = model;
+        }
+        return model;
+    }
+
+    /// <summary>
+    /// Runs a test case that invokes a decision service directly. The input nodes
+    /// are parameter values matched to the service parameters by name; the result
+    /// node names one of the service's output decisions.
+    /// </summary>
+    private TckNodeResult RunDecisionServiceInvocation(TckModel model, TckTestCase testCase, TckResult result)
+    {
+        var serviceName = testCase.InvocableName;
+
+        object expected;
+        try
+        {
+            expected = TckValue.Parse(result.Expected);
+        }
+        catch (Exception ex)
+        {
+            return Node(result, TckStatus.FixtureError, "expected value: " + ex.Message);
+        }
+
+        var expectedText = TckValue.Format(expected);
+
+        if (!model.Definition.DecisionServices.TryGetValue(serviceName, out var service))
+        {
+            return Node(result, TckStatus.NotFound,
+                $"no decision service '{serviceName}' (available: {string.Join(", ", model.Definition.DecisionServices.Keys)})");
+        }
+
+        var inputs = new Dictionary<string, object>(StringComparer.Ordinal);
+        foreach (var input in testCase.Inputs)
+        {
+            object value;
+            try
+            {
+                value = TckValue.Parse(input.Value);
+            }
+            catch (Exception ex)
+            {
+                return Node(result, TckStatus.FixtureError, $"input '{input.Name}': {ex.Message}");
+            }
+            inputs[input.Name] = TckValue.ToEngineValue(value);
+        }
+
+        object actual;
+        try
+        {
+            var context = DmnExecutionContextFactory.CreateExecutionContext(model.Definition);
+            var outputs = context.InvokeDecisionService(serviceName, inputs);
+            if (!outputs.TryGetValue(result.Name, out actual))
+            {
+                return Node(result, TckStatus.NotFound,
+                    $"decision service '{serviceName}' has no output decision '{result.Name}' " +
+                    $"(outputs: {string.Join(", ", outputs.Keys)})");
+            }
+        }
+        catch (Exception ex)
+        {
+            return ErrorNode(result, expectedText, ex);
+        }
+
+        return CompareNode(result, expected, actual, expectedText);
+    }
+
+    private static TckNodeResult ErrorNode(TckResult result, string expectedText, Exception exception)
+    {
+        var message = Shorten(exception.Message);
+
+        // The engine failing before it can evaluate is a capability gap, not a
+        // wrong answer. Reporting it as unsupported keeps the failure list
+        // focused on behaviour that actually ran.
+        if (IsInfrastructureError(exception))
+        {
+            return Node(result, TckStatus.Unsupported,
+                "engine cannot evaluate: " + message, expectedText, "<error>", null);
+        }
+
+        if (result.ExpectsError)
+            return Node(result, TckStatus.Pass, "", expectedText, "<error>",
+                "error as expected: " + message);
+
+        return Node(result, TckStatus.Fail, "threw: " + message, expectedText, "<error>", null);
+    }
+
+    private static TckNodeResult CompareNode(TckResult result, object expected, object actual, string expectedText)
+    {
         var actualText = TckValue.Format(actual);
 
         if (result.ExpectsError)
@@ -338,16 +425,6 @@ public sealed class TckRunner
         return TckValue.Compare(expected, actual, out var reason)
             ? Node(result, TckStatus.Pass, "", expectedText, actualText, null)
             : Node(result, TckStatus.Fail, reason, expectedText, actualText, null);
-    }
-
-    private TckModel GetModel(string path)
-    {
-        if (!_models.TryGetValue(path, out var model))
-        {
-            model = TckModel.Load(path);
-            _models[path] = model;
-        }
-        return model;
     }
 
     /// <summary>

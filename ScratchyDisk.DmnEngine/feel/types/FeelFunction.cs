@@ -38,6 +38,13 @@ namespace ScratchyDisk.DmnEngine.Feel.Types
         public bool ValidateArity { get; }
 
         /// <summary>
+        /// Optional callable for named invocation. When set it receives the supplied
+        /// arguments by name, so the function itself can validate unknown or missing
+        /// parameters instead of silently receiving null.
+        /// </summary>
+        private Func<IReadOnlyDictionary<string, object>, object> NamedBody { get; }
+
+        /// <summary>
         /// Display name of this function (for debugging/error messages)
         /// </summary>
         public string Name { get; }
@@ -45,7 +52,8 @@ namespace ScratchyDisk.DmnEngine.Feel.Types
         public FeelFunction(string name, IReadOnlyList<string> parameterNames, Func<object[], object> body,
             IReadOnlyList<string> parameterTypes = null,
             IReadOnlyDictionary<string, string> typeAliases = null,
-            bool validateArity = false)
+            bool validateArity = false,
+            Func<IReadOnlyDictionary<string, object>, object> namedBody = null)
         {
             Name = name ?? "anonymous";
             ParameterNames = parameterNames ?? Array.Empty<string>();
@@ -53,6 +61,7 @@ namespace ScratchyDisk.DmnEngine.Feel.Types
             TypeAliases = typeAliases;
             ValidateArity = validateArity;
             Body = body ?? throw new ArgumentNullException(nameof(body));
+            NamedBody = namedBody;
         }
 
         /// <summary>
@@ -91,6 +100,12 @@ namespace ScratchyDisk.DmnEngine.Feel.Types
         public object InvokeNamed(IDictionary<string, object> namedArgs)
         {
             if (namedArgs == null) return Invoke();
+
+            if (NamedBody != null)
+            {
+                var supplied = new Dictionary<string, object>(namedArgs, StringComparer.Ordinal);
+                return NamedBody(supplied);
+            }
 
             if (namedArgs.Keys.Any(key => !ParameterNames.Contains(key, StringComparer.Ordinal)))
                 return null;

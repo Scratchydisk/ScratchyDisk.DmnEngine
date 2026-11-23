@@ -10,7 +10,6 @@ namespace ScratchyDisk.DmnEngine.Parser.Dto
     public class InputData : NamedElement
     {
         /// <summary>
-        /// <summary>
         /// Variable that carries the input data value (its typeRef declares the input type).
         /// </summary>
         [XmlElement("variable")]

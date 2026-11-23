@@ -620,9 +620,18 @@ namespace ScratchyDisk.DmnEngine.Engine.Definition
             {
                 //boxed expression decision
                 decision = CreateBoxedExpressionDecision(sourceDecision, decisionName, requiredInputs, requiredDecisions);
-            }else 
+            }
+            else
             {
-                //unsupported decision type
+                // A decision without decision logic has no value of its own; its
+                // value is null unless an external caller (for example a decision
+                // service parameter) provides one. Decisions whose logic uses an
+                // unmodelled boxed expression stay unsupported.
+                if (!HasUnsupportedLogic(sourceDecision) && sourceDecision.OutputVariable != null)
+                {
+                    decision = CreateExpressionDecision(sourceDecision, decisionName, requiredInputs,
+                        requiredDecisions, "null");
+                }
             }
 
             if (decision != null)
@@ -1232,48 +1241,54 @@ namespace ScratchyDisk.DmnEngine.Engine.Definition
                 var name = source.Name ?? source.Id;
                 if (string.IsNullOrWhiteSpace(name)) continue;
 
-                var outputDecisionNames = (source.OutputDecisions ?? Enumerable.Empty<DecisionServiceReference>())
-                    .Select(reference => ResolveDecisionRef(reference?.Ref))
-                    .Where(decisionRef => decisionRef != null)
-                    .Select(decisionRef => decisionRef.Name)
+                var outputs = (source.OutputDecisions ?? new List<DecisionServiceReference>())
+                    .Select(o => ResolveDecisionRef(o.Ref))
+                    .Where(d => d != null)
+                    .Select(d => d.Name)
+                    .Distinct(StringComparer.Ordinal)
                     .ToList();
-                if (outputDecisionNames.Count == 0) continue;
+                if (outputs.Count == 0) continue;
 
-                var parameterNames = new List<string>();
-                var parameterVariables = new List<string>();
-                var parameterDecisions = new List<string>();
-                var parameterTypes = new List<string>();
+                var parameters = new List<DmnDecisionServiceParameter>();
 
+                // DMN lists the input data parameters before the input decision
+                // parameters; positional invocation relies on this order.
                 foreach (var input in source.InputData ?? Enumerable.Empty<DecisionServiceReference>())
                 {
                     var id = input.Ref?.TrimStart('#');
                     if (id != null && InputDataById.TryGetValue(id, out var variable))
                     {
-                        parameterNames.Add(variable.Label);
-                        parameterVariables.Add(variable.Name);
-                        var typeRef = SourceModel.InputData?.FirstOrDefault(i => i.Id == id)?.Variable?.TypeRef;
-                        parameterTypes.Add(string.IsNullOrWhiteSpace(typeRef) ? null : ResolveFeelTypeName(typeRef));
+                        parameters.Add(new DmnDecisionServiceParameter(
+                            variable.Label ?? variable.Name, variable.Name,
+                            feelTypeName: InputDataFeelTypeName(id, variable)));
                     }
                 }
                 foreach (var input in source.InputDecisions ?? Enumerable.Empty<DecisionServiceReference>())
                 {
                     var decision = ResolveDecisionRef(input.Ref);
-                    if (decision == null) continue;
-                    parameterNames.Add(decision.Name);
-                    parameterVariables.Add(decision.Name);
-                    parameterDecisions.Add(decision.Name);
+                    if (decision == null)
+                    {
+                        Logger.Warn($"Decision service {name}: input decision {input.Ref} is not modelled by the engine");
+                        continue;
+                    }
 
+                    // The provided value is bound to the decision's output variable,
+                    // which is not always named after the decision itself.
+                    var variableName = DecisionOutputVariableName(decision);
                     var id = input.Ref?.TrimStart('#');
                     var typeRef = SourceModel.Decisions?
                         .FirstOrDefault(d => d.Id == id)?.OutputVariable?.TypeRef;
-                    parameterTypes.Add(string.IsNullOrWhiteSpace(typeRef) ? null : ResolveFeelTypeName(typeRef));
+                    var feelTypeName = string.IsNullOrWhiteSpace(typeRef)
+                        ? ClrFeelTypeName(Variables.TryGetValue(variableName, out var decisionVariable)
+                            ? decisionVariable.Type
+                            : null)
+                        : ResolveFeelTypeName(typeRef);
+                    parameters.Add(new DmnDecisionServiceParameter(
+                        decision.Name, variableName, decision.Name, feelTypeName));
                 }
 
                 var outputTypeName = ResolveDecisionServiceOutputTypeName(source.OutputVariable?.TypeRef);
-
-                DecisionServices[name] = new DmnDecisionService(
-                    name, parameterNames, parameterVariables, outputDecisionNames[0], parameterDecisions,
-                    parameterTypes, outputTypeName, outputDecisionNames);
+                DecisionServices[name] = new DmnDecisionService(name, parameters, outputs, outputTypeName);
             }
         }
 
@@ -1306,6 +1321,47 @@ namespace ScratchyDisk.DmnEngine.Engine.Definition
             var id = reference.TrimStart('#');
             if (DecisionsById.TryGetValue(id, out var decision)) return decision;
             return Decisions.Values.FirstOrDefault(d => d.Name == reference || d.Name == id);
+        }
+
+        /// <summary>
+        /// FEEL type name of an input data declaration. The execution variable only
+        /// carries a type when a decision table discovered one, so fall back to the
+        /// type declared on the input data's own variable.
+        /// </summary>
+        private string InputDataFeelTypeName(string inputId, DmnVariableDefinition variable)
+        {
+            if (variable.Type != null) return ClrFeelTypeName(variable.Type);
+
+            var source = SourceModel?.InputData?.FirstOrDefault(i => i.Id == inputId);
+            return TypeRefFeelTypeName(source?.Variable?.TypeRef, new HashSet<string>(StringComparer.Ordinal));
+        }
+
+        private static readonly HashSet<string> UnmodelledLogicKinds =
+            new(StringComparer.Ordinal) { "conditional", "for", "some", "every", "filter" };
+
+        /// <summary>
+        /// True when the decision declares a boxed expression the engine does not model.
+        /// </summary>
+        private static bool HasUnsupportedLogic(Decision sourceDecision)
+        {
+            return sourceDecision.UnknownElements != null
+                   && sourceDecision.UnknownElements.Any(e => UnmodelledLogicKinds.Contains(e.LocalName));
+        }
+
+        /// <summary>
+        /// Name of the execution variable holding the value of <paramref name="decision"/>.
+        /// </summary>
+        private static string DecisionOutputVariableName(IDmnDecision decision)
+        {
+            switch (decision)
+            {
+                case DmnExpressionDecision expression when expression.Output != null:
+                    return expression.Output.Name;
+                case DmnDecisionTable table when table.Outputs.Length == 1:
+                    return table.Outputs[0].Variable.Name;
+                default:
+                    return decision.Name;
+            }
         }
 
         private Dictionary<string, string> BuildDecisionAliases()

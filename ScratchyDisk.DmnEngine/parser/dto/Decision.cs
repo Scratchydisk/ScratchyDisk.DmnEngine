@@ -68,6 +68,15 @@ namespace ScratchyDisk.DmnEngine.Parser.Dto
         /// </summary>
         [XmlElement("decisionTable")]
         public DecisionTable DecisionTable { get; set; }
-        
+
+        /// <summary>
+        /// Child elements this DTO does not model. Boxed expressions that the
+        /// engine does not support yet (conditional, filter, for, some, every) are
+        /// found here, so a decision with unsupported logic can be told apart from
+        /// a decision that declares no logic at all.
+        /// </summary>
+        [XmlAnyElement]
+        public List<System.Xml.XmlElement> UnknownElements { get; set; }
+
     }
 }
