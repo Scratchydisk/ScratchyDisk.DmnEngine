@@ -39,7 +39,9 @@ namespace ScratchyDisk.DmnEngine.Test.Complex
             result.FirstResultVariables.Should().HaveCount(1);
             result.Results[0].HitRules.Should().HaveCount(1);
 
-            var val = direct == "over" ? "dyna.Direct==over" : name + isOk + direct;
+            var val = direct == "over"
+                ? "dyna.Direct==over"
+                : (name ?? "null") + (isOk ? "true" : "false") + direct;
             var output = result.FirstResultVariables[0];
             output.Should().NotBeNull();
             output.Value.Should().Be(val).And.BeOfType<string>();

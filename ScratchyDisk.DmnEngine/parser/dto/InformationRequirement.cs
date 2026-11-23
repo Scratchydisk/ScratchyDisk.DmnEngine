@@ -103,13 +103,26 @@ namespace ScratchyDisk.DmnEngine.Parser.Dto
             if (string.IsNullOrWhiteSpace(reference))
                 throw new DmnParserException("Can't parse InformationRequirement - reference is null or empty");
 
-            if (!reference.StartsWith('#'))
+            if (reference.StartsWith('#'))
+            {
+                reference = reference[1..];
+            }
+            else if (reference.IndexOfAny(new[] { '#', ':', '/' }) >= 0)
+            {
+                // Imported references are qualified URIs ("...Model#_id"); take
+                // the local part. A plain bare id is still invalid.
+                var separator = reference.LastIndexOfAny(new[] { '#', ':', '/' });
+                reference = reference[(separator + 1)..];
+            }
+            else
+            {
                 throw new DmnParserException("Can't parse InformationRequirement - reference doesn't start with #");
+            }
 
-            if (reference.Length < 2)
+            if (reference.Length < 1)
                 throw new DmnParserException("Can't parse InformationRequirement - reference too short/missing");
 
-            return reference.Substring(1);
+            return reference;
         }
 
         /// <summary>Returns a string that represents the current object.</summary>

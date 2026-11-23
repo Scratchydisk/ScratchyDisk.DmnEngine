@@ -49,9 +49,10 @@ namespace ScratchyDisk.DmnEngine.Feel.Parsing
             "round half up",
             "round half down",
 
-            // Date/time functions
+            // Date/time types and functions
             "date and time",
             "years and months duration",
+            "days and time duration",
             "day of year",
             "day of week",
             "month of year",

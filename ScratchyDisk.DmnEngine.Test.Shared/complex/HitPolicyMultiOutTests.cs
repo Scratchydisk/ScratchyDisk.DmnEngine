@@ -21,7 +21,7 @@ namespace ScratchyDisk.DmnEngine.Test.Complex
         [DataRow(5, 5, null, null, true)]
         [DataRow(6, 6, null, null, false)]
         [DataRow(null, null, null, null, false)]
-        [DataRow(null, 2, "b2", 2, true)]
+        [DataRow(0, 2, "b2", 2, true)]
         public void UniqueHitPolicyMultiOutTest(int? a, int? b, string o1, int? o2, bool hasHit)
         {
             var ctx = CTX("hitpolicy_MultiOut_Unique.dmn");
@@ -92,7 +92,7 @@ namespace ScratchyDisk.DmnEngine.Test.Complex
         [DataRow(5, 5, null, null, true)]
         [DataRow(6, 6, null, null, false)]
         [DataRow(null, null, null, null, false)]
-        [DataRow(null, 2, "b2", 2, true)]
+        [DataRow(0, 2, "b2", 2, true)]
         [DataRow(5, 2, "b2", 7, true)]
         public void FirstHitPolicyMultiOutTest(int? a, int? b, string o1, int? o2, bool hasHit)
         {

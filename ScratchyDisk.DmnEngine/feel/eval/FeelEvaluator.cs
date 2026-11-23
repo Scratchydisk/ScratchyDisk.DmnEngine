@@ -289,7 +289,7 @@ namespace ScratchyDisk.DmnEngine.Feel.Eval
                 if (left is DateOnly date && right is FeelYmDuration ymd)
                     return ymd.AddTo(date);
                 if (left is DateOnly date2 && right is TimeSpan ts1)
-                    return new DateTimeOffset(date2.ToDateTime(TimeOnly.MinValue)) + ts1;
+                    return DateOnly.FromDateTime(date2.ToDateTime(TimeOnly.MinValue).Add(ts1));
                 if (left is DateTimeOffset dto && right is FeelYmDuration ymd2)
                     return ymd2.AddTo(dto);
                 if (left is DateTimeOffset dto2 && right is TimeSpan ts2)
@@ -306,6 +306,8 @@ namespace ScratchyDisk.DmnEngine.Feel.Eval
                     return ymd4.AddTo(dto3);
                 if (left is TimeSpan ts4 && right is DateTimeOffset dto4)
                     return dto4 + ts4;
+                if (left is TimeSpan tsDate && right is DateOnly dateWithDuration)
+                    return DateOnly.FromDateTime(dateWithDuration.ToDateTime(TimeOnly.MinValue).Add(tsDate));
                 if (left is TimeSpan ts5 && right is FeelTime ft2)
                     return ft2 + ts5;
 
@@ -316,14 +318,9 @@ namespace ScratchyDisk.DmnEngine.Feel.Eval
                     return yml + ymr;
             }
 
-            // C# compat: string + anything, anything + string → string concatenation
-            // This covers: "str" + 5, null + "str", "str" + null, bool + "str", etc.
-            if (left is string || right is string)
-                return (left?.ToString() ?? "") + (right?.ToString() ?? "");
-
-            // Null propagation for non-string operations
-            if (left == null || right == null) return null;
-
+            // FEEL only defines string + string. There is no implicit string
+            // conversion, so a mixed addition is null (an error at the engine
+            // boundary), not C#-style concatenation.
             return null;
         }
 
@@ -340,11 +337,17 @@ namespace ScratchyDisk.DmnEngine.Feel.Eval
             if (left is FeelTime ft1 && right is FeelTime ft2)
                 return ft1 - ft2;
 
+            // Date - date-time: the date is midnight UTC.
+            if (left is DateOnly leftDate && right is DateTimeOffset rightDateTime)
+                return new DateTimeOffset(leftDate.ToDateTime(TimeOnly.MinValue), TimeSpan.Zero) - rightDateTime;
+            if (left is DateTimeOffset leftDateTime && right is DateOnly rightDate)
+                return leftDateTime - new DateTimeOffset(rightDate.ToDateTime(TimeOnly.MinValue), TimeSpan.Zero);
+
             // Date - duration
             if (left is DateOnly date && right is FeelYmDuration ymd)
                 return new FeelYmDuration(-ymd.TotalMonths).AddTo(date);
             if (left is DateOnly date2 && right is TimeSpan ts1)
-                return new DateTimeOffset(date2.ToDateTime(TimeOnly.MinValue)) - ts1;
+                return DateOnly.FromDateTime(date2.ToDateTime(TimeOnly.MinValue).Subtract(ts1));
             if (left is DateTimeOffset dto && right is FeelYmDuration ymd2)
                 return new FeelYmDuration(-ymd2.TotalMonths).AddTo(dto);
             if (left is DateTimeOffset dto3 && right is TimeSpan ts2)
@@ -372,11 +375,29 @@ namespace ScratchyDisk.DmnEngine.Feel.Eval
             if (FeelValueComparer.IsNumeric(left) && right is TimeSpan ts2)
                 return TimeSpan.FromTicks((long)(ts2.Ticks * (double)FeelValueComparer.ToDecimal(left)));
             if (left is FeelYmDuration ym && FeelValueComparer.IsNumeric(right))
-                return ym * (int)FeelValueComparer.ToDecimal(right);
+                return MultiplyYmDuration(ym, FeelValueComparer.ToDecimal(right));
             if (FeelValueComparer.IsNumeric(left) && right is FeelYmDuration ym2)
-                return ym2 * (int)FeelValueComparer.ToDecimal(left);
+                return MultiplyYmDuration(ym2, FeelValueComparer.ToDecimal(left));
 
             return null;
+        }
+
+        /// <summary>
+        /// FEEL years-and-months duration multiplication rounds to the nearest month,
+        /// with half values rounded up (towards positive infinity).
+        /// </summary>
+        private static FeelYmDuration MultiplyYmDuration(FeelYmDuration duration, decimal factor)
+        {
+            var months = duration.TotalMonths * factor;
+            var rounded = Math.Floor(months + 0.5m);
+            return new FeelYmDuration((int)rounded);
+        }
+
+        private static FeelYmDuration DivideYmDuration(FeelYmDuration duration, decimal divisor)
+        {
+            var months = duration.TotalMonths / divisor;
+            var rounded = Math.Floor(months + 0.5m);
+            return new FeelYmDuration((int)rounded);
         }
 
         private static object EvalDiv(object left, object right)
@@ -397,9 +418,9 @@ namespace ScratchyDisk.DmnEngine.Feel.Eval
             }
             if (left is FeelYmDuration ym && FeelValueComparer.IsNumeric(right))
             {
-                var d = (int)FeelValueComparer.ToDecimal(right);
-                if (d == 0) return null;
-                return ym / d;
+                var d = FeelValueComparer.ToDecimal(right);
+                if (d == 0m) return null;
+                return DivideYmDuration(ym, d);
             }
 
             // Duration / duration = number
@@ -503,18 +524,69 @@ namespace ScratchyDisk.DmnEngine.Feel.Eval
         private object EvalIn(InNode inNode)
         {
             var value = Evaluate(inNode.Value);
-            var tests = Evaluate(inNode.Tests);
 
-            // If tests is a list, check if value is in it
-            if (tests is List<object> list)
-                return list.Any(item => CoerceUnaryTestResult(item, value));
+            // `x in <unary tests>` evaluates the tests against x, not against the
+            // null input value. Temporarily bind x as the implicit input value so
+            // comparisons, ranges and lists all use their unary-test semantics.
+            if (inNode.Tests is UnaryTests unaryTests)
+            {
+                bool? any = false;
+                foreach (var test in unaryTests.Tests)
+                {
+                    var match = EvaluateInTest(test, value);
+                    if (match == true) { any = true; break; }
+                    if (match == null) any = null;
+                }
 
-            // If tests is an UnaryTests result (already evaluated), check
-            if (tests is FeelRange range)
-                return range.Contains(value);
+                if (unaryTests.IsNegated)
+                    return any == null ? null : !any.Value;
+                return any;
+            }
 
-            // Single value equality
-            return FeelValueComparer.FeelEqual(value, tests);
+            return EvaluateInTest(inNode.Tests, value);
+        }
+
+        /// <summary>
+        /// Evaluates one unary test as the right-hand side of `in`, preserving null
+        /// for ranges with a null endpoint or a null input.
+        /// </summary>
+        private bool? EvaluateInTest(FeelAstNode test, object value)
+        {
+            var previousInput = context.InputValue;
+            context.InputValue = value;
+            try
+            {
+                if (test is RangeNode rangeNode
+                    && (rangeNode.Low is NullLiteral || rangeNode.High is NullLiteral))
+                {
+                    return null;
+                }
+
+                var evaluated = Evaluate(test);
+
+                if (evaluated is FeelRange range)
+                    return range.Contains(value);
+
+                if (evaluated is List<object> list)
+                {
+                    bool? any = false;
+                    foreach (var item in list)
+                    {
+                        var match = item is FeelRange itemRange
+                            ? itemRange.Contains(value)
+                            : FeelValueComparer.FeelEqual(value, item);
+                        if (match == true) return true;
+                        if (match == null) any = null;
+                    }
+                    return any;
+                }
+
+                return CoerceUnaryTestResultForNode(test, evaluated, value);
+            }
+            finally
+            {
+                context.InputValue = previousInput;
+            }
         }
 
         private object EvalInstanceOf(InstanceOf io)
@@ -523,6 +595,10 @@ namespace ScratchyDisk.DmnEngine.Feel.Eval
             var typeName = io.TypeName;
 
             if (value == null) return typeName == "null";
+
+            if (typeName.StartsWith("list<", StringComparison.Ordinal)) return value is List<object>;
+            if (typeName.StartsWith("range<", StringComparison.Ordinal)) return value is FeelRange;
+            if (typeName.StartsWith("context<", StringComparison.Ordinal)) return value is FeelContext;
 
             return typeName switch
             {
@@ -931,6 +1007,10 @@ namespace ScratchyDisk.DmnEngine.Feel.Eval
 
         private static object ParseDateTimeLiteral(string raw)
         {
+            // FEEL allows 24:00:00 as the end of a day.
+            var endOfDay = raw.Contains("T24:00");
+            if (endOfDay) raw = raw.Replace("T24:00", "T00:00");
+
             // Try ISO date: 2024-01-15
             if (DateOnly.TryParseExact(raw, "yyyy-MM-dd", CultureInfo.InvariantCulture, DateTimeStyles.None, out var date))
                 return date;
@@ -939,15 +1019,51 @@ namespace ScratchyDisk.DmnEngine.Feel.Eval
             if (TryParseFeelTime(raw, out var time))
                 return time;
 
+            // FEEL 1.5 IANA zone suffix: 2024-01-15T10:30:00@Europe/Paris
+            var at = raw.LastIndexOf('@');
+            if (at > 0)
+            {
+                var zone = ResolveTimeZone(raw[(at + 1)..]);
+                if (zone == null) return null;
+                if (!DateTime.TryParse(raw[..at], CultureInfo.InvariantCulture, DateTimeStyles.None, out var local))
+                    return null;
+                if (zone.IsInvalidTime(local)) return null;
+                var zoned = new DateTimeOffset(local, zone.GetUtcOffset(local));
+                return endOfDay ? zoned.AddDays(1) : zoned;
+            }
+
             // Try ISO date-time: 2024-01-15T10:30:00, etc.
             if (DateTimeOffset.TryParse(raw, CultureInfo.InvariantCulture, DateTimeStyles.None, out var dto))
-                return dto;
+                return endOfDay ? dto.AddDays(1) : dto;
 
             // Try duration: P1Y2M, P3DT4H, PT1H30M, etc.
             if (TryParseDuration(raw, out var duration))
                 return duration;
 
             return null; // Unknown format
+        }
+
+        /// <summary>
+        /// Resolves an IANA or Windows time zone identifier, accepting Z and UTC.
+        /// </summary>
+        private static TimeZoneInfo ResolveTimeZone(string identifier)
+        {
+            if (string.IsNullOrWhiteSpace(identifier)) return null;
+            if (identifier == "Z" || identifier.Equals("UTC", StringComparison.OrdinalIgnoreCase))
+                return TimeZoneInfo.Utc;
+
+            try { return TimeZoneInfo.FindSystemTimeZoneById(identifier); }
+            catch (TimeZoneNotFoundException) { }
+            catch (InvalidTimeZoneException) { }
+
+            if (TimeZoneInfo.TryConvertIanaIdToWindowsId(identifier, out var windowsId))
+            {
+                try { return TimeZoneInfo.FindSystemTimeZoneById(windowsId); }
+                catch (TimeZoneNotFoundException) { }
+                catch (InvalidTimeZoneException) { }
+            }
+
+            return null;
         }
 
         private static bool TryParseFeelTime(string raw, out FeelTime result)
@@ -967,7 +1083,11 @@ namespace ScratchyDisk.DmnEngine.Feel.Eval
             if (match.Groups[5].Success) // Z
                 offset = TimeSpan.Zero;
             else if (match.Groups[6].Success) // +/-HH:mm
-                offset = TimeSpan.Parse(match.Groups[6].Value);
+            {
+                var text = match.Groups[6].Value;
+                var sign = text.StartsWith("-") ? -1 : 1;
+                offset = sign * TimeSpan.Parse(text.TrimStart('+', '-'), CultureInfo.InvariantCulture);
+            }
 
             result = new FeelTime(hour, minute, second, ms, offset);
             return true;

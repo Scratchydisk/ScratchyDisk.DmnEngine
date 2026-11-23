@@ -13,6 +13,7 @@ using ScratchyDisk.DmnEngine.Feel.Ast;
 using ScratchyDisk.DmnEngine.Feel.Eval;
 using ScratchyDisk.DmnEngine.Feel.Parsing;
 using ScratchyDisk.DmnEngine.Feel.Types;
+using ScratchyDisk.DmnEngine.Parser;
 
 namespace ScratchyDisk.DmnEngine.Engine.Execution.Context
 {
@@ -272,23 +273,27 @@ namespace ScratchyDisk.DmnEngine.Engine.Execution.Context
             var evalContext = new FeelEvaluationContext();
             foreach (var variable in Variables.Values)
             {
-                var value = variable.Value;
-                // When value is null and the variable has a value type, use the default value
-                // (replicates old DynamicExpresso behavior where null int → 0, null bool → false, etc.)
-                if (value == null && variable.Type != null && variable.Type.IsValueType)
-                {
-                    value = Activator.CreateInstance(variable.Type);
-                }
-                // When value is null and the variable type is string, use empty string
-                // (replicates C# behavior where null string in concatenation = "")
-                else if (value == null && variable.Type == typeof(string))
-                {
-                    value = "";
-                }
-                // Coerce CLR values to FEEL canonical types
-                value = FeelTypeCoercion.CoerceToFeel(value);
+                // FEEL null is a value. Do not substitute CLR defaults: null must
+                // propagate through arithmetic, comparisons and boolean logic.
+                var value = FeelTypeCoercion.CoerceToFeel(variable.Value);
                 evalContext.SetVariable(variable.Name, value);
+
+                // The FEEL expression refers to the DMN label (for example
+                // "Full Name"); the engine's variable key is normalized
+                // ("Full_Name"). Alias the label so both resolve.
+                if (!string.IsNullOrWhiteSpace(variable.Label)
+                    && !string.Equals(variable.Label, variable.Name, StringComparison.Ordinal))
+                {
+                    evalContext.SetVariable(variable.Label, value);
+                }
             }
+
+            // Business knowledge models are FEEL functions, not stored variables.
+            foreach (var bkm in Definition.BusinessKnowledgeModels.Values)
+            {
+                evalContext.SetVariable(bkm.Name, CreateBusinessKnowledgeModelFunction(bkm));
+            }
+
             return evalContext;
         }
 
@@ -301,8 +306,50 @@ namespace ScratchyDisk.DmnEngine.Engine.Execution.Context
             foreach (var variable in Variables.Values)
             {
                 scope.AddName(variable.Name);
+                // FEEL names may contain spaces; the label preserves the name as
+                // written in the model ("Full Name") while the key is normalized.
+                if (!string.IsNullOrWhiteSpace(variable.Label)
+                    && !string.Equals(variable.Label, variable.Name, StringComparison.Ordinal))
+                {
+                    scope.AddName(variable.Label);
+                }
             }
+
+            foreach (var bkm in Definition.BusinessKnowledgeModels.Values)
+            {
+                scope.AddName(bkm.Name);
+            }
+
             return scope;
+        }
+
+        /// <summary>
+        /// Creates a callable FEEL function for a business knowledge model. The body
+        /// is evaluated in a child scope containing the formal parameters plus the
+        /// current execution variables.
+        /// </summary>
+        private FeelFunction CreateBusinessKnowledgeModelFunction(DmnBusinessKnowledgeModel bkm)
+        {
+            var parameters = bkm.ParameterNames;
+
+            return new FeelFunction(bkm.Name, parameters, args =>
+            {
+                var child = BuildFeelEvaluationContext().CreateChildScope();
+                for (var i = 0; i < parameters.Count; i++)
+                {
+                    child.SetVariable(parameters[i], i < args.Length ? args[i] : null);
+                }
+
+                var scope = BuildFeelScope();
+                foreach (var parameter in parameters)
+                {
+                    scope.AddName(parameter);
+                }
+
+                var engine = GetFeelEngine();
+                var ast = engine.ParseExpression(bkm.Expression, scope);
+                return engine.Evaluate(ast, child, DmnExpressionLanguage.Resolve(bkm.ExpressionLanguage));
+            });
         }
 
         /// <summary>
@@ -327,8 +374,9 @@ namespace ScratchyDisk.DmnEngine.Engine.Execution.Context
         {
             if (string.IsNullOrWhiteSpace(expression))
                 throw Logger.Fatal<ArgumentException>($"{nameof(expression)} is null or empty");
-            if (outputType == null) throw Logger.Fatal<ArgumentNullException>($"{nameof(outputType)} is null");
 
+            // A missing typeRef is the DMN type "any": evaluate the expression and
+            // return the FEEL value without conversion.
             expression = PreProcessExpression(expression);
             var scope = BuildFeelScope();
 
@@ -368,12 +416,12 @@ namespace ScratchyDisk.DmnEngine.Engine.Execution.Context
             object resultConverted;
             try
             {
-                resultConverted = ConvertResult(result, outputType);
+                resultConverted = outputType == null ? result : ConvertResult(result, outputType);
             }
             catch (Exception exception)
             {
-                throw Logger.Fatal<DmnEvaluationException>($"Can't convert the expression result to {outputType.Name}",
-                    exception);
+                throw Logger.Fatal<DmnEvaluationException>(
+                    $"Can't convert the expression result to {outputType?.Name ?? "any"}", exception);
             }
 
             return resultConverted;
@@ -454,16 +502,10 @@ namespace ScratchyDisk.DmnEngine.Engine.Execution.Context
         /// </summary>
         protected static object ConvertResult(object result, Type outputType)
         {
-            if (result == null)
-            {
-                if (outputType.IsValueType)
-                {
-                    // For nullable value types, return null
-                    if (Nullable.GetUnderlyingType(outputType) != null) return null;
-                    return Activator.CreateInstance(outputType);
-                }
-                return null;
-            }
+            if (outputType == null) return result;
+            // FEEL null is a value, not an absence: it must not be turned into the
+            // CLR default (0, false) of a declared output type.
+            if (result == null) return null;
             if (outputType == typeof(object)) return result;
             if (outputType.IsInstanceOfType(result)) return result;
 
@@ -549,7 +591,7 @@ namespace ScratchyDisk.DmnEngine.Engine.Execution.Context
                         "Unsupported parsed-expression cache scope");
             }
 
-            return $"{prefix}||{expression}||{outputType.AssemblyQualifiedName}";
+            return $"{prefix}||{expression}||{outputType?.AssemblyQualifiedName ?? "any"}";
         }
 
         /// <summary>

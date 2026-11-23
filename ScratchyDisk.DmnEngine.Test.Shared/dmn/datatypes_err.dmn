@@ -95,7 +95,7 @@
         <inputExpression id="LiteralExpression_0xsbrad" typeRef="double" />
       </input>
       <input id="InputClause_116we31" label="date">
-        <inputExpression id="LiteralExpression_19prb4v" typeRef="datetime" />
+        <inputExpression id="LiteralExpression_19prb4v" typeRef="unsupportedtype" />
       </input>
       <output id="OutputClause_1osvbb7" label="out" typeRef="string" />
       <rule id="row-816543858-19">

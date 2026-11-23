@@ -18,6 +18,12 @@ namespace ScratchyDisk.DmnEngine.Parser.Dto
         [XmlElement("informationRequirement")]
         public List<InformationRequirement> InformationRequirements { get; set; }
 
+        /// <summary>
+        /// References to business knowledge models required by the decision.
+        /// </summary>
+        [XmlElement("knowledgeRequirement")]
+        public List<KnowledgeRequirement> KnowledgeRequirements { get; set; }
+
         //------------------------------------
         //Expression
         //------------------------------------

@@ -155,17 +155,17 @@ namespace ScratchyDisk.DmnEngine.Test.Unit.Feel
         }
 
         [TestMethod]
-        public void ParseExponentiationRightAssociative()
+        public void ParseExponentiationLeftAssociative()
         {
-            // 2 ** 3 ** 2 should parse as 2 ** (3 ** 2)
+            // 2 ** 3 ** 2 should parse as (2 ** 3) ** 2
             var ast = engine.ParseExpression("2 ** 3 ** 2");
             var outer = ast.Should().BeOfType<BinaryOp>().Subject;
             outer.Op.Should().Be(BinaryOperator.Exp);
-            outer.Left.Should().BeOfType<NumberLiteral>().Which.Value.Should().Be(2m);
-            var inner = outer.Right.Should().BeOfType<BinaryOp>().Subject;
+            outer.Right.Should().BeOfType<NumberLiteral>().Which.Value.Should().Be(2m);
+            var inner = outer.Left.Should().BeOfType<BinaryOp>().Subject;
             inner.Op.Should().Be(BinaryOperator.Exp);
-            inner.Left.Should().BeOfType<NumberLiteral>().Which.Value.Should().Be(3m);
-            inner.Right.Should().BeOfType<NumberLiteral>().Which.Value.Should().Be(2m);
+            inner.Left.Should().BeOfType<NumberLiteral>().Which.Value.Should().Be(2m);
+            inner.Right.Should().BeOfType<NumberLiteral>().Which.Value.Should().Be(3m);
         }
 
         // ==================== Comparison ====================

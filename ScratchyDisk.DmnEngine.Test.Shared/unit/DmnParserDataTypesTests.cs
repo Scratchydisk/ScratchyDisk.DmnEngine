@@ -76,7 +76,7 @@ namespace ScratchyDisk.DmnEngine.Test.Unit
         public void ParseTypesErrTest()
         {
             Action act = () => DmnExecutionContextFactory.CreateExecutionContext(MODEL("datatypes_err.dmn"));
-            act.Should().Throw<DmnParserException>().WithMessage("Unsupported type name datetime");
+            act.Should().Throw<DmnParserException>().WithMessage("Unsupported type name unsupportedtype");
         }
     }
 }

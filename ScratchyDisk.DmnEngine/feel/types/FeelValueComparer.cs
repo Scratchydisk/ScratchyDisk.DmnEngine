@@ -37,12 +37,48 @@ namespace ScratchyDisk.DmnEngine.Feel.Types
                 return cmp == 0;
             }
 
+            // Contexts compare by entry, lists by element.
+            if (left is FeelContext leftContext && right is FeelContext rightContext)
+                return ContextsEqual(leftContext, rightContext);
+
+            if (IsList(left) && IsList(right))
+                return ListsEqual((IEnumerable<object>)left, (IEnumerable<object>)right);
+
             // Same type comparison
             if (left.GetType() == right.GetType())
                 return left.Equals(right);
 
-            // Cross-type: try Equals
-            return left.Equals(right);
+            // Different, non-coercible types are not comparable: FEEL equality
+            // yields null rather than false.
+            return null;
+        }
+
+        private static bool IsList(object value) =>
+            value is IEnumerable<object> && value is not string && value is not FeelContext;
+
+        private static bool? ListsEqual(IEnumerable<object> left, IEnumerable<object> right)
+        {
+            var leftItems = left.ToList();
+            var rightItems = right.ToList();
+            if (leftItems.Count != rightItems.Count) return false;
+
+            for (var i = 0; i < leftItems.Count; i++)
+            {
+                if (FeelEqual(leftItems[i], rightItems[i]) != true) return false;
+            }
+            return true;
+        }
+
+        private static bool? ContextsEqual(FeelContext left, FeelContext right)
+        {
+            if (left.Count != right.Count) return false;
+
+            foreach (var entry in left.Entries)
+            {
+                if (!right.TryGetValue(entry.Key, out var rightValue)) return false;
+                if (FeelEqual(entry.Value, rightValue) != true) return false;
+            }
+            return true;
         }
 
         /// <summary>

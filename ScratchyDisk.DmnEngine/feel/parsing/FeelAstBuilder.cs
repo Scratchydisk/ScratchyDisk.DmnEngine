@@ -158,7 +158,22 @@ namespace ScratchyDisk.DmnEngine.Feel.Parsing
         public override FeelAstNode VisitComparisonInList(FeelParser.ComparisonInListContext context)
         {
             var value = Visit(context.additiveExpression());
-            var tests = Visit(context.simpleUnaryTests());
+            var testsNode = context.simpleUnaryTests();
+            var tests = Visit(testsNode);
+
+            // `x in (2..4)` is an interval delimited by parentheses, so both ends
+            // are exclusive. The grammar routes it through the parenthesised list
+            // alternative; a comma or an explicit inner bracket means a real list.
+            var text = testsNode.GetText();
+            if (tests is RangeNode range
+                && !text.Contains(',')
+                && !text.StartsWith("[")
+                && !text.StartsWith("(")
+                && !text.StartsWith("]"))
+            {
+                return new InNode(value, new RangeNode(range.Low, false, range.High, false));
+            }
+
             return new InNode(value, tests);
         }
 
@@ -226,11 +241,11 @@ namespace ScratchyDisk.DmnEngine.Feel.Parsing
         {
             var bases = context.unaryExpression();
             if (bases.Length == 1) return Visit(bases[0]);
-            // Right-associative: a ** b ** c = a ** (b ** c)
-            var result = Visit(bases[^1]);
-            for (var i = bases.Length - 2; i >= 0; i--)
+            // FEEL exponentiation is left-associative: a ** b ** c = (a ** b) ** c
+            var result = Visit(bases[0]);
+            for (var i = 1; i < bases.Length; i++)
             {
-                result = new BinaryOp(BinaryOperator.Exp, Visit(bases[i]), result);
+                result = new BinaryOp(BinaryOperator.Exp, result, Visit(bases[i]));
             }
             return result;
         }

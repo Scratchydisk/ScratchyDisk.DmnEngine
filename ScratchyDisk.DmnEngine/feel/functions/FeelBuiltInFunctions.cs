@@ -59,6 +59,30 @@ namespace ScratchyDisk.DmnEngine.Feel.Functions
         private static object Arg(object[] args, int index) =>
             index < args.Length ? args[index] : null;
 
+        /// <summary>
+        /// FEEL type name of a value, used by the type() built-in.
+        /// </summary>
+        private static object TypeName(object value)
+        {
+            switch (value)
+            {
+                case null: return "null";
+                case string: return "string";
+                case bool: return "boolean";
+                case DateOnly: return "date";
+                case DateTimeOffset: return "date and time";
+                case FeelTime: return "time";
+                case TimeSpan: return "days and time duration";
+                case FeelYmDuration: return "years and months duration";
+                case FeelRange: return "range";
+                case FeelContext: return "context";
+                case FeelFunction: return "function";
+                case IEnumerable<object>: return "list";
+                default:
+                    return FeelValueComparer.IsNumeric(value) ? "number" : null;
+            }
+        }
+
         private static decimal? ArgDecimal(object[] args, int index)
         {
             var val = Arg(args, index);
@@ -954,7 +978,12 @@ namespace ScratchyDisk.DmnEngine.Feel.Functions
             var second = match.Groups[3].Success ? int.Parse(match.Groups[3].Value) : 0;
             TimeSpan? offset = null;
             if (match.Groups[5].Success) offset = TimeSpan.Zero;
-            else if (match.Groups[6].Success) offset = TimeSpan.Parse(match.Groups[6].Value);
+            else if (match.Groups[6].Success)
+            {
+                var text = match.Groups[6].Value;
+                var sign = text.StartsWith("-") ? -1 : 1;
+                offset = sign * TimeSpan.Parse(text.TrimStart('+', '-'), CultureInfo.InvariantCulture);
+            }
             else if (match.Groups[7].Success)
             {
                 var zone = ResolveTimeZone(match.Groups[7].Value);
@@ -1031,7 +1060,7 @@ namespace ScratchyDisk.DmnEngine.Feel.Functions
             Register("string", new[] { "from" }, args =>
             {
                 var val = Arg(args, 0);
-                if (val == null) return null;
+                if (val == null) return "null";
                 if (val is string s) return s;
                 if (val is bool b) return b ? "true" : "false";
                 if (FeelValueComparer.IsNumeric(val))
@@ -1043,6 +1072,7 @@ namespace ScratchyDisk.DmnEngine.Feel.Functions
                 if (val is FeelYmDuration ym) return ym.ToString();
                 return val.ToString();
             });
+            Register("type", new[] { "value" }, args => TypeName(Arg(args, 0)));
             Register("range", new[] { "from" }, args =>
             {
                 var text = ArgString(args, 0);

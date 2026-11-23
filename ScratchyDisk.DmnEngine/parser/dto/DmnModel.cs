@@ -22,6 +22,18 @@ namespace ScratchyDisk.DmnEngine.Parser.Dto
         public List<Decision> Decisions { get; set; }
 
         /// <summary>
+        /// List of business knowledge models (reusable FEEL functions).
+        /// </summary>
+        [XmlElement("businessKnowledgeModel")]
+        public List<BusinessKnowledgeModel> BusinessKnowledgeModels { get; set; }
+
+        /// <summary>
+        /// Named item definitions (aliases, structures and collections).
+        /// </summary>
+        [XmlElement("itemDefinition")]
+        public List<ItemDefinition> ItemDefinitions { get; set; }
+
+        /// <summary>
         /// Diagrams within DMN Model
         /// </summary>
         [XmlElement("DMNDI", Namespace = "https://www.omg.org/spec/DMN/20191111/DMNDI/")]

@@ -762,6 +762,112 @@ namespace ScratchyDisk.DmnEngine.Test.Unit.Feel
             Eval("upper case(substring(\"hello world\", 7))", scope: scope).Should().Be("WORLD");
         }
 
+        [TestMethod]
+        public void EvalStringOfBoolean() => Eval("string(true)").Should().Be("true");
+
+        [TestMethod]
+        public void EvalStringOfNull() => Eval("string(null)").Should().Be("null");
+
+        [TestMethod]
+        public void EvalStringPlusNumberIsNull() => Eval("\"a\" + 1").Should().BeNull();
+
+        [TestMethod]
+        public void EvalNullPlusStringIsNull() => Eval("null + \"a\"").Should().BeNull();
+
+        [TestMethod]
+        public void EvalListPlusStringIsNull() => Eval("[1] + \"a\"").Should().BeNull();
+
+        [TestMethod]
+        public void EvalIanaDateTimeLiteral() =>
+            Eval("@\"2021-01-01T10:10:10@Australia/Melbourne\"").Should().BeOfType<DateTimeOffset>();
+
+        [TestMethod]
+        public void EvalIanaDateTimePlusYmDuration() =>
+            Eval("@\"2021-01-01T10:10:10@Australia/Melbourne\" + @\"P1M\"").Should().NotBeNull();
+
+        [TestMethod]
+        public void EvalTimePlusDayDuration() =>
+            Eval("@\"10:15:00+11:00\" + @\"P1D\"").Should().BeOfType<FeelTime>();
+
+        [TestMethod]
+        public void EvalTimeMinusHourDuration() =>
+            Eval("@\"10:10:10+11:00\" - @\"PT1H\"").Should().BeOfType<FeelTime>();
+
+        [TestMethod]
+        public void EvalDateMinusZonedDateTime() =>
+            Eval("@\"2021-01-02\" - @\"2021-01-01T10:10:10+11:00\"").Should().Be(TimeSpan.FromDays(1) + TimeSpan.FromMinutes(49) + TimeSpan.FromSeconds(50));
+
+        [TestMethod]
+        public void EvalZonedDateTimeMinusDate() =>
+            Eval("@\"2021-01-02T10:10:10+01:00\" - @\"2021-01-01\"").Should().Be(TimeSpan.FromDays(1) + TimeSpan.FromHours(9) + TimeSpan.FromMinutes(10) + TimeSpan.FromSeconds(10));
+
+        [TestMethod]
+        public void EvalExponentiationIsLeftAssociative() =>
+            Eval("3 ** 4 ** 5").Should().Be(3486784401m);
+
+        [TestMethod]
+        public void EvalEqualityOfIncompatibleTypesIsNull() => Eval("false = 0").Should().BeNull();
+
+        [TestMethod]
+        public void EvalStringNumberEqualityIsNull() => Eval("100 = \"100\"").Should().BeNull();
+
+        [TestMethod]
+        public void EvalInstanceOfMultiWordType() => Eval("1 instance of days and time duration", scope: new FeelScope()).Should().Be(false);
+
+        [TestMethod]
+        public void EvalInstanceOfParameterizedList() => Eval("[1] instance of list<number>").Should().Be(true);
+
+        [TestMethod]
+        public void EvalInstanceOfParameterizedRange() => Eval("[1..3] instance of range<number>").Should().Be(true);
+
+        // ==================== Duration arithmetic ====================
+
+        [TestMethod]
+        public void EvalYmDurationMultiplyRoundsHalfUp() =>
+            Eval("@\"P2M\" * 1.5").Should().Be(new FeelYmDuration(3));
+
+        [TestMethod]
+        public void EvalYmDurationMultiplyRoundsNegativeHalfUp() =>
+            Eval("-2.5 * @\"P1Y11M\"").Should().Be(new FeelYmDuration(-57));
+
+        // ==================== In operator ====================
+
+        [TestMethod]
+        public void EvalInUnaryOperator() => Eval("1 in <= 10").Should().Be(true);
+
+        [TestMethod]
+        public void EvalInExclusiveRange() => Eval("2 in (2..4)").Should().Be(false);
+
+        [TestMethod]
+        public void EvalInInclusiveRange() => Eval("4 in (2..4]").Should().Be(true);
+
+        [TestMethod]
+        public void EvalInMultipleTests() => Eval("10 in (1, < 5, >=10)").Should().Be(true);
+
+        [TestMethod]
+        public void EvalInListLiteral() => Eval("10 in [1, 2, 10]").Should().Be(true);
+
+        [TestMethod]
+        public void EvalInEqualityTest() => Eval("10 in =10").Should().Be(true);
+
+        [TestMethod]
+        public void EvalInListOfRanges() => Eval("1 in [[2..4], [1..3]]").Should().Be(true);
+
+        [TestMethod]
+        public void EvalInListOfLists() => Eval("[1,2,3] in [[1,2,3,4], [1,2,3]]").Should().Be(true);
+
+        [TestMethod]
+        public void EvalListEquality() => Eval("[1,2,3] = [1,2,3]").Should().Be(true);
+
+        [TestMethod]
+        public void EvalListInequality() => Eval("[1,2,3] != [1,2,3]").Should().Be(false);
+
+        [TestMethod]
+        public void EvalInNullValue() => Eval("null in [1..10]").Should().BeNull();
+
+        [TestMethod]
+        public void EvalInNullRangeEndpoint() => Eval("5 in (null..10]").Should().BeNull();
+
         // ==================== Helpers ====================
 
         private static FeelContext CreateContext(params (string key, object value)[] entries)

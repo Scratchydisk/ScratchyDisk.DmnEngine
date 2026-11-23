@@ -49,7 +49,7 @@
           <text><![CDATA[not("over")]]></text>
         </inputEntry>
         <outputEntry id="LiteralExpression_1fcjkqq">
-          <text><![CDATA[a+(b!=null?b.ToString():"")+dyna.Direct]]></text>
+          <text><![CDATA[string(a) + string(b) + dyna.Direct]]></text>
         </outputEntry>
       </rule>
       <rule id="row-816543858-21">

@@ -162,7 +162,7 @@ namespace ScratchyDisk.DmnEngine.Test.Builder
                     .WithAggregation(CollectHitPolicyAggregationEnum.List)
                     .WithRule("row-816543858-20", r => r
                       .When(f03Input2, "not(\"over\")")
-                      .Then(f03Output0, "a+(b!=null?b.ToString():\"\")+dyna.Direct")
+                      .Then(f03Output0, "string(a) + string(b) + dyna.Direct")
                       )
                     .WithRule("row-816543858-21", r => r
                       .When(f03Input2, "\"over\"")

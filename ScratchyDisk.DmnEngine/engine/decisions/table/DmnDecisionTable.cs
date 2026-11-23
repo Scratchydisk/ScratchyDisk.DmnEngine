@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Concurrent;
+using System.Globalization;
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
@@ -160,9 +161,16 @@ namespace ScratchyDisk.DmnEngine.Engine.Decisions.Table
                             $"COLLECT hit policy violation - multiple outputs not allowed for aggregation {Aggregation}");
 
                     var outType = Outputs[0].Variable.Type;
-                    var outTypeIsNumeric = outType == typeof(int) || outType == typeof(long) || outType == typeof(double);
+                    var outTypeIsAny = outType == null;
+                    var outTypeIsNumeric = outTypeIsAny
+                                           || outType == typeof(decimal)
+                                           || outType == typeof(int)
+                                           || outType == typeof(long)
+                                           || outType == typeof(double)
+                                           || outType == typeof(float)
+                                           || outType == typeof(short);
                     var outTypeIsBool = outType == typeof(bool);
-                    var outTypeIsStr = outType == typeof(string);
+                    var outTypeIsStr = outTypeIsAny || outType == typeof(string);
 
                     var isAllowedForCount = outTypeIsNumeric || outTypeIsStr;
                     var isAllowedForSumMinMax = outTypeIsNumeric || outTypeIsBool;
@@ -173,7 +181,7 @@ namespace ScratchyDisk.DmnEngine.Engine.Decisions.Table
                          Aggregation != CollectHitPolicyAggregationEnum.List && Aggregation != CollectHitPolicyAggregationEnum.Count && isAllowedForSumMinMax))
                         throw Logger.ErrorCorr<DmnExecutorException>(
                             executionId,
-                            $"COLLECT hit policy violation - type {outType.Name} not allowed for aggregation {Aggregation}");
+                            $"COLLECT hit policy violation - type {outType?.Name ?? "any"} not allowed for aggregation {Aggregation}");
 
 
                     if (Aggregation == CollectHitPolicyAggregationEnum.List)
@@ -664,31 +672,26 @@ namespace ScratchyDisk.DmnEngine.Engine.Decisions.Table
             IEnumerable<DmnDecisionTableRule> positiveRules,
             DmnDecisionTableRuleExecutionResults results)
         {
-            double sum = 0;
-            var min = double.MaxValue;
-            var max = double.MinValue;
+            decimal sum = 0;
+            decimal? min = null;
+            decimal? max = null;
 
-            var distinctValues = new List<double>();
+            var distinctValues = new List<decimal>();
 
             foreach (var positiveRule in positiveRules)
             {
                 var valueRaw = positiveRule.Outputs.Length > 0 ? results.GetResult(positiveRule, positiveRule.Outputs[0])?.Value : null;
                 if (valueRaw == null) continue; //ignore null results/values
 
-                double value;
-                var isBool = positiveRule.Outputs[0].Output.Variable.Type == typeof(bool);
-                if (isBool)
-                {
-                    value = (bool)valueRaw ? 1 : 0;
-                }
-                else
-                {
-                    value = (double)Convert.ChangeType(valueRaw, typeof(double));
-                }
+                // FEEL numbers are decimal, so aggregation must stay decimal rather
+                // than round-tripping through double.
+                var value = valueRaw is bool booleanValue
+                    ? (booleanValue ? 1m : 0m)
+                    : Convert.ToDecimal(valueRaw, CultureInfo.InvariantCulture);
 
                 sum += value;
-                if (value < min) min = value;
-                if (value > max) max = value;
+                min = min.HasValue ? Math.Min(min.Value, value) : value;
+                max = max.HasValue ? Math.Max(max.Value, value) : value;
                 if (!distinctValues.Contains(value))
                 {
                     distinctValues.Add(value);
@@ -696,7 +699,7 @@ namespace ScratchyDisk.DmnEngine.Engine.Decisions.Table
             }
 
             var count = distinctValues.Count;
-            return new PositiveRulesCollectValues(sum, min, max, count);
+            return new PositiveRulesCollectValues(sum, min ?? 0m, max ?? 0m, count);
         }
 
         /// <summary>
@@ -729,15 +732,15 @@ namespace ScratchyDisk.DmnEngine.Engine.Decisions.Table
             /// <summary>
             /// Sum of evaluated values
             /// </summary>
-            public readonly double Sum;
+            public readonly decimal Sum;
             /// <summary>
             /// Min evaluated value
             /// </summary>
-            public readonly double Min;
+            public readonly decimal Min;
             /// <summary>
             /// Max evaluated value
             /// </summary>
-            public readonly double Max;
+            public readonly decimal Max;
             /// <summary>
             /// Count of distinct evaluated values
             /// </summary>
@@ -750,7 +753,7 @@ namespace ScratchyDisk.DmnEngine.Engine.Decisions.Table
             /// <param name="min">Min evaluated value</param>
             /// <param name="max">Max evaluated value</param>
             /// <param name="count">Count of distinct evaluated values</param>
-            public PositiveRulesCollectValues(double sum, double min, double max, int count)
+            public PositiveRulesCollectValues(decimal sum, decimal min, decimal max, int count)
             {
                 Sum = sum;
                 Min = min;

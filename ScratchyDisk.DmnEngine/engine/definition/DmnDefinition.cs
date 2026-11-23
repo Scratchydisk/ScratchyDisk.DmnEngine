@@ -36,6 +36,11 @@ namespace ScratchyDisk.DmnEngine.Engine.Definition
         public IReadOnlyDictionary<string, IDmnDecision> Decisions { get; }
 
         /// <summary>
+        /// Business knowledge models available to decision expressions, by name.
+        /// </summary>
+        public IReadOnlyDictionary<string, DmnBusinessKnowledgeModel> BusinessKnowledgeModels { get; }
+
+        /// <summary>
         /// Maps input data variable names to expression variable aliases.
         /// When a DMN file uses different names in the DRD input data elements
         /// vs. the decision table input expressions (common in Camunda exports),
@@ -59,11 +64,14 @@ namespace ScratchyDisk.DmnEngine.Engine.Definition
         /// <param name="decisions">Dictionary of available decisions by name</param>
         public DmnDefinition(
             IReadOnlyDictionary<string, IDmnVariable> variables,
-            IReadOnlyDictionary<string, IDmnDecision> decisions)
+            IReadOnlyDictionary<string, IDmnDecision> decisions,
+            IReadOnlyDictionary<string, DmnBusinessKnowledgeModel> businessKnowledgeModels = null)
         {
             Id = Guid.NewGuid().ToString();
             Variables = variables;
             Decisions = decisions;
+            BusinessKnowledgeModels = businessKnowledgeModels
+                                      ?? new Dictionary<string, DmnBusinessKnowledgeModel>();
         }
     }
 }

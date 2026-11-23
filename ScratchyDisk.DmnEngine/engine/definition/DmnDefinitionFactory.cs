@@ -11,6 +11,7 @@ using ScratchyDisk.DmnEngine.Engine.Definition.Extensions;
 using ScratchyDisk.DmnEngine.Engine.Definition.Extensions.Diagram;
 using ScratchyDisk.DmnEngine.Parser;
 using ScratchyDisk.DmnEngine.Parser.Dto;
+using ScratchyDisk.DmnEngine.Feel.Types;
 
 namespace ScratchyDisk.DmnEngine.Engine.Definition
 {
@@ -34,13 +35,23 @@ namespace ScratchyDisk.DmnEngine.Engine.Definition
         /// </summary>
         public static readonly Dictionary<string, Type> DefaultKnowTypes = new Dictionary<string, Type>()
         {
+            { "any", typeof(object) },
             { "string", typeof(string) },
             { "boolean", typeof(bool) },
             { "integer", typeof(int) },
             { "long", typeof(long) },
             { "double", typeof(double) },
             { "date", typeof(DateTime) },
-            { "number", typeof(decimal) }
+            { "number", typeof(decimal) },
+            { "time", typeof(FeelTime) },
+            { "date and time", typeof(DateTimeOffset) },
+            { "datetime", typeof(DateTimeOffset) },
+            { "days and time duration", typeof(TimeSpan) },
+            { "daytimeduration", typeof(TimeSpan) },
+            { "years and months duration", typeof(FeelYmDuration) },
+            { "yearmonthduration", typeof(FeelYmDuration) },
+            { "context", typeof(FeelContext) },
+            { "list", typeof(List<object>) }
         };
 
 
@@ -78,9 +89,29 @@ namespace ScratchyDisk.DmnEngine.Engine.Definition
         protected Dictionary<string, IDmnDecision> DecisionsById { get; } = new Dictionary<string, IDmnDecision>();
 
         /// <summary>
+        /// Business knowledge models by name.
+        /// </summary>
+        protected Dictionary<string, DmnBusinessKnowledgeModel> BusinessKnowledgeModels { get; } =
+            new Dictionary<string, DmnBusinessKnowledgeModel>(StringComparer.Ordinal);
+
+        /// <summary>
         /// Set of known types that can be used for inputs/variables
         /// </summary>
         private Dictionary<string, Type> knownTypes = new Dictionary<string, Type>();
+
+        /// <summary>Item definitions by name (case-insensitive).</summary>
+        private readonly Dictionary<string, ItemDefinition> itemDefinitions =
+            new Dictionary<string, ItemDefinition>(StringComparer.OrdinalIgnoreCase);
+
+        /// <summary>Resolved item definition types.</summary>
+        private readonly Dictionary<string, Type> resolvedItemTypes =
+            new Dictionary<string, Type>(StringComparer.OrdinalIgnoreCase);
+
+        /// <summary>Cycle guard for recursive item definitions.</summary>
+        private readonly HashSet<string> resolvingItemTypes =
+            new HashSet<string>(StringComparer.OrdinalIgnoreCase);
+
+        private bool itemDefinitionsIndexed;
 
         /// <summary>
         /// Set of known types that can be used for inputs/variables
@@ -206,6 +237,9 @@ namespace ScratchyDisk.DmnEngine.Engine.Definition
                 }
             }
 
+            //Process business knowledge models before decisions so expressions can call them
+            ProcessBusinessKnowledgeModelsSource();
+
             //Process decisions
             if (SourceModel.Decisions != null && SourceModel.Decisions.Count > 0)
             {
@@ -226,7 +260,8 @@ namespace ScratchyDisk.DmnEngine.Engine.Definition
                 Variables.ToDictionary(
                     v => v.Key,
                     v => (IDmnVariable)v.Value),
-                Decisions);
+                Decisions,
+                BusinessKnowledgeModels);
 
             // Attach the alias map to the definition
             if (inputAliases != null && inputAliases.Count > 0)
@@ -366,6 +401,37 @@ namespace ScratchyDisk.DmnEngine.Engine.Definition
         }
 
         /// <summary>
+        /// Builds executable business knowledge models from the parsed model.
+        /// Only literal-expression bodies are supported; other function bodies are
+        /// left out rather than failing the whole model.
+        /// </summary>
+        protected virtual void ProcessBusinessKnowledgeModelsSource()
+        {
+            if (SourceModel?.BusinessKnowledgeModels == null) return;
+
+            foreach (var source in SourceModel.BusinessKnowledgeModels)
+            {
+                var name = !string.IsNullOrWhiteSpace(source.Name) ? source.Name : source.Id;
+                if (string.IsNullOrWhiteSpace(name)) continue;
+
+                var logic = source.EncapsulatedLogic;
+                if (logic?.Expression == null || string.IsNullOrWhiteSpace(logic.Expression.Text)) continue;
+
+                var parameters = logic.FormalParameters?
+                    .Select(p => p.Name)
+                    .Where(p => !string.IsNullOrWhiteSpace(p))
+                    .ToList() ?? new List<string>();
+
+                BusinessKnowledgeModels[name] = new DmnBusinessKnowledgeModel(
+                    name,
+                    name,
+                    parameters,
+                    logic.Expression.Text,
+                    logic.Expression.Language);
+            }
+        }
+
+        /// <summary>
         /// Validates the inputs of the <see cref="DmnModel"/> (<see cref="SourceModel"/>)
         /// and populates <see cref="InputData"/>, <see cref="InputDataById"/> and related <see cref="Variables"/>
         /// </summary>
@@ -381,9 +447,16 @@ namespace ScratchyDisk.DmnEngine.Engine.Definition
             //TODO    ?Input name in form varName:varType for (complex) input types
             foreach (var sourceInput in SourceModel.InputData)
             {
-                if (string.IsNullOrWhiteSpace(sourceInput.Id)) throw Logger.Fatal<DmnParserException>($"Missing input id");
+                var inputId = sourceInput.Id;
+                if (string.IsNullOrWhiteSpace(inputId))
+                {
+                    // An id is optional in the schema. Synthesize a stable key so the
+                    // model can still be executed (it simply cannot be referenced).
+                    inputId = $"input_{InputDataById.Count + 1}";
+                    while (InputDataById.ContainsKey(inputId)) inputId += "_";
+                }
 
-                var inputName = !string.IsNullOrWhiteSpace(sourceInput.Name) ? sourceInput.Name : sourceInput.Id;
+                var inputName = !string.IsNullOrWhiteSpace(sourceInput.Name) ? sourceInput.Name : inputId;
                 var variableName = DmnVariableDefinition.NormalizeVariableName(inputName);
                 if (InputData.ContainsKey(variableName))
                     throw Logger.Fatal<DmnParserException>($"Duplicate input data name {variableName} (from {inputName})");
@@ -391,7 +464,7 @@ namespace ScratchyDisk.DmnEngine.Engine.Definition
                 var variable = new DmnVariableDefinition(variableName, inputName, label: inputName);
                 InputData.Add(variableName, variable);
                 Variables.Add(variableName, variable);
-                InputDataById.Add(sourceInput.Id, variable);
+                InputDataById.Add(inputId, variable);
             }
         }
 
@@ -418,10 +491,20 @@ namespace ScratchyDisk.DmnEngine.Engine.Definition
 
             var allSourceDecisions = SourceModel.Decisions ?? new List<Decision>(); //All decisions parsed from XML source
 
-            if (string.IsNullOrWhiteSpace(sourceDecision.Id)) throw Logger.Fatal<DmnParserException>($"Missing decision id");
-            if (DecisionsById.ContainsKey(sourceDecision.Id)) return DecisionsById[sourceDecision.Id]; //already processed
+            var decisionId = sourceDecision.Id;
+            if (string.IsNullOrWhiteSpace(decisionId))
+            {
+                // An id is optional in the schema. Synthesize one so the decision can
+                // be executed; it cannot be referenced by other decisions.
+                decisionId = $"decision_{DecisionsById.Count + 1}";
+                while (DecisionsById.ContainsKey(decisionId)) decisionId += "_";
+            }
+            else if (DecisionsById.ContainsKey(decisionId))
+            {
+                return DecisionsById[decisionId]; //already processed
+            }
 
-            var decisionName = !string.IsNullOrWhiteSpace(sourceDecision.Name) ? sourceDecision.Name : sourceDecision.Id;
+            var decisionName = !string.IsNullOrWhiteSpace(sourceDecision.Name) ? sourceDecision.Name : decisionId;
             if (Decisions.ContainsKey(decisionName)) throw Logger.Fatal<DmnParserException>($"Duplicate decision name {decisionName}");
 
             var requiredInputs = new List<IDmnVariable>();
@@ -491,7 +574,7 @@ namespace ScratchyDisk.DmnEngine.Engine.Definition
             if (decision != null)
             {
                 Decisions.Add(decisionName, decision);
-                DecisionsById.Add(sourceDecision.Id, decision);
+                DecisionsById.Add(decisionId, decision);
             }
 
             return decision;
@@ -877,6 +960,66 @@ namespace ScratchyDisk.DmnEngine.Engine.Definition
                 knownTypes.Add(defaultKnowType.Key, defaultKnowType.Value);
 
             }
+
+            EnsureItemDefinitionsIndexed();
+        }
+
+        /// <summary>
+        /// Indexes the model's named item definitions so they can be resolved as
+        /// variable types. Resolution is lazy and supports aliases, structures and
+        /// collections, including recursive references.
+        /// </summary>
+        private void EnsureItemDefinitionsIndexed()
+        {
+            if (itemDefinitionsIndexed) return;
+            itemDefinitionsIndexed = true;
+
+            if (SourceModel?.ItemDefinitions == null) return;
+            foreach (var item in SourceModel.ItemDefinitions)
+            {
+                if (!string.IsNullOrWhiteSpace(item.Name))
+                    itemDefinitions[item.Name] = item;
+            }
+        }
+
+        /// <summary>
+        /// Resolves an item definition to the CLR type used by the engine.
+        /// Collections become FEEL lists, structures become FEEL contexts.
+        /// </summary>
+        private Type ResolveItemDefinition(ItemDefinition item)
+        {
+            var key = item.Name;
+            if (resolvedItemTypes.TryGetValue(key, out var resolved)) return resolved;
+
+            // Recursive definitions are legal; stop the recursion with "any".
+            if (!resolvingItemTypes.Add(key)) return typeof(object);
+
+            try
+            {
+                if (item.IsCollection)
+                {
+                    resolved = typeof(List<object>);
+                }
+                else if (item.ItemComponents != null && item.ItemComponents.Count > 0)
+                {
+                    resolved = typeof(FeelContext);
+                }
+                else if (!string.IsNullOrWhiteSpace(item.TypeRef))
+                {
+                    resolved = ParseTypeName(item.TypeRef);
+                }
+                else
+                {
+                    resolved = typeof(object);
+                }
+
+                resolvedItemTypes[key] = resolved;
+                return resolved;
+            }
+            finally
+            {
+                resolvingItemTypes.Remove(key);
+            }
         }
 
         /// <summary>
@@ -892,6 +1035,10 @@ namespace ScratchyDisk.DmnEngine.Engine.Definition
 
             typeName = typeName.ToLower();
             if (KnownTypes.TryGetValue(typeName, out var type)) return type;
+
+            EnsureItemDefinitionsIndexed();
+            if (itemDefinitions.TryGetValue(typeName, out var item))
+                return ResolveItemDefinition(item);
 
             throw Logger.Fatal<DmnParserException>($"Unsupported type name {typeName}");
         }

@@ -18,7 +18,7 @@ namespace ScratchyDisk.DmnEngine.Test.Unit
                .WithInput("input2", out var input2Ref)
                .WithVariable<object>("output", out var outputRef)
                .WithExpressionDecision("decision1", "(input1+1).ToString()", outputRef)
-               .WithExpressionDecision("decision2", "input2+1", outputRef)
+               .WithExpressionDecision("decision2", "if type(input2) = \"string\" then input2 + \"1\" else input2 + 1", outputRef)
                .Build();
 
             var ctx = DmnExecutionContextFactory.CreateExecutionContext(def);

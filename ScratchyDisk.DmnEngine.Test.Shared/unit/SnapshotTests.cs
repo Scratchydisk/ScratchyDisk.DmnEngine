@@ -46,8 +46,8 @@ namespace ScratchyDisk.DmnEngine.Test.Unit
                 .WithVariable<int>("output1", out var output1Ref)
                 .WithVariable<double>("output2", out var output2Ref)
                 .WithVariable<string>("var3", out var var3Ref)
-                .WithExpressionDecision("decision1", "input1+1", output1Ref, out var decision1Ref)
-                .WithExpressionDecision("decision2", "input2+1", var3Ref, out var decision2Ref)
+                .WithExpressionDecision("decision1", "if input1 = null then 1 else input1+1", output1Ref, out var decision1Ref)
+                .WithExpressionDecision("decision2", "input2 + \"1\"", var3Ref, out var decision2Ref)
                 .WithExpressionDecision("decision3", b => b
                     .Put("double.Parse(var3)")
                     .To(output2Ref)
@@ -1137,7 +1137,7 @@ namespace ScratchyDisk.DmnEngine.Test.Unit
             var def = new DmnDefinitionBuilder()
                 .WithVariable<int>("output", out var outputRef)
                 .WithVariable<int>("count", out var countRef)
-                .WithExpressionDecision("incCount", "count+1", countRef, out var incCountRef)
+                .WithExpressionDecision("incCount", "if count = null then 1 else count+1", countRef, out var incCountRef)
                 .WithExpressionDecision("decision1", b => b
                     .Put("count").To(outputRef)
                     .Requires(incCountRef), out var decision1Ref)
@@ -1329,7 +1329,7 @@ namespace ScratchyDisk.DmnEngine.Test.Unit
             var def = new DmnDefinitionBuilder()
                 .WithInput<int>("input", out var inputVarRef)
                 .WithVariable<int>("output", out var outputVarRef)
-                .WithExpressionDecision("expr1", "output+1", outputVarRef, out var expDecision1Ref)
+                .WithExpressionDecision("expr1", "if output = null then 1 else output+1", outputVarRef, out var expDecision1Ref)
 
                 .WithTableDecision("tbl", table =>
                     table

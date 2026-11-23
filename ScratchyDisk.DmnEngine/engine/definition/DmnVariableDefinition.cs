@@ -190,7 +190,7 @@ namespace ScratchyDisk.DmnEngine.Engine.Definition
             {
                 error = $"Variable name is null or empty";
             }
-            else if (retVal.Any(c => !(char.IsLetter(c) || char.IsDigit(c) || c == '_')))
+            else if (retVal.Any(c => !(char.IsLetter(c) || char.IsDigit(c) || c == '_' || c == '/' || c == '\'')))
             {
                 error = $"Variable name '{name}' contains invalid character";
             }

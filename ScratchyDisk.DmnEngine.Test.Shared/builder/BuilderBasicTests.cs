@@ -166,9 +166,9 @@ namespace ScratchyDisk.DmnEngine.Test.Builder
                         .Put("input1").To(outputVarRef)
                         .Requires(input1Ref),
                     out var decision1Ref)
-                .WithExpressionDecision("decision2", "output+2", outputVarRef, out var decision2Ref) //IMPORTANT: The "output" variable is string, so the "decision2" is not numeric addition but it's string concat
+                .WithExpressionDecision("decision2", "if output = null then \"2\" else output + \"2\"", outputVarRef, out var decision2Ref) //IMPORTANT: The "output" variable is string, so the "decision2" is not numeric addition but it's string concat
                 .WithExpressionDecision("decision3", ed => ed
-                        .Put("input2+output").To(outputVarRef)
+                        .Put("string(input2) + output").To(outputVarRef)
                         .Requires(input2Ref)
                         .Requires(decision2Ref),
                     out var decision3Ref)
@@ -343,8 +343,8 @@ namespace ScratchyDisk.DmnEngine.Test.Builder
         [DataRow(6, 6, false, true, 8, 0, false)]
         [DataRow(0.9, 7, false, false, 9, 1, false)]
         [DataRow(6.1, 6, false, true, 8, 0, false)]
-        [DataRow("6", 6, false, false, 8, 0, false)] //input1 is string, FEEL treats "6">5.1 as incomparable → false
-        public void ExpressionDecisionTest(object input1, int input2, bool isExecErr, bool result1, int result2, int result3, bool result4)
+        [DataRow("6", 6, false, null, 8, 0, null)] //input1 is string; FEEL comparison is null, not false
+        public void ExpressionDecisionTest(object input1, int input2, bool isExecErr, bool? result1, int result2, int result3, bool? result4)
         {
             var builder = new DmnDefinitionBuilder()
                 .WithInput("input1")
