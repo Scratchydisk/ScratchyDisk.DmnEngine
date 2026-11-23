@@ -2,6 +2,7 @@ using System;
 using FluentAssertions;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 using ScratchyDisk.DmnEngine.Feel;
+using ScratchyDisk.DmnEngine.Feel.Types;
 using ScratchyDisk.DmnEngine.Feel.Eval;
 using ScratchyDisk.DmnEngine.Feel.Parsing;
 
@@ -26,13 +27,14 @@ namespace ScratchyDisk.DmnEngine.Test.Unit
         {
             var result = Eval("date and time(date(2024, 12, 24), time(23, 59, 0), \"Europe/Paris\")");
 
-            var value = result.Should().BeOfType<DateTimeOffset>().Subject;
-            value.Year.Should().Be(2024);
-            value.Month.Should().Be(12);
-            value.Day.Should().Be(24);
-            value.Hour.Should().Be(23);
-            value.Minute.Should().Be(59);
-            value.Offset.Should().Be(TimeSpan.FromHours(1));
+            var value = result.Should().BeOfType<FeelDateTime>().Subject;
+            value.ZoneId.Should().Be("Europe/Paris");
+            value.Value.Year.Should().Be(2024);
+            value.Value.Month.Should().Be(12);
+            value.Value.Day.Should().Be(24);
+            value.Value.Hour.Should().Be(23);
+            value.Value.Minute.Should().Be(59);
+            value.Value.Offset.Should().Be(TimeSpan.FromHours(1));
         }
 
         [TestMethod]
@@ -40,8 +42,9 @@ namespace ScratchyDisk.DmnEngine.Test.Unit
         {
             var result = Eval("date and time(date(2024, 7, 1), time(12, 0, 0), \"Europe/Paris\")");
 
-            var value = result.Should().BeOfType<DateTimeOffset>().Subject;
-            value.Offset.Should().Be(TimeSpan.FromHours(2));
+            var value = result.Should().BeOfType<FeelDateTime>().Subject;
+            value.ZoneId.Should().Be("Europe/Paris");
+            value.Value.Offset.Should().Be(TimeSpan.FromHours(2));
         }
 
         [TestMethod]
@@ -49,7 +52,9 @@ namespace ScratchyDisk.DmnEngine.Test.Unit
         {
             var result = Eval("date and time(date(2024, 12, 24), time(23, 59, 0), \"Z\")");
 
-            result.Should().BeOfType<DateTimeOffset>().Which.Offset.Should().Be(TimeSpan.Zero);
+            var value = result.Should().BeOfType<FeelDateTime>().Subject;
+            value.ZoneId.Should().Be("Z");
+            value.Value.Offset.Should().Be(TimeSpan.Zero);
         }
 
         [TestMethod]

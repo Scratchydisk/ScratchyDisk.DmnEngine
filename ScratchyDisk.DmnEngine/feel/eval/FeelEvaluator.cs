@@ -192,6 +192,11 @@ namespace ScratchyDisk.DmnEngine.Feel.Eval
                     "value" => (decimal)new DateTimeOffset(d.ToDateTime(TimeOnly.MinValue), TimeSpan.Zero).ToUnixTimeSeconds(),
                     _ => null
                 },
+                FeelDateTime zdt => member switch
+                {
+                    "timezone" => zdt.ZoneId,
+                    _ => AccessDateTimeComponent(zdt.Value, member)
+                },
                 DateTimeOffset dt => member switch
                 {
                     "year" => (decimal)dt.Year,
@@ -215,7 +220,7 @@ namespace ScratchyDisk.DmnEngine.Feel.Eval
                     "value" => (decimal)(t.Time.Hour * 3600 + t.Time.Minute * 60 + t.Time.Second) + t.Time.Millisecond / 1000m,
                     "offset" => t.Offset,
                     "time offset" => t.Offset,
-                    "timezone" => null,
+                    "timezone" => t.ZoneId,
                     _ => null
                 },
                 TimeSpan ts => member switch
@@ -272,6 +277,18 @@ namespace ScratchyDisk.DmnEngine.Feel.Eval
 
         private static object EvalAdd(object left, object right)
         {
+            var zoneId = left is FeelDateTime leftZone ? leftZone.ZoneId
+                : right is FeelDateTime rightZone ? rightZone.ZoneId : null;
+            var result = EvalAddCore(
+                left is FeelDateTime leftZoned ? leftZoned.Value : left,
+                right is FeelDateTime rightZoned ? rightZoned.Value : right);
+            return zoneId != null && result is DateTimeOffset zonedResult
+                ? new FeelDateTime(zonedResult, zoneId)
+                : result;
+        }
+
+        private static object EvalAddCore(object left, object right)
+        {
             // Both null → null (FEEL semantics)
             if (left == null && right == null) return null;
 
@@ -326,6 +343,18 @@ namespace ScratchyDisk.DmnEngine.Feel.Eval
         }
 
         private static object EvalSub(object left, object right)
+        {
+            var zoneId = left is FeelDateTime leftZone ? leftZone.ZoneId
+                : right is FeelDateTime rightZone ? rightZone.ZoneId : null;
+            var result = EvalSubCore(
+                left is FeelDateTime leftZoned ? leftZoned.Value : left,
+                right is FeelDateTime rightZoned ? rightZoned.Value : right);
+            return zoneId != null && result is DateTimeOffset zonedResult
+                ? new FeelDateTime(zonedResult, zoneId)
+                : result;
+        }
+
+        private static object EvalSubCore(object left, object right)
         {
             if (FeelValueComparer.IsNumeric(left) && FeelValueComparer.IsNumeric(right))
                 return FeelValueComparer.ToDecimal(left) - FeelValueComparer.ToDecimal(right);
@@ -608,7 +637,7 @@ namespace ScratchyDisk.DmnEngine.Feel.Eval
                 "boolean" => value is bool,
                 "date" => value is DateOnly,
                 "time" => value is FeelTime,
-                "date and time" or "dateandtime" => value is DateTimeOffset,
+                "date and time" or "dateandtime" => value is DateTimeOffset or FeelDateTime,
                 "years and months duration" or "yearsandmonthsduration" => value is FeelYmDuration,
                 "days and time duration" or "daysandtimeduration" => value is TimeSpan,
                 "list" => value is List<object>,
@@ -1053,7 +1082,8 @@ namespace ScratchyDisk.DmnEngine.Feel.Eval
                     return null;
                 if (zone.IsInvalidTime(local)) return null;
                 var zoned = new DateTimeOffset(local, zone.GetUtcOffset(local));
-                return endOfDay ? zoned.AddDays(1) : zoned;
+                if (endOfDay) zoned = zoned.AddDays(1);
+                return new FeelDateTime(zoned, raw[(at + 1)..]);
             }
 
             // Try ISO date-time: 2024-01-15T10:30:00, etc.
@@ -1095,25 +1125,31 @@ namespace ScratchyDisk.DmnEngine.Feel.Eval
             result = default;
 
             // Match time patterns: HH:mm, HH:mm:ss, HH:mm:ss.fff, with optional offset
-            var match = Regex.Match(raw, @"^(\d{1,2}):(\d{2})(?::(\d{2})(?:\.(\d+))?)?(?:(Z)|([+-]\d{2}:\d{2}))?$", RegexOptions.None, RegexDefaults.Timeout);
+            var match = Regex.Match(raw, @"^(\d{2}:\d{2}(?::\d{2}(?:\.\d+)?)?)(?:(Z)|([+-]\d{2}:\d{2})|@(.+))?$", RegexOptions.None, RegexDefaults.Timeout);
             if (!match.Success) return false;
 
-            var hour = int.Parse(match.Groups[1].Value);
-            var minute = int.Parse(match.Groups[2].Value);
-            var second = match.Groups[3].Success ? int.Parse(match.Groups[3].Value) : 0;
-            var ms = match.Groups[4].Success ? int.Parse(match.Groups[4].Value.PadRight(3, '0').Substring(0, 3)) : 0;
-
+            var time = TimeOnly.Parse(match.Groups[1].Value, CultureInfo.InvariantCulture);
             TimeSpan? offset = null;
-            if (match.Groups[5].Success) // Z
+            string zoneId = null;
+
+            if (match.Groups[2].Success) // Z
                 offset = TimeSpan.Zero;
-            else if (match.Groups[6].Success) // +/-HH:mm
+            else if (match.Groups[3].Success) // +/-HH:mm
             {
-                var text = match.Groups[6].Value;
+                var text = match.Groups[3].Value;
                 var sign = text.StartsWith("-") ? -1 : 1;
                 offset = sign * TimeSpan.Parse(text.TrimStart('+', '-'), CultureInfo.InvariantCulture);
+                if (offset.Value.Duration() > TimeSpan.FromHours(14)) return false;
+            }
+            else if (match.Groups[4].Success) // @zone
+            {
+                zoneId = match.Groups[4].Value;
+                var zone = ResolveTimeZone(zoneId);
+                if (zone == null) return false;
+                offset = zone.GetUtcOffset(DateTime.Today);
             }
 
-            result = new FeelTime(hour, minute, second, ms, offset);
+            result = new FeelTime(time, offset, zoneId);
             return true;
         }
 

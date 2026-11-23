@@ -23,10 +23,17 @@ namespace ScratchyDisk.DmnEngine.Feel.Types
         /// </summary>
         public bool HasOffset => Offset.HasValue;
 
-        public FeelTime(TimeOnly time, TimeSpan? offset = null)
+        /// <summary>
+        /// Optional timezone identifier (for example "Europe/Paris"). When set,
+        /// string() must print the identifier rather than the numeric offset.
+        /// </summary>
+        public string ZoneId { get; }
+
+        public FeelTime(TimeOnly time, TimeSpan? offset = null, string zoneId = null)
         {
             Time = time;
             Offset = offset;
+            ZoneId = zoneId;
         }
 
         public FeelTime(int hour, int minute, int second, TimeSpan? offset = null)
@@ -40,7 +47,7 @@ namespace ScratchyDisk.DmnEngine.Feel.Types
         /// </summary>
         public DateTimeOffset ToDateTimeOffset()
         {
-            var dt = new DateTime(1970, 1, 1, Time.Hour, Time.Minute, Time.Second, Time.Millisecond, DateTimeKind.Unspecified);
+            var dt = new DateTime(1970, 1, 1, 0, 0, 0, DateTimeKind.Unspecified).Add(Time.ToTimeSpan());
             return new DateTimeOffset(dt, Offset ?? TimeSpan.Zero);
         }
 
@@ -82,7 +89,7 @@ namespace ScratchyDisk.DmnEngine.Feel.Types
         public static FeelTime operator +(FeelTime time, TimeSpan duration)
         {
             var newTime = time.Time.Add(duration);
-            return new FeelTime(newTime, time.Offset);
+            return new FeelTime(newTime, time.Offset, time.ZoneId);
         }
 
         public static FeelTime operator -(FeelTime time, TimeSpan duration)
@@ -93,11 +100,16 @@ namespace ScratchyDisk.DmnEngine.Feel.Types
         public override string ToString()
         {
             var timeStr = Time.ToString("HH:mm:ss");
+            var fraction = Time.ToString("fffffff").TrimEnd('0');
+            if (fraction.Length > 0) timeStr += "." + fraction;
+
+            if (!string.IsNullOrWhiteSpace(ZoneId)) return $"{timeStr}@{ZoneId}";
             if (!HasOffset) return timeStr;
             if (Offset == TimeSpan.Zero) return $"{timeStr}Z";
             var sign = Offset.Value < TimeSpan.Zero ? "-" : "+";
             var abs = Offset.Value < TimeSpan.Zero ? -Offset.Value : Offset.Value;
-            return $"{timeStr}{sign}{abs:hh\\:mm}";
+            var offsetFormat = abs.Seconds != 0 || abs.Milliseconds != 0 ? "hh\\:mm\\:ss" : "hh\\:mm";
+            return $"{timeStr}{sign}{abs.ToString(offsetFormat)}";
         }
     }
 }

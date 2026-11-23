@@ -152,8 +152,8 @@ Captured 2026-11-23 against TCK `a428da2`, engine `2.0.1`.
 | Level | Cases | PASS | FAIL | PARSE-FAIL | NOT-FOUND | BLOCKED | Executed pass rate |
 | --- | ---: | ---: | ---: | ---: | ---: | ---: | ---: |
 | compliance-level-2 | 116 | 116 | 0 | 0 | 0 | 0 | 100.0% |
-| compliance-level-3 | 3,321 | 2,841 | 317 | 30 | 19 | 163 | 90.0% |
-| **Total** | **3,437** | **2,957** | **317** | **30** | **19** | **163** | **90.3%** |
+| compliance-level-3 | 3,321 | 2,904 | 254 | 30 | 19 | 163 | 92.0% |
+| **Total** | **3,437** | **3,020** | **254** | **30** | **19** | **163** | **92.2%** |
 
 `BLOCKED` is `PARSE-FAIL` + `NOT-FOUND` + `UNSUPPORTED` + `FIXTURE-ERROR`.
 3,274 cases reached a decision. Level 2 is fully cleared.
@@ -164,7 +164,7 @@ cases using a decision logic kind the parser does not read (`context`,
 decision-service input bindings, and 6 values that cannot be represented
 (negative years in `DateOnly`).
 
-Of the cases that did execute, the 317 failures concentrate in timezone
+Of the cases that did execute, the 254 failures concentrate in timezone
 handling (`0100`), date/time/duration functions (`1115`–`1121`), imports
 (`1159`), ranges (`1156`), `instance of` (`0070`), coercion (`0082`), string
 functions (`matches`) and number functions.

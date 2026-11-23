@@ -102,7 +102,26 @@ namespace ScratchyDisk.DmnEngine.Engine.Execution.Context
             {
                 if (Type != null && value != null)
                 {
-                    // Try FEEL type coercion first (handles decimal→int, DateOnly→DateTime, etc.)
+                    // FEEL temporal values often need an explicit CLR mapping.
+                    if (value is DateOnly dateOnlyValue)
+                    {
+                        if (Type == typeof(DateTime)) return dateOnlyValue.ToDateTime(TimeOnly.MinValue);
+                        if (Type == typeof(DateTimeOffset))
+                            return new DateTimeOffset(dateOnlyValue.ToDateTime(TimeOnly.MinValue), TimeSpan.Zero);
+                    }
+                    if (value is DateTime dateTimeValue)
+                    {
+                        if (Type == typeof(DateOnly)) return DateOnly.FromDateTime(dateTimeValue);
+                        if (Type == typeof(DateTimeOffset)) return new DateTimeOffset(dateTimeValue);
+                    }
+                    if (value is ScratchyDisk.DmnEngine.Feel.Types.FeelDateTime zonedValue)
+                    {
+                        if (Type == typeof(DateTimeOffset)) return zonedValue.Value;
+                        if (Type == typeof(DateTime)) return zonedValue.Value.DateTime;
+                        if (Type == typeof(DateOnly)) return DateOnly.FromDateTime(zonedValue.Value.DateTime);
+                    }
+
+                    // Try FEEL type coercion first (handles decimal→int, etc.)
                     var coerced = ScratchyDisk.DmnEngine.Feel.Types.FeelTypeCoercion.CoerceToClr(value, Type);
                     return coerced ?? Convert.ChangeType(value, Type);
                 }

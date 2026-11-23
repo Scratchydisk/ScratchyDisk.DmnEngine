@@ -48,6 +48,26 @@ namespace ScratchyDisk.DmnEngine.Feel.Functions
         {
             if (namedArgs == null || !Functions.TryGetValue(name, out var fn)) return null;
 
+            if (name == "time")
+            {
+                object[] timeArgs;
+                if (namedArgs.ContainsKey("from"))
+                {
+                    timeArgs = new[] { namedArgs["from"] };
+                }
+                else
+                {
+                    timeArgs = new[]
+                    {
+                        ValueOrNull("hour"), ValueOrNull("minute"),
+                        ValueOrNull("second"), ValueOrNull("offset")
+                    };
+                }
+                return fn.Invoke(timeArgs);
+
+                object ValueOrNull(string key) => namedArgs.TryGetValue(key, out var v) ? v : null;
+            }
+
             if (name == "context put")
             {
                 if (namedArgs.TryGetValue("key", out var keyArg) && keyArg is List<object>) return null;
@@ -114,6 +134,7 @@ namespace ScratchyDisk.DmnEngine.Feel.Functions
                 case bool: return "boolean";
                 case DateOnly: return "date";
                 case DateTimeOffset: return "date and time";
+                case FeelDateTime: return "date and time";
                 case FeelTime: return "time";
                 case TimeSpan: return "days and time duration";
                 case FeelYmDuration: return "years and months duration";
@@ -853,12 +874,22 @@ namespace ScratchyDisk.DmnEngine.Feel.Functions
                 if (a == null || b == null) return a == null && b == null;
                 if (!Equals(TypeName(a), TypeName(b))) return false;
 
+                // Zoned date-times must agree on the zone identifier as well as the
+                // wall clock; an unzoned or offset value is a different type.
+                if (a is FeelDateTime za || b is FeelDateTime zb)
+                {
+                    if (a is not FeelDateTime za2 || b is not FeelDateTime zb2) return false;
+                    return za2.ZoneId == zb2.ZoneId
+                           && za2.Value.DateTime == zb2.Value.DateTime
+                           && za2.Value.Offset == zb2.Value.Offset;
+                }
+
                 // "is" is stricter than "=": timezone presence and the wall-clock
                 // components matter, not just the instant.
                 if (a is DateTimeOffset da && b is DateTimeOffset db)
                     return da.DateTime == db.DateTime && da.Offset == db.Offset;
                 if (a is FeelTime ta && b is FeelTime tb)
-                    return ta.Time == tb.Time && ta.Offset == tb.Offset;
+                    return ta.Time == tb.Time && ta.Offset == tb.Offset && ta.ZoneId == tb.ZoneId;
 
                 return FeelValueComparer.FeelEqual(a, b) == true;
             });
@@ -885,12 +916,13 @@ namespace ScratchyDisk.DmnEngine.Feel.Functions
                         return d;
                     return null;
                 }
+                if (val is FeelDateTime fdt) return DateOnly.FromDateTime(fdt.Value.DateTime);
                 if (val is DateTimeOffset dto) return DateOnly.FromDateTime(dto.DateTime);
                 if (val is DateOnly) return val;
                 return null;
             });
 
-            Register("time", new[] { "from", "hour", "minute", "second" }, args =>
+            Register("time", new[] { "from", "hour", "minute", "second", "offset" }, args =>
             {
                 if (args.Length >= 3)
                 {
@@ -909,6 +941,9 @@ namespace ScratchyDisk.DmnEngine.Feel.Functions
                     return null;
                 }
                 if (val is FeelTime) return val;
+                if (val is DateOnly) return new FeelTime(TimeOnly.MinValue, TimeSpan.Zero);
+                if (val is FeelDateTime zdt)
+                    return new FeelTime(TimeOnly.FromDateTime(zdt.Value.DateTime), zdt.Value.Offset, zdt.ZoneId);
                 if (val is DateTimeOffset dto)
                     return new FeelTime(TimeOnly.FromTimeSpan(dto.TimeOfDay), dto.Offset);
                 return null;
@@ -923,6 +958,7 @@ namespace ScratchyDisk.DmnEngine.Feel.Functions
 
                     DateOnly date;
                     if (dateVal is DateOnly d) date = d;
+                    else if (dateVal is FeelDateTime fdt2) date = DateOnly.FromDateTime(fdt2.Value.DateTime);
                     else if (dateVal is DateTimeOffset dto2) date = DateOnly.FromDateTime(dto2.DateTime);
                     else if (dateVal is string ds && DateOnly.TryParseExact(ds, "yyyy-MM-dd", CultureInfo.InvariantCulture, DateTimeStyles.None, out var dp))
                         date = dp;
@@ -939,10 +975,20 @@ namespace ScratchyDisk.DmnEngine.Feel.Functions
                         else return null;
                         var local = date.ToDateTime(time, DateTimeKind.Unspecified);
                         if (zone.IsInvalidTime(local)) return null;
-                        return new DateTimeOffset(local, zone.GetUtcOffset(local));
+                        return new FeelDateTime(new DateTimeOffset(local, zone.GetUtcOffset(local)), timezone);
                     }
                     if (timeVal is FeelTime ft)
+                    {
+                        if (!string.IsNullOrWhiteSpace(ft.ZoneId))
+                        {
+                            var zone = ResolveTimeZone(ft.ZoneId);
+                            if (zone == null) return null;
+                            var local = date.ToDateTime(ft.Time, DateTimeKind.Unspecified);
+                            if (zone.IsInvalidTime(local)) return null;
+                            return new FeelDateTime(new DateTimeOffset(local, zone.GetUtcOffset(local)), ft.ZoneId);
+                        }
                         return new DateTimeOffset(date.ToDateTime(ft.Time), ft.Offset ?? TimeSpan.Zero);
+                    }
                     if (timeVal is string ts && TryParseTime(ts, out var t))
                         return new DateTimeOffset(date.ToDateTime(t.Time), t.Offset ?? TimeSpan.Zero);
                     return null;
@@ -958,7 +1004,7 @@ namespace ScratchyDisk.DmnEngine.Feel.Functions
                         if (!DateTime.TryParse(s.Substring(0, at), CultureInfo.InvariantCulture, DateTimeStyles.None, out var local))
                             return null;
                         if (zone.IsInvalidTime(local)) return null;
-                        return new DateTimeOffset(local, zone.GetUtcOffset(local));
+                        return new FeelDateTime(new DateTimeOffset(local, zone.GetUtcOffset(local)), s.Substring(at + 1));
                     }
                     if (DateTimeOffset.TryParse(s, CultureInfo.InvariantCulture, DateTimeStyles.None, out var dto))
                         return dto;
@@ -1035,26 +1081,30 @@ namespace ScratchyDisk.DmnEngine.Feel.Functions
         private static bool TryParseTime(string raw, out FeelTime result)
         {
             result = default;
-            var match = Regex.Match(raw, @"^(\d{1,2}):(\d{2})(?::(\d{2})(?:\.(\d+))?)?(?:(Z)|([+-]\d{2}:\d{2})|@(.+))?$", RegexOptions.None, RegexDefaults.Timeout);
+            var match = Regex.Match(raw, @"^(\d{2}:\d{2}(?::\d{2}(?:\.\d+)?)?)(?:(Z)|([+-]\d{2}:\d{2})|@(.+))?$", RegexOptions.None, RegexDefaults.Timeout);
             if (!match.Success) return false;
-            var hour = int.Parse(match.Groups[1].Value);
-            var minute = int.Parse(match.Groups[2].Value);
-            var second = match.Groups[3].Success ? int.Parse(match.Groups[3].Value) : 0;
+
+            var time = TimeOnly.Parse(match.Groups[1].Value, CultureInfo.InvariantCulture);
             TimeSpan? offset = null;
-            if (match.Groups[5].Success) offset = TimeSpan.Zero;
-            else if (match.Groups[6].Success)
+            string zoneId = null;
+
+            if (match.Groups[2].Success) offset = TimeSpan.Zero;
+            else if (match.Groups[3].Success)
             {
-                var text = match.Groups[6].Value;
+                var text = match.Groups[3].Value;
                 var sign = text.StartsWith("-") ? -1 : 1;
                 offset = sign * TimeSpan.Parse(text.TrimStart('+', '-'), CultureInfo.InvariantCulture);
+                if (offset.Value.Duration() > TimeSpan.FromHours(14)) return false;
             }
-            else if (match.Groups[7].Success)
+            else if (match.Groups[4].Success)
             {
-                var zone = ResolveTimeZone(match.Groups[7].Value);
+                zoneId = match.Groups[4].Value;
+                var zone = ResolveTimeZone(zoneId);
                 if (zone == null) return false;
-                offset = zone.GetUtcOffset(DateTimeOffset.UtcNow);
+                offset = zone.GetUtcOffset(DateTime.Today);
             }
-            result = new FeelTime(hour, minute, second, offset);
+
+            result = new FeelTime(time, offset, zoneId);
             return true;
         }
 
@@ -1145,6 +1195,7 @@ namespace ScratchyDisk.DmnEngine.Feel.Functions
                 if (FeelValueComparer.IsNumeric(val))
                     return FeelValueComparer.ToDecimal(val).ToString(CultureInfo.InvariantCulture);
                 if (val is DateOnly d) return d.ToString("yyyy-MM-dd");
+                if (val is FeelDateTime fdt) return fdt.ToString();
                 if (val is DateTimeOffset dto) return dto.ToString("yyyy-MM-ddTHH:mm:sszzz");
                 if (val is FeelTime ft) return ft.ToString();
                 if (val is TimeSpan ts) return FormatTimeSpanDuration(ts);

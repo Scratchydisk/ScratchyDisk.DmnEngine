@@ -20,6 +20,10 @@ namespace ScratchyDisk.DmnEngine.Feel.Types
             // null = x or x = null → false (per FEEL spec, not null)
             if (left == null || right == null) return false;
 
+            // Zone-aware date-times compare by instant for equality.
+            if (left is FeelDateTime leftZoned) left = leftZoned.Value;
+            if (right is FeelDateTime rightZoned) right = rightZoned.Value;
+
             // Numeric comparison with coercion
             if (IsNumeric(left) && IsNumeric(right))
                 return ToDecimal(left) == ToDecimal(right);
@@ -89,6 +93,9 @@ namespace ScratchyDisk.DmnEngine.Feel.Types
         public static int? Compare(object left, object right)
         {
             if (left == null || right == null) return null;
+
+            if (left is FeelDateTime leftZoned) left = leftZoned.Value;
+            if (right is FeelDateTime rightZoned) right = rightZoned.Value;
 
             // Numeric comparison
             if (IsNumeric(left) && IsNumeric(right))

@@ -261,7 +261,7 @@ public sealed class TckRunner
                 {
                     return Node(result, TckStatus.FixtureError, $"input '{input.Name}': {ex.Message}");
                 }
-                context.WithInputParameter(input.Name, value);
+                context.WithInputParameter(input.Name, TckValue.ToEngineValue(value));
             }
 
             var actualResult = context.ExecuteDecision(result.Name);

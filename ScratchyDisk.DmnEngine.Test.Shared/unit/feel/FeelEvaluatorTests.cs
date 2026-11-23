@@ -779,7 +779,7 @@ namespace ScratchyDisk.DmnEngine.Test.Unit.Feel
 
         [TestMethod]
         public void EvalIanaDateTimeLiteral() =>
-            Eval("@\"2021-01-01T10:10:10@Australia/Melbourne\"").Should().BeOfType<DateTimeOffset>();
+            Eval("@\"2021-01-01T10:10:10@Australia/Melbourne\"").Should().BeOfType<FeelDateTime>();
 
         [TestMethod]
         public void EvalIanaDateTimePlusYmDuration() =>

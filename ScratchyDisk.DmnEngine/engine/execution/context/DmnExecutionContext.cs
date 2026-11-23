@@ -510,6 +510,13 @@ namespace ScratchyDisk.DmnEngine.Engine.Execution.Context
             if (outputType.IsInstanceOfType(result)) return result;
 
             // FEEL date/time values and their CLR counterparts.
+            if (result is FeelDateTime zonedDateTime)
+            {
+                if (outputType == typeof(DateTimeOffset)) return zonedDateTime.Value;
+                if (outputType == typeof(DateTime)) return zonedDateTime.Value.DateTime;
+                if (outputType == typeof(DateOnly)) return DateOnly.FromDateTime(zonedDateTime.Value.DateTime);
+                if (outputType == typeof(object)) return zonedDateTime;
+            }
             if (result is DateOnly dateValue)
             {
                 if (outputType == typeof(DateTime))

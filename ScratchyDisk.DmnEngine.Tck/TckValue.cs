@@ -130,10 +130,16 @@ public static class TckValue
         if (!match.Groups["offset"].Success) return new TckTime(new FeelTime(time), false);
 
         var offsetText = match.Groups["offset"].Value;
-        var offset = offsetText == "Z"
-            ? TimeSpan.Zero
-            : TimeSpan.Parse(offsetText.TrimStart('+'), CultureInfo.InvariantCulture);
-        if (offsetText.StartsWith("-")) offset = -offset;
+        TimeSpan offset;
+        if (offsetText == "Z")
+        {
+            offset = TimeSpan.Zero;
+        }
+        else
+        {
+            var sign = offsetText.StartsWith("-") ? -1 : 1;
+            offset = sign * TimeSpan.Parse(offsetText.TrimStart('+', '-'), CultureInfo.InvariantCulture);
+        }
         return new TckTime(new FeelTime(time, offset), true);
     }
 
@@ -392,6 +398,9 @@ public static class TckValue
             case TckDateTime tck:
                 date = DateOnly.FromDateTime(tck.Value.DateTime);
                 return true;
+            case FeelDateTime zoned:
+                date = DateOnly.FromDateTime(zoned.Value.DateTime);
+                return true;
             default:
                 date = default;
                 return false;
@@ -405,6 +414,10 @@ public static class TckValue
             case TckDateTime tck:
                 dateTime = tck.Value;
                 hasOffset = tck.HasOffset;
+                return true;
+            case FeelDateTime zoned:
+                dateTime = zoned.Value;
+                hasOffset = true;
                 return true;
             case DateTimeOffset dto:
                 dateTime = dto;
@@ -464,6 +477,30 @@ public static class TckValue
         }
     }
 
+    /// <summary>
+    /// Converts a parsed TCK value into the CLR value the engine consumes.
+    /// Expected values keep their wrappers for comparison.
+    /// </summary>
+    public static object ToEngineValue(object value)
+    {
+        switch (value)
+        {
+            case TckTime time: return time.Value;
+            case TckDateTime dateTime: return dateTime.Value;
+            case FeelContext context:
+            {
+                var converted = new FeelContext();
+                foreach (var entry in context.Entries)
+                    converted.Put(entry.Key, ToEngineValue(entry.Value));
+                return converted;
+            }
+            case List<object> list:
+                return list.Select(ToEngineValue).ToList();
+            default:
+                return value;
+        }
+    }
+
     public static string Format(object value)
     {
         switch (value)
@@ -475,6 +512,7 @@ public static class TckValue
             case double d: return d.ToString("R", CultureInfo.InvariantCulture);
             case DateOnly date: return date.ToString("yyyy-MM-dd", CultureInfo.InvariantCulture);
             case TckDateTime tck: return tck.Value.ToString("O", CultureInfo.InvariantCulture);
+            case FeelDateTime zonedDateTime: return zonedDateTime.ToString();
             case DateTimeOffset dto: return dto.ToString("O", CultureInfo.InvariantCulture);
             case DateTime dt: return dt.ToString("O", CultureInfo.InvariantCulture);
             case TimeSpan span: return XmlConvert.ToString(span);
