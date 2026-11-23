@@ -148,10 +148,10 @@ namespace ScratchyDisk.DmnEngine.Engine.Definition
         /// <param name="source">Source DMN Model parsed from XML</param>
         /// <exception cref="ArgumentNullException"><paramref name="source"/> is null.</exception>    
         /// <returns>DMN model definition that can be used to execute the decisions within the <see cref="execution.context.DmnExecutionContext"/></returns>
-        public static DmnDefinition CreateDmnDefinition(DmnModel source)
+        public static DmnDefinition CreateDmnDefinition(DmnModel source, DmnModelSet models = null)
         {
             if (source == null) throw new ArgumentNullException(nameof(source));
-            ModelImportResolver.Resolve(source);
+            ModelImportResolver.Resolve(source, models);
             ValidateExpressionLanguages(source);
             var factory = new DmnDefinitionFactory(source);
             return factory.ProcessModel();

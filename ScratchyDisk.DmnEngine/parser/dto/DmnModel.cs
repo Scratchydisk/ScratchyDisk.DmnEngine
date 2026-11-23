@@ -13,6 +13,10 @@ namespace ScratchyDisk.DmnEngine.Parser.Dto
         [XmlAttribute("namespace")]
         public string Namespace { get; set; }
 
+        /// <summary>Definitions name attribute.</summary>
+        [XmlAttribute("name")]
+        public string Name { get; set; }
+
         /// <summary>Import declarations.</summary>
         [XmlElement("import")]
         public List<Import> Imports { get; set; }

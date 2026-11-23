@@ -15,12 +15,12 @@ namespace ScratchyDisk.DmnEngine.Engine.Definition
     /// </summary>
     public static class ModelImportResolver
     {
-        public static void Resolve(DmnModel root)
+        public static void Resolve(DmnModel root, DmnModelSet models = null)
         {
             if (root == null || root.Imports == null || root.Imports.Count == 0) return;
             if (root.ImportAliases != null) return;
 
-            var resolver = new Resolver(root);
+            var resolver = new Resolver(root, models);
             resolver.Run();
         }
 
@@ -34,11 +34,16 @@ namespace ScratchyDisk.DmnEngine.Engine.Definition
         private sealed class Resolver
         {
             private readonly DmnModel root;
+            private readonly DmnModelSet models;
             private readonly Dictionary<string, Entry> byNamespace = new(StringComparer.Ordinal);
             private readonly Dictionary<string, DmnModel> modelCache = new(StringComparer.OrdinalIgnoreCase);
             private int prefixCounter;
 
-            public Resolver(DmnModel root) { this.root = root; }
+            public Resolver(DmnModel root, DmnModelSet models)
+            {
+                this.root = root;
+                this.models = models;
+            }
 
             internal sealed class Entry
             {
@@ -83,28 +88,32 @@ namespace ScratchyDisk.DmnEngine.Engine.Definition
 
                 foreach (var import in entry.Model.Imports)
                 {
-                    var model = Load(entry, import);
-                    if (model == null) continue;
-
-                    var ns = model.Namespace ?? import.Namespace ?? "";
-                    if (!byNamespace.TryGetValue(ns, out var target))
+                    var importNamespace = import.Namespace ?? "";
+                    if (!byNamespace.TryGetValue(importNamespace, out var target))
                     {
-                        prefixCounter++;
-                        target = new Entry
+                        var model = Load(entry, import);
+                        if (model == null) continue;
+
+                        var ns = model.Namespace ?? importNamespace;
+                        if (!byNamespace.TryGetValue(ns, out target))
                         {
-                            Model = model,
-                            Namespace = ns,
-                            NamePrefix = $"m{prefixCounter}.",
-                            IdPrefix = $"m{prefixCounter}#",
-                        };
-                        byNamespace[ns] = target;
-                        ResolveImports(target);
+                            prefixCounter++;
+                            target = new Entry
+                            {
+                                Model = model,
+                                Namespace = ns,
+                                NamePrefix = $"m{prefixCounter}.",
+                                IdPrefix = $"m{prefixCounter}#",
+                            };
+                            byNamespace[ns] = target;
+                            ResolveImports(target);
+                        }
                     }
 
                     entry.Imports.Add(new ImportBinding
                     {
                         Name = import.Name ?? "",
-                        Namespace = ns,
+                        Namespace = target.Namespace,
                         Entry = target,
                     });
                 }
@@ -112,6 +121,21 @@ namespace ScratchyDisk.DmnEngine.Engine.Definition
 
             private DmnModel Load(Entry importer, Import import)
             {
+                if (models != null)
+                {
+                    if (!string.IsNullOrWhiteSpace(import.LocationPath) && importer.Model.SourcePath != null)
+                    {
+                        var modelDirectory = Path.GetDirectoryName(importer.Model.SourcePath);
+                        var modelLocation = import.LocationPath;
+                        var modelPath = Path.IsPathRooted(modelLocation)
+                            ? modelLocation
+                            : Path.Combine(modelDirectory, modelLocation);
+                        if (File.Exists(modelPath)) return models.LoadByPath(modelPath);
+                    }
+                    if (models.TryLoadByNamespace(import.Namespace, out var indexed))
+                        return indexed;
+                }
+
                 var baseDirectory = importer.Model.SourcePath == null
                     ? null
                     : Path.GetDirectoryName(importer.Model.SourcePath);
