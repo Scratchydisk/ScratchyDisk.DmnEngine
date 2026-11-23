@@ -509,6 +509,23 @@ namespace ScratchyDisk.DmnEngine.Engine.Execution.Context
             if (outputType == typeof(object)) return result;
             if (outputType.IsInstanceOfType(result)) return result;
 
+            // FEEL date/time values and their CLR counterparts.
+            if (result is DateOnly dateValue)
+            {
+                if (outputType == typeof(DateTime))
+                    return dateValue.ToDateTime(TimeOnly.MinValue);
+                if (outputType == typeof(DateTimeOffset))
+                    return new DateTimeOffset(dateValue.ToDateTime(TimeOnly.MinValue), TimeSpan.Zero);
+            }
+            if (result is DateTime dateTimeValue)
+            {
+                if (outputType == typeof(DateOnly)) return DateOnly.FromDateTime(dateTimeValue);
+                if (outputType == typeof(DateTimeOffset))
+                    return new DateTimeOffset(dateTimeValue);
+            }
+            if (result is DateTimeOffset offsetValue && outputType == typeof(DateOnly))
+                return DateOnly.FromDateTime(offsetValue.DateTime);
+
             // Use FEEL type coercion first
             var coerced = FeelTypeCoercion.CoerceToClr(result, outputType);
             if (coerced != null) return coerced;

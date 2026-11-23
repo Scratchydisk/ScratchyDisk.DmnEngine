@@ -662,30 +662,34 @@ namespace ScratchyDisk.DmnEngine.Feel.Eval
         private object EvalFor(ForNode forNode)
         {
             var results = new List<object>();
-            EvalForIterations(forNode.Iterations, 0, forNode.ReturnExpression, context, results);
-            return results;
+            return EvalForIterations(forNode.Iterations, 0, forNode.ReturnExpression, context, results)
+                ? results
+                : null;
         }
 
-        private void EvalForIterations(
+        private bool EvalForIterations(
             IReadOnlyList<IterationContext> iterations, int iterationIndex,
             FeelAstNode returnExpr, FeelEvaluationContext scope, List<object> results)
         {
             if (iterationIndex >= iterations.Count)
             {
-                var childEvaluator = new FeelEvaluator(scope, functionResolver);
-                results.Add(childEvaluator.Evaluate(returnExpr));
-                return;
+                // FEEL exposes the results accumulated so far as "partial".
+                scope.SetVariable("partial", new List<object>(results));
+                results.Add(new FeelEvaluator(scope, functionResolver).Evaluate(returnExpr));
+                return true;
             }
 
             var iteration = iterations[iterationIndex];
+            var scopeEvaluator = new FeelEvaluator(scope, functionResolver);
             var childScope = scope.CreateChildScope();
-            var childEval = new FeelEvaluator(childScope, functionResolver);
+            var childEvaluator = new FeelEvaluator(childScope, functionResolver);
 
             if (iteration.RangeEnd != null)
             {
-                // Range iteration: for x in 1..5
-                var startVal = Evaluate(iteration.ListExpression);
-                var endVal = Evaluate(iteration.RangeEnd);
+                // Range iteration: for x in 1..5, or dates.
+                var startVal = scopeEvaluator.Evaluate(iteration.ListExpression);
+                var endVal = scopeEvaluator.Evaluate(iteration.RangeEnd);
+
                 if (FeelValueComparer.IsNumeric(startVal) && FeelValueComparer.IsNumeric(endVal))
                 {
                     var start = (int)FeelValueComparer.ToDecimal(startVal);
@@ -694,21 +698,36 @@ namespace ScratchyDisk.DmnEngine.Feel.Eval
                     for (var i = start; step > 0 ? i <= end : i >= end; i += step)
                     {
                         childScope.SetVariable(iteration.VariableName, (decimal)i);
-                        EvalForIterations(iterations, iterationIndex + 1, returnExpr, childScope, results);
+                        if (!EvalForIterations(iterations, iterationIndex + 1, returnExpr, childScope, results)) return false;
                     }
+                    return true;
                 }
-            }
-            else
-            {
-                // List iteration: for x in [1, 2, 3]
-                var listVal = Evaluate(iteration.ListExpression);
-                var items = CoerceToList(listVal);
-                foreach (var item in items)
+
+                if (startVal is DateOnly startDate && endVal is DateOnly endDate)
                 {
-                    childScope.SetVariable(iteration.VariableName, item);
-                    EvalForIterations(iterations, iterationIndex + 1, returnExpr, childScope, results);
+                    var step = startDate <= endDate ? 1 : -1;
+                    for (var date = startDate; step > 0 ? date <= endDate : date >= endDate; date = date.AddDays(step))
+                    {
+                        childScope.SetVariable(iteration.VariableName, date);
+                        if (!EvalForIterations(iterations, iterationIndex + 1, returnExpr, childScope, results)) return false;
+                    }
+                    return true;
                 }
+
+                return false;
             }
+
+            // List iteration: for x in [1, 2, 3], or y in x for nested iterators.
+            var listVal = scopeEvaluator.Evaluate(iteration.ListExpression);
+            var items = CoerceToList(listVal);
+            if (items == null || items.Any(item => item is FeelRange)) return false;
+
+            foreach (var item in items)
+            {
+                childScope.SetVariable(iteration.VariableName, item);
+                if (!EvalForIterations(iterations, iterationIndex + 1, returnExpr, childScope, results)) return false;
+            }
+            return true;
         }
 
         private object EvalQuantified(QuantifiedNode q)

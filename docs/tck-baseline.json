@@ -1,25 +1,25 @@
 {
   "schemaVersion": 1,
-  "generatedUtc": "2026-11-23T11:54:32.3011793Z",
+  "generatedUtc": "2026-11-23T12:24:44.6102787Z",
   "tck": {
     "root": "artifacts/tck/TestCases",
     "commit": "a428da2f9c5ff2a4b8566ab511144e9022d743fe"
   },
   "engine": {
-    "version": "2.0.1\u002Bb73fe739c844f4a462c1c70b603332a7e318b251"
+    "version": "2.0.1\u002B93252bd2278bb24b99bde0ff16903ef4e260ae10"
   },
   "totals": {
     "total": 3437,
-    "pass": 2930,
-    "fail": 344,
+    "pass": 2957,
+    "fail": 317,
     "parseFail": 30,
     "notFound": 19,
     "unsupported": 108,
     "fixtureError": 6,
     "blocked": 163,
     "executed": 3274,
-    "passRate": 0.8524876345650276,
-    "executedPassRate": 0.8949297495418448
+    "passRate": 0.8603433226651149,
+    "executedPassRate": 0.9031765424557117
   },
   "cases": {
     "compliance-level-3/0002-string-functions/0002-string-functions-test-01.xml/001": {
@@ -578,58 +578,6 @@
       "status": "FAIL",
       "reason": "expected a value, got null"
     },
-    "compliance-level-3/0084-feel-for-loops/0084-feel-for-loops-test-01.xml/decision_013": {
-      "status": "FAIL",
-      "reason": "item 1: expected a value, got null"
-    },
-    "compliance-level-3/0084-feel-for-loops/0084-feel-for-loops-test-01.xml/decision_015": {
-      "status": "FAIL",
-      "reason": "list size 4 vs 0"
-    },
-    "compliance-level-3/0084-feel-for-loops/0084-feel-for-loops-test-01.xml/decision_017": {
-      "status": "FAIL",
-      "reason": "list size 3 vs 0"
-    },
-    "compliance-level-3/0084-feel-for-loops/0084-feel-for-loops-test-01.xml/decision_018": {
-      "status": "FAIL",
-      "reason": "list size 3 vs 0"
-    },
-    "compliance-level-3/0084-feel-for-loops/0084-feel-for-loops-test-01.xml/decision_019": {
-      "status": "FAIL",
-      "reason": "expected an error but a value was returned"
-    },
-    "compliance-level-3/0084-feel-for-loops/0084-feel-for-loops-test-01.xml/decision_019_a": {
-      "status": "FAIL",
-      "reason": "expected an error but a value was returned"
-    },
-    "compliance-level-3/0084-feel-for-loops/0084-feel-for-loops-test-01.xml/decision_020": {
-      "status": "FAIL",
-      "reason": "expected an error but a value was returned"
-    },
-    "compliance-level-3/0084-feel-for-loops/0084-feel-for-loops-test-01.xml/decision_020_a": {
-      "status": "FAIL",
-      "reason": "expected an error but a value was returned"
-    },
-    "compliance-level-3/0084-feel-for-loops/0084-feel-for-loops-test-01.xml/decision_021": {
-      "status": "FAIL",
-      "reason": "expected an error but a value was returned"
-    },
-    "compliance-level-3/0084-feel-for-loops/0084-feel-for-loops-test-01.xml/decision_021_a": {
-      "status": "FAIL",
-      "reason": "expected an error but a value was returned"
-    },
-    "compliance-level-3/0084-feel-for-loops/0084-feel-for-loops-test-01.xml/decision_022": {
-      "status": "FAIL",
-      "reason": "expected an error but a value was returned"
-    },
-    "compliance-level-3/0084-feel-for-loops/0084-feel-for-loops-test-01.xml/decision_022_a": {
-      "status": "FAIL",
-      "reason": "expected an error but a value was returned"
-    },
-    "compliance-level-3/0084-feel-for-loops/0084-feel-for-loops-test-01.xml/decision_025": {
-      "status": "FAIL",
-      "reason": "expected an error but a value was returned"
-    },
     "compliance-level-3/0085-decision-services/0085-decision-services-test-01.xml/002": {
       "status": "UNSUPPORTED",
       "reason": "engine cannot evaluate: WithInputParameter: decision_002_input is not an input parameter"
@@ -1134,14 +1082,6 @@
       "status": "FAIL",
       "reason": "expected a value, got null"
     },
-    "compliance-level-3/1115-feel-date-function/1115-feel-date-function-test-01.xml/011_5f0b42b1f8": {
-      "status": "FAIL",
-      "reason": "expected a value, got null"
-    },
-    "compliance-level-3/1115-feel-date-function/1115-feel-date-function-test-01.xml/012_d9e4b97438": {
-      "status": "FAIL",
-      "reason": "expected a value, got null"
-    },
     "compliance-level-3/1115-feel-date-function/1115-feel-date-function-test-01.xml/013_d7e901ee86": {
       "status": "FIXTURE-ERROR",
       "reason": "expected value: String \u0027-2017-12-31\u0027 was not recognized as a valid DateOnly."
@@ -1157,46 +1097,6 @@
     "compliance-level-3/1115-feel-date-function/1115-feel-date-function-test-01.xml/016_31f3fef4a0": {
       "status": "FAIL",
       "reason": "string \u0022-999999999-12-31\u0022 vs \u0022null\u0022"
-    },
-    "compliance-level-3/1115-feel-date-function/1115-feel-date-function-test-01.xml/017_887dfef005": {
-      "status": "FAIL",
-      "reason": "expected a value, got null"
-    },
-    "compliance-level-3/1115-feel-date-function/1115-feel-date-function-test-01.xml/018_fc0ef0c8cb": {
-      "status": "FAIL",
-      "reason": "expected a value, got null"
-    },
-    "compliance-level-3/1115-feel-date-function/1115-feel-date-function-test-01.xml/019_b2b82796ce": {
-      "status": "FAIL",
-      "reason": "expected a value, got null"
-    },
-    "compliance-level-3/1115-feel-date-function/1115-feel-date-function-test-01.xml/020_7d56b7bf63": {
-      "status": "FAIL",
-      "reason": "expected a value, got null"
-    },
-    "compliance-level-3/1115-feel-date-function/1115-feel-date-function-test-01.xml/021_95fb3d9984": {
-      "status": "FAIL",
-      "reason": "expected a value, got null"
-    },
-    "compliance-level-3/1115-feel-date-function/1115-feel-date-function-test-01.xml/022_4063db2d59": {
-      "status": "FAIL",
-      "reason": "expected a value, got null"
-    },
-    "compliance-level-3/1115-feel-date-function/1115-feel-date-function-test-01.xml/023_4a1f604006": {
-      "status": "FAIL",
-      "reason": "expected a value, got null"
-    },
-    "compliance-level-3/1115-feel-date-function/1115-feel-date-function-test-01.xml/024_3cb98a2bb8": {
-      "status": "FAIL",
-      "reason": "expected a value, got null"
-    },
-    "compliance-level-3/1115-feel-date-function/1115-feel-date-function-test-01.xml/025_cf0ad1313c": {
-      "status": "FAIL",
-      "reason": "expected a value, got null"
-    },
-    "compliance-level-3/1115-feel-date-function/1115-feel-date-function-test-01.xml/026_cedd7e5e5f": {
-      "status": "FAIL",
-      "reason": "expected a value, got null"
     },
     "compliance-level-3/1115-feel-date-function/1115-feel-date-function-test-01.xml/027_987c5be372": {
       "status": "FIXTURE-ERROR",
@@ -1870,10 +1770,6 @@
       "status": "FAIL",
       "reason": "expected an error but a value was returned"
     },
-    "compliance-level-3/1157-implicit-conversions/1157-implicit-conversions-test-01.xml/003": {
-      "status": "FAIL",
-      "reason": "expected a value, got null"
-    },
     "compliance-level-3/1157-implicit-conversions/1157-implicit-conversions-test-01.xml/004": {
       "status": "UNSUPPORTED",
       "reason": "result is a business knowledge model"
@@ -1888,15 +1784,11 @@
     },
     "compliance-level-3/1157-implicit-conversions/1157-implicit-conversions-test-01.xml/007": {
       "status": "FAIL",
-      "reason": "expected a value, got null"
+      "reason": "[2000-01-02] vs 2000-01-02T00:00:00.0000000"
     },
     "compliance-level-3/1157-implicit-conversions/1157-implicit-conversions-test-01.xml/008": {
       "status": "FAIL",
       "reason": "2000-01-02 vs [2000-01-02]"
-    },
-    "compliance-level-3/1157-implicit-conversions/1157-implicit-conversions-test-01.xml/009": {
-      "status": "FAIL",
-      "reason": "expected a value, got null"
     },
     "compliance-level-3/1157-implicit-conversions/1157-implicit-conversions-test-01.xml/010": {
       "status": "UNSUPPORTED",

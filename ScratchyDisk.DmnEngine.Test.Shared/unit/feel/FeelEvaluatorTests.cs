@@ -862,6 +862,31 @@ namespace ScratchyDisk.DmnEngine.Test.Unit.Feel
             Eval("is(@\"2021-02-13\", @\"2021-02-13T00:00:00\")").Should().Be(false);
         }
 
+        [TestMethod]
+        public void EvalForPartialResults()
+        {
+            var result = Eval("for i in 0..3 return if i = 0 then 1 else i * partial[-1]") as List<object>;
+            result.Should().Equal(1m, 1m, 2m, 6m);
+        }
+
+        [TestMethod]
+        public void EvalForNestedIterator()
+        {
+            var result = Eval("for x in [[1,2], [3,4]], y in x return y") as List<object>;
+            result.Should().Equal(1m, 2m, 3m, 4m);
+        }
+
+        [TestMethod]
+        public void EvalForDateRange()
+        {
+            var result = Eval("for i in @\"1980-01-01\"..@\"1980-01-03\" return i") as List<object>;
+            result.Should().HaveCount(3);
+            result[0].Should().Be(new DateOnly(1980, 1, 1));
+        }
+
+        [TestMethod]
+        public void EvalForStringRangeIsNull() => Eval("for i in \"a\"..\"z\" return i").Should().BeNull();
+
         // ==================== Duration arithmetic ====================
 
         [TestMethod]
