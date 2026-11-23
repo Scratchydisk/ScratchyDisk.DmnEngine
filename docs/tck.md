@@ -141,9 +141,8 @@ always a new failure. New passes are reported as fixed and do not fail the run.
 Review the baseline diff when updating it: a large unexplained change usually
 means the suite or the harness changed, not the engine.
 
-The current baseline was captured against the working tree, which contains
-uncommitted engine changes. Regenerate it after those changes are committed
-before wiring the baseline into CI.
+Regenerate the baseline only after the corresponding engine change is
+committed, so the committed baseline always describes a reachable tree state.
 
 ## Current baseline
 
@@ -152,31 +151,35 @@ Captured 2026-11-23 against TCK `a428da2`, engine `2.0.1`.
 | Level | Cases | PASS | FAIL | PARSE-FAIL | NOT-FOUND | BLOCKED | Executed pass rate |
 | --- | ---: | ---: | ---: | ---: | ---: | ---: | ---: |
 | compliance-level-2 | 116 | 116 | 0 | 0 | 0 | 0 | 100.0% |
-| compliance-level-3 | 3,321 | 2,984 | 180 | 30 | 19 | 163 | 94.3% |
-| **Total** | **3,437** | **3,100** | **180** | **30** | **19** | **163** | **94.5%** |
+| compliance-level-3 | 3,321 | 3,303 | 0 | 0 | 0 | 18 | 100.0% |
+| **Total** | **3,437** | **3,419** | **0** | **0** | **0** | **18** | **100.0%** |
 
 `BLOCKED` is `PARSE-FAIL` + `NOT-FOUND` + `UNSUPPORTED` + `FIXTURE-ERROR`.
-3,274 cases reached a decision. Level 2 is fully cleared.
+3,419 cases reached a decision and every one of them produced the expected
+value or the expected error. Level 2 is fully cleared.
 
-The remaining blockers are now small: 30 import-related parse failures, 82
-cases using a decision logic kind the parser does not read (`context`,
-`invocation`, `relation`, `functionDefinition`, `list`), and a handful of
-decision-service input bindings.
-
-Of the cases that did execute, the 180 failures concentrate in imports
-(`1159`), range functions (`1156`), custom types in `instance of` (`0070`),
-output coercion (`0082`), years-and-months duration functions (`1121`),
-equality and date/time helper functions.
+The only remaining gap is 18 cases in `0076-feel-external-java`, which invoke
+Java classes from a Java library shipped with the TCK. A .NET engine cannot load
+them, so they are reported as `UNSUPPORTED` rather than as failures. Supporting
+them would need a bridge to a JVM, which is out of scope for this engine.
 
 ## Harness limitations
 
-- One model per test file. Multi-model import suites are reported as
-  `PARSE-FAIL`/`UNSUPPORTED`, not resolved.
-- Business knowledge models are supported when their body is a literal
-  expression. Decision services are not modelled, so those cases are
-  `UNSUPPORTED` rather than failing.
+- One model per test file. Imported models are resolved from the directory of the
+  model under test: `DmnModelSet` indexes that directory by namespace, and the
+  definition factory flattens the imported models into a single executable model
+  with deterministic `mN.` name prefixes and per-element aliases (see
+  [model-sets.md](model-sets.md)).
+- Business knowledge models may have any boxed body (literal expression, context,
+  relation, list, invocation, nested function definition or decision table) and
+  can be invoked directly as well as from FEEL. Decision services are modelled as
+  callable functions over their output decisions.
+- Boxed `conditional`, `for`, `some`, `every` and `filter` expressions are
+  executed; so are nested decision tables inside contexts and BKM bodies.
 - FEEL expanded years and 9-digit fractional seconds are represented by
   `FeelExpandedDate`/`FeelExpandedDateTime`.
+- External Java functions (`0076-feel-external-java`) cannot be evaluated on
+  .NET and are reported as `UNSUPPORTED`.
 - The runner is a local measurement, not a submission. Publishing results on the
   TCK site is a separate PR to `TestResults/<Vendor>/<version>`.
 

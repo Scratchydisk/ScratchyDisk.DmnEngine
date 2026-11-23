@@ -4,8 +4,14 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 ## [Unreleased] ##
 ### Added ###
+- **DMN TCK conformance runner** — the repository now carries a local runner (`ScratchyDisk.DmnEngine.Tck`) that executes the OMG DMN TCK at a pinned commit, writes the published result CSV plus a per-node triage report, and compares against a committed ratchet baseline (`docs/tck-baseline.json`). `scripts/fetch-tck.sh` fetches the suite and `docs/tck.md` documents the workflow.
+- **Model sets** — `DmnModelSet` indexes a folder of DMN files by namespace and model name so `import` elements resolve across files, and `CreateDefinition` builds a definition from a model namespace or name. Documented in `docs/model-sets.md`.
+- **Decision services as callable functions** — decision services are registered in the FEEL scope like business knowledge models, support positional and named argument invocation, bind input-data parameters before input-decision parameters, and can be invoked directly with `DmnExecutionContext.InvokeDecisionService`.
+- **Declared-type conformance** — decisions, decision-table outputs, business knowledge model parameters/results and decision service parameters/results are checked against their declared FEEL types, including item definitions, collections and singleton-list/scalar conversion. Non-conforming values raise a DMN evaluation error instead of being silently coerced.
+- **First-class FEEL functions** — business knowledge models and function-definition decisions evaluate to FEEL functions that can be returned, passed as arguments and invoked again (curried lambdas), and built-in functions are usable as values.
 - **Executable boxed expressions** — decision and business knowledge model bodies may be a context, relation, list, invocation or decision table. Context entries may hold nested decision tables and function definitions, and a trailing context entry without a variable provides the context value (`0031`, `0035`, `0040`, `0041`, `0087` TCK suites).
 - **FEEL names containing `-`** — the name resolver now matches known model names against the raw tokens, so names such as `Pre-bureau risk category` resolve inside table expressions.
+
 - **DMN 1.6 support** — `20240513/MODEL/` namespace, `Parse16`/`ParseString16`, CLI/testbed version metadata and 1.6 fixtures.
 - **FEEL 1.6 additions** — descendant expressions (`...`), temporal `.value`, single-parameter rounding, `date and time(date, time, timezone)`, exponential/leading-dot numeric literals and decimal-to-integer conversion.
 - **DMN 1.6 error handling** — lenient diagnostics by default and opt-in strict mode.
@@ -14,6 +20,12 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 ### Changed ###
 - B-FEEL `expressionLanguage` models now fail fast with a clear unsupported-language error instead of being evaluated as FEEL.
 - Expression language is retained on expressions and routed through a dialect-aware evaluator.
+- Imported models are flattened with deterministic `mN.` name prefixes and per-element aliases, so import-qualified references in expressions, type references and knowledge requirements resolve to the flattened model.
+### Fixed ###
+- Input parameters named in a test case with an import namespace (or carrying an unresolved import alias) now bind to the flattened model element instead of failing as "not an input parameter".
+- FEEL context keys may be quoted or contain spaces, operators and non-BMP characters (emoji), and `string(null)` propagates null instead of producing `"null"`.
+- FEEL tail cases: range-to-range relations (`starts`, `finishes`, `started by`, `finished by`), `in` over lists with incomparable items, implicit singleton-list conversion in scalar builtin arguments, `split()` with a regex delimiter and trailing empty items, `all()`/`any()` with no arguments, `list replace()` with unknown named arguments, `.time offset` on local date-times, and `COLLECT LIST` results visible to dependent decisions under the decision name.
+- The TCK runner treats `<inputNode>` namespaces and `<resultNode>` types (`decisionService`, `bkm`) as direct invocations, and preserves whitespace in expected string values.
 ## [2.0.1] - 2026-02-23 ##
 
 ### Added ###
