@@ -5,6 +5,8 @@ using ScratchyDisk.DmnEngine.Engine.Definition.Builder;
 using ScratchyDisk.DmnEngine.Engine.Execution;
 using ScratchyDisk.DmnEngine.Engine.Execution.Context;
 using ScratchyDisk.DmnEngine.Engine.Execution.Result;
+using ScratchyDisk.DmnEngine.Engine.Definition;
+using ScratchyDisk.DmnEngine.Parser;
 using ScratchyDisk.DmnEngine.Parser.Dto;
 
 namespace ScratchyDisk.DmnEngine.Test.Unit
@@ -500,6 +502,39 @@ namespace ScratchyDisk.DmnEngine.Test.Unit
                 // ReSharper disable once PossibleNullReferenceException
                 result.Results[i].HitRules[0].Name.Should().Be(hits[i]);
             }
+        }
+
+        [TestMethod]
+        public void CollectListResultIsAvailableToDependentDecision()
+        {
+            const string dmn = @"<definitions xmlns=""https://www.omg.org/spec/DMN/20230324/MODEL/"" id=""def"" name=""def"" namespace=""http://example.com"">
+  <inputData name=""a"" id=""i_a""><variable typeRef=""number"" name=""a""/></inputData>
+  <decision name=""Collect"" id=""d_collect"">
+    <variable typeRef=""number"" name=""Collect""/>
+    <informationRequirement id=""ir1""><requiredInput href=""#i_a""/></informationRequirement>
+    <decisionTable hitPolicy=""COLLECT"" outputLabel=""o"">
+      <input id=""in1""><inputExpression typeRef=""number""><text>a</text></inputExpression></input>
+      <output id=""out1"" name=""o"" typeRef=""number""/>
+      <rule id=""r1""><inputEntry id=""ie1""><text>-</text></inputEntry><outputEntry id=""oe1""><text>1</text></outputEntry></rule>
+      <rule id=""r2""><inputEntry id=""ie2""><text>-</text></inputEntry><outputEntry id=""oe2""><text>2</text></outputEntry></rule>
+      <rule id=""r3""><inputEntry id=""ie3""><text>-</text></inputEntry><outputEntry id=""oe3""><text>3</text></outputEntry></rule>
+    </decisionTable>
+  </decision>
+  <decision name=""Count"" id=""d_count"">
+    <variable typeRef=""number"" name=""Count""/>
+    <informationRequirement id=""ir2""><requiredDecision href=""#d_collect""/></informationRequirement>
+    <literalExpression typeRef=""number""><text>count(Collect)</text></literalExpression>
+  </decision>
+</definitions>";
+
+            var definition = DmnDefinitionFactory.CreateDmnDefinition(DmnParser.ParseString15(dmn));
+            var ctx = DmnExecutionContextFactory.CreateExecutionContext(definition)
+                .WithInputParameter("a", 1);
+
+            var result = ctx.ExecuteDecision("Count");
+
+            result.HasResult.Should().BeTrue();
+            result.FirstResultVariables[0].Value.Should().Be(3m);
         }
 
         [TestMethod]

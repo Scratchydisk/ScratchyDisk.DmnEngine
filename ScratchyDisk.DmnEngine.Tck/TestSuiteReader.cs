@@ -47,7 +47,9 @@ public static class TestSuiteReader
 
     private static TckTestFile ReadTestFile(string path, string levelName)
     {
-        var document = XDocument.Load(path);
+        // Preserve whitespace: a <value> may legitimately be a single space, and
+        // dropping it makes the expected value look like the empty string.
+        var document = XDocument.Load(path, LoadOptions.PreserveWhitespace);
         var root = document.Root ?? throw new InvalidDataException("Missing root element");
 
         var modelName = Child(root, "modelName")?.Value;

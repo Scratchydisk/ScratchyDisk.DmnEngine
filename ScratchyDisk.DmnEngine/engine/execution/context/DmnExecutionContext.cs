@@ -341,7 +341,6 @@ namespace ScratchyDisk.DmnEngine.Engine.Execution.Context
         {
             if (decision == null || !Definition.DecisionAliases.TryGetValue(decision.Name, out var aliasName)) return;
             if (!Variables.TryGetValue(aliasName, out var aliasVariable)) return;
-            if (Variables.Values.Any(v => v.Name == aliasName && v == aliasVariable) && aliasName == decision.Name) return;
 
             if (!result.HasResult)
             {

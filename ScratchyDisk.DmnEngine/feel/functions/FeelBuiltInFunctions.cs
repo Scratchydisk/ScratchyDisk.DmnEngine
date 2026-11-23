@@ -71,6 +71,11 @@ namespace ScratchyDisk.DmnEngine.Feel.Functions
 
             if (name == "list replace")
             {
+                foreach (var key in namedArgs.Keys)
+                {
+                    if (key is not ("list" or "match" or "position" or "newItem")) return null;
+                }
+
                 var listReplaceArgs = new[]
                 {
                     ValueOrNull(namedArgs, "list"),
@@ -229,16 +234,23 @@ namespace ScratchyDisk.DmnEngine.Feel.Functions
             }
         }
 
+        /// <summary>
+        /// A singleton list may be used wherever a single value is expected
+        /// (DMN FEEL implicit conversion, [a] → a).
+        /// </summary>
+        private static object Scalar(object value) =>
+            value is List<object> { Count: 1 } list ? list[0] : value;
+
         private static decimal? ArgDecimal(object[] args, int index)
         {
-            var val = Arg(args, index);
+            var val = Scalar(Arg(args, index));
             if (val == null) return null;
             if (FeelValueComparer.IsNumeric(val)) return FeelValueComparer.ToDecimal(val);
             return null;
         }
 
         private static string ArgString(object[] args, int index) =>
-            Arg(args, index) as string;
+            Scalar(Arg(args, index)) as string;
 
         private static List<object> ArgList(object[] args, int index)
         {
@@ -246,6 +258,19 @@ namespace ScratchyDisk.DmnEngine.Feel.Functions
             if (val is List<object> list) return list;
             if (val != null) return new List<object> { val };
             return null;
+        }
+
+        /// <summary>
+        /// The fractional-second digits of a decimal number of seconds, without a
+        /// trailing decimal point ("1.3" → "3"), or null when there is no fraction.
+        /// </summary>
+        private static string FractionDigits(decimal seconds)
+        {
+            var text = seconds.ToString(CultureInfo.InvariantCulture);
+            var point = text.IndexOf('.');
+            if (point < 0) return null;
+            var fraction = text[(point + 1)..].TrimEnd('0');
+            return fraction.Length == 0 ? null : fraction;
         }
 
         // ==================== String Functions ====================
@@ -390,7 +415,9 @@ namespace ScratchyDisk.DmnEngine.Feel.Functions
                 var s = ArgString(args, 0);
                 var delim = ArgString(args, 1);
                 if (s == null || delim == null) return null;
-                return (object)s.Split(delim).Select(x => (object)x).ToList();
+                // The delimiter is a regular expression, not a literal string.
+                return (object)Regex.Split(s, delim, RegexOptions.None, RegexDefaults.Timeout)
+                    .Select(x => (object)x).ToList();
             });
 
             Register("string join", new[] { "list", "delimiter" }, args =>
@@ -676,6 +703,8 @@ namespace ScratchyDisk.DmnEngine.Feel.Functions
 
             Register("all", new[] { "list" }, args =>
             {
+                if (args.Length == 0)
+                    throw new FeelEvaluationException("Function 'all' expects at least one argument");
                 var list = FlattenArgs(args);
                 if (list == null || list.Count == 0) return true;
                 bool? result = true;
@@ -690,6 +719,8 @@ namespace ScratchyDisk.DmnEngine.Feel.Functions
 
             Register("any", new[] { "list" }, args =>
             {
+                if (args.Length == 0)
+                    throw new FeelEvaluationException("Function 'any' expects at least one argument");
                 var list = FlattenArgs(args);
                 if (list == null || list.Count == 0) return false;
                 bool? result = false;
@@ -1076,9 +1107,17 @@ namespace ScratchyDisk.DmnEngine.Feel.Functions
                     var m = ArgDecimal(args, 1);
                     var s = ArgDecimal(args, 2);
                     if (h == null || m == null || s == null) return null;
+                    if (h is < 0 or > 23 || m is < 0 or > 59 || s < 0 || s >= 60) return null;
                     TimeSpan? offset = null;
                     if (args.Length >= 4 && Arg(args, 3) is TimeSpan tz) offset = tz;
-                    return new FeelTime((int)h.Value, (int)m.Value, (int)s.Value, offset);
+
+                    // Seconds are decimal: keep the fractional part rather than
+                    // truncating it to a whole second.
+                    var secondTicks = (long)(s.Value * TimeSpan.TicksPerSecond);
+                    var time = new TimeOnly((int)h.Value, (int)m.Value, 0)
+                        .Add(TimeSpan.FromTicks(secondTicks));
+                    var fraction = FractionDigits(s.Value);
+                    return new FeelTime(time, offset, null, fraction);
                 }
                 var val = Arg(args, 0);
                 if (val is string str)
@@ -1835,6 +1874,7 @@ namespace ScratchyDisk.DmnEngine.Feel.Functions
                 var point = Arg(args, 0);
                 var range = Arg(args, 1) as FeelRange;
                 if (range == null) return null;
+                if (point is FeelRange pointRange) return RangeStarts(pointRange, range);
                 return range.LowInclusive && FeelValueComparer.FeelEqual(point, range.LowEndpoint) == true;
             });
 
@@ -1843,6 +1883,7 @@ namespace ScratchyDisk.DmnEngine.Feel.Functions
                 var range = Arg(args, 0) as FeelRange;
                 var point = Arg(args, 1);
                 if (range == null) return null;
+                if (point is FeelRange pointRange) return RangeStarts(pointRange, range);
                 return range.LowInclusive && FeelValueComparer.FeelEqual(range.LowEndpoint, point) == true;
             });
 
@@ -1851,6 +1892,7 @@ namespace ScratchyDisk.DmnEngine.Feel.Functions
                 var point = Arg(args, 0);
                 var range = Arg(args, 1) as FeelRange;
                 if (range == null) return null;
+                if (point is FeelRange pointRange) return RangeFinishes(pointRange, range);
                 return range.HighInclusive && FeelValueComparer.FeelEqual(point, range.HighEndpoint) == true;
             });
 
@@ -1859,6 +1901,7 @@ namespace ScratchyDisk.DmnEngine.Feel.Functions
                 var range = Arg(args, 0) as FeelRange;
                 var point = Arg(args, 1);
                 if (range == null) return null;
+                if (point is FeelRange pointRange) return RangeFinishes(pointRange, range);
                 return range.HighInclusive && FeelValueComparer.FeelEqual(range.HighEndpoint, point) == true;
             });
 
@@ -1875,6 +1918,46 @@ namespace ScratchyDisk.DmnEngine.Feel.Functions
                 }
                 return FeelValueComparer.FeelEqual(a, b);
             });
+        }
+
+        /// <summary>
+        /// True when range <paramref name="a"/> starts range <paramref name="b"/>:
+        /// they share the same lower bound (with the same inclusivity) and
+        /// <paramref name="a"/> does not extend past the upper bound of
+        /// <paramref name="b"/>.
+        /// </summary>
+        private static bool? RangeStarts(FeelRange a, FeelRange b)
+        {
+            if (a.LowEndpoint == null || b.LowEndpoint == null) return null;
+            var low = FeelValueComparer.Compare(a.LowEndpoint, b.LowEndpoint);
+            if (low == null) return null;
+            if (low != 0 || a.LowInclusive != b.LowInclusive) return false;
+
+            var high = FeelValueComparer.Compare(a.HighEndpoint, b.HighEndpoint);
+            if (high == null) return null;
+            if (high < 0) return true;
+            if (high > 0) return false;
+            return b.HighInclusive || !a.HighInclusive;
+        }
+
+        /// <summary>
+        /// True when range <paramref name="a"/> finishes range <paramref name="b"/>:
+        /// they share the same upper bound (with the same inclusivity) and
+        /// <paramref name="a"/> does not start before the lower bound of
+        /// <paramref name="b"/>.
+        /// </summary>
+        private static bool? RangeFinishes(FeelRange a, FeelRange b)
+        {
+            if (a.HighEndpoint == null || b.HighEndpoint == null) return null;
+            var high = FeelValueComparer.Compare(a.HighEndpoint, b.HighEndpoint);
+            if (high == null) return null;
+            if (high != 0 || a.HighInclusive != b.HighInclusive) return false;
+
+            var low = FeelValueComparer.Compare(a.LowEndpoint, b.LowEndpoint);
+            if (low == null) return null;
+            if (low > 0) return true;
+            if (low < 0) return false;
+            return b.LowInclusive || !a.LowInclusive;
         }
 
         private static bool? OverlapsBefore(FeelRange a, FeelRange b)

@@ -469,6 +469,20 @@ namespace ScratchyDisk.DmnEngine.Test.Unit.Feel
         }
 
         [TestMethod]
+        public void EvalSplitDelimiterIsRegex()
+        {
+            var result = Eval("split(\"John Doe\", \"\\s\")") as List<object>;
+            result.Should().BeEquivalentTo(new object[] { "John", "Doe" });
+        }
+
+        [TestMethod]
+        public void EvalSplitKeepsTrailingEmptyItems()
+        {
+            var result = Eval("split(\"a;b;c;;\", \";\")") as List<object>;
+            result.Should().BeEquivalentTo(new object[] { "a", "b", "c", "", "" });
+        }
+
+        [TestMethod]
         public void EvalMatches()
         {
             Eval("matches(\"test123\", \"test\\\\d+\")").Should().Be(true);
@@ -622,10 +636,24 @@ namespace ScratchyDisk.DmnEngine.Test.Unit.Feel
         }
 
         [TestMethod]
+        public void EvalAllRequiresAnArgument()
+        {
+            Action act = () => Eval("all()");
+            act.Should().Throw<FeelEvaluationException>();
+        }
+
+        [TestMethod]
         public void EvalAny()
         {
             Eval("any([false, true, false])").Should().Be(true);
             Eval("any([false, false, false])").Should().Be(false);
+        }
+
+        [TestMethod]
+        public void EvalAnyRequiresAnArgument()
+        {
+            Action act = () => Eval("any()");
+            act.Should().Throw<FeelEvaluationException>();
         }
 
         [TestMethod]
@@ -1072,7 +1100,7 @@ namespace ScratchyDisk.DmnEngine.Test.Unit.Feel
             Eval("date and time(\"1970-01-01T00:00:00\").timezone", scope: scope).Should().BeNull();
         }
 
-        // ==================== Typed parameters (implicit conversions) ====================
+        // ==================== Typed parameters (implicit conversions) =============
 
         [TestMethod]
         public void EvalTypedParameterWrapsScalarInSingletonList()
@@ -1099,6 +1127,96 @@ namespace ScratchyDisk.DmnEngine.Test.Unit.Feel
         {
             Eval("(function(x: string) x)(10)").Should().BeNull();
         }
+
+        [TestMethod]
+        public void EvalInListWithIncomparableItemsIsFalse() =>
+            Eval("true in [false, 2, 3]").Should().Be(false);
+
+        // ==================== Implicit singleton-list conversion ====================
+
+        [TestMethod]
+        public void EvalUpperCaseAcceptsSingletonList() =>
+            Eval("upper case([\"Bob\"])", scope: new FeelScope()).Should().Be("BOB");
+
+        [TestMethod]
+        public void EvalSubstringAcceptsSingletonList() =>
+            Eval("substring([\"abc\"], 1, 2)").Should().Be("ab");
+
+        // ==================== Time function ====================
+
+        [TestMethod]
+        public void EvalTimeFunctionKeepsFractionalSeconds()
+        {
+            var result = Eval("time(12, 59, 1.3, duration(\"-PT1H\"))");
+            result.Should().BeOfType<FeelTime>();
+            ((FeelTime)result).ToString().Should().Be("12:59:01.3-01:00");
+        }
+
+        [TestMethod]
+        public void EvalTimeFunctionRejectsOutOfRangeComponents()
+        {
+            Eval("time(23, 59, 60, null)").Should().BeNull();
+            Eval("time(24, 0, 0, null)").Should().BeNull();
+            Eval("time(23, 60, 0, null)").Should().BeNull();
+        }
+
+        // ==================== Date-time properties ====================
+
+        [TestMethod]
+        public void EvalTimeOffsetIsNullWhenNotSet() =>
+            Eval("date and time(\"2018-12-10T10:30:00\").time offset", scope: new FeelScope()).Should().BeNull();
+
+        [TestMethod]
+        public void EvalTimeOffsetIsSetWhenPresent() =>
+            Eval("date and time(\"2018-12-10T10:30:00+05:00\").time offset", scope: new FeelScope())
+                .Should().Be(TimeSpan.FromHours(5));
+
+        // ==================== list replace named arguments ====================
+
+        [TestMethod]
+        public void EvalListReplaceRejectsUnknownNamedArgument() =>
+            Eval("list replace(position: 2, newItem: 4, list: [1,2,3], foo: 1)", scope: new FeelScope())
+                .Should().BeNull();
+
+        // ==================== Interval relations ====================
+
+        [TestMethod]
+        public void EvalStartsRange() => Eval("starts([1..5], [1..10])").Should().Be(true);
+
+        [TestMethod]
+        public void EvalStartsRangeRequiresSameLowerInclusivity() =>
+            Eval("starts((1..5], [1..10])").Should().Be(false);
+
+        [TestMethod]
+        public void EvalStartsRangeAllowsShorterOpenUpperBound() =>
+            Eval("starts([1..10), [1..10])").Should().Be(true);
+
+        [TestMethod]
+        public void EvalStartedByRange() =>
+            Eval("started by([1..10], [1..5])", scope: new FeelScope()).Should().Be(true);
+
+        [TestMethod]
+        public void EvalStartedByRangeAllowsShorterOpenUpperBound() =>
+            Eval("started by([1..10], [1..10))", scope: new FeelScope()).Should().Be(true);
+
+        [TestMethod]
+        public void EvalFinishesRange() => Eval("finishes([5..10], [1..10])").Should().Be(true);
+
+        [TestMethod]
+        public void EvalFinishesRangeRequiresSameUpperInclusivity() =>
+            Eval("finishes([5..10), [1..10])").Should().Be(false);
+
+        [TestMethod]
+        public void EvalFinishesRangeAllowsDifferentLowerInclusivity() =>
+            Eval("finishes((1..10], [1..10])").Should().Be(true);
+
+        [TestMethod]
+        public void EvalFinishedByRange() =>
+            Eval("finished by([1..10], [5..10])", scope: new FeelScope()).Should().Be(true);
+
+        [TestMethod]
+        public void EvalFinishedByRangeRequiresSameUpperInclusivity() =>
+            Eval("finished by([1..10], [5..10))", scope: new FeelScope()).Should().Be(false);
 
         // ==================== Helpers ====================
 

@@ -237,8 +237,8 @@ namespace ScratchyDisk.DmnEngine.Feel.Eval
                     "hour" => (decimal)edt.Time.Hour,
                     "minute" => (decimal)edt.Time.Minute,
                     "second" => (decimal)edt.Time.Second,
-                    "offset" => edt.Offset,
-                    "time offset" => edt.Offset,
+                    "offset" => edt.HasOffset ? edt.Offset : null,
+                    "time offset" => edt.HasOffset ? edt.Offset : null,
                     "timezone" => edt.ZoneId,
                     "value" => (decimal)((edt.Date.ToDayNumber() * 86400) + edt.Time.Hour * 3600 + edt.Time.Minute * 60 + edt.Time.Second),
                     _ => null
@@ -260,8 +260,10 @@ namespace ScratchyDisk.DmnEngine.Feel.Eval
                     "minute" => (decimal)dt.Minute,
                     "second" => (decimal)dt.Second,
                     "value" => dt.ToUnixTimeMilliseconds() / 1000m,
-                    "offset" => dt.Offset,
-                    "time offset" => dt.Offset,
+                    // A zero offset is how the engine represents a local value with
+                    // no timezone part, so it has no time offset.
+                    "offset" => dt.Offset == TimeSpan.Zero ? null : dt.Offset,
+                    "time offset" => dt.Offset == TimeSpan.Zero ? null : dt.Offset,
                     "timezone" => null,
                     _ => null
                 },
@@ -693,12 +695,20 @@ namespace ScratchyDisk.DmnEngine.Feel.Eval
                     bool? any = false;
                     foreach (var item in list)
                     {
-                        var match = item is FeelRange itemRange
-                            ? itemRange.Contains(value)
-                            : FeelValueComparer.FeelEqual(value, item);
-                        if (match == true) return true;
-                        if (match == null) any = null;
+                        if (item is FeelRange itemRange)
+                        {
+                            var rangeMatch = itemRange.Contains(value);
+                            if (rangeMatch == true) return true;
+                            if (rangeMatch == null) any = null;
+                        }
+                        else if (FeelValueComparer.FeelEqual(value, item) == true)
+                        {
+                            return true;
+                        }
                     }
+                    // A value that is not equal to any item of the list is not in
+                    // the list, even when individual comparisons are not comparable
+                    // (for example true in [false, 2, 3] is false, not null).
                     return any;
                 }
 
