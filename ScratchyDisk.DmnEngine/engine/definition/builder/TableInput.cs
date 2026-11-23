@@ -12,6 +12,7 @@ namespace ScratchyDisk.DmnEngine.Engine.Definition.Builder
     /// <remarks>Source variable and source expression are mutually exclusive and one of them has to be provided.</remarks>
     public sealed class TableInput : DmnBuilderElement<TableInput, DmnDecisionTableInput>
     {
+        private const string AlreadyBuiltMessage = "Table input is already built";
         /// <summary>
         /// Reference CTOR delegate
         /// </summary>
@@ -124,7 +125,7 @@ namespace ScratchyDisk.DmnEngine.Engine.Definition.Builder
         /// <exception cref="DmnBuilderException">Throws <see cref="DmnBuilderException"/> when <paramref name="variableRef"/> can't be found in the variable catalog</exception>
         public TableInput WithVariable(Variable.Ref variableRef)
         {
-            if (IsBuilt) throw Logger.Error<DmnBuilderException>("Table input is already built");
+            if (IsBuilt) throw Logger.Error<DmnBuilderException>(AlreadyBuiltMessage);
             if (variableRef == null) throw new ArgumentNullException(nameof(variableRef));
 
             var variable = Variables[variableRef] ?? throw Logger.Error<DmnBuilderException>($"Can't get the variable from reference {variableRef.Name}");
@@ -142,7 +143,7 @@ namespace ScratchyDisk.DmnEngine.Engine.Definition.Builder
         /// <exception cref="ArgumentException">Throws <see cref="ArgumentException"/> when <paramref name="expression"/> is empty or whitespace</exception>
         public TableInput WithExpression(string expression)
         {
-            if (IsBuilt) throw Logger.Error<DmnBuilderException>("Table input is already built");
+            if (IsBuilt) throw Logger.Error<DmnBuilderException>(AlreadyBuiltMessage);
             Expression = expression ?? throw new ArgumentNullException(nameof(expression));
             if (string.IsNullOrWhiteSpace(expression)) throw new ArgumentException("Missing expression", nameof(expression));
 
@@ -156,7 +157,7 @@ namespace ScratchyDisk.DmnEngine.Engine.Definition.Builder
         /// <exception cref="DmnBuilderException">Throws <see cref="DmnBuilderException"/> when the definition has already been built</exception>
         public TableInput WithAllowedValues(string[] allowedValues)
         {
-            if (IsBuilt) throw Logger.Error<DmnBuilderException>("Table input is already built");
+            if (IsBuilt) throw Logger.Error<DmnBuilderException>(AlreadyBuiltMessage);
 
             AllowedValues = allowedValues;
             return this;
@@ -168,7 +169,7 @@ namespace ScratchyDisk.DmnEngine.Engine.Definition.Builder
         /// <exception cref="DmnBuilderException">Throws <see cref="DmnBuilderException"/> when the definition has already been built</exception>
         public TableInput WithoutAllowedValuesConstraint()
         {
-            if (IsBuilt) throw Logger.Error<DmnBuilderException>("Table input is already built");
+            if (IsBuilt) throw Logger.Error<DmnBuilderException>(AlreadyBuiltMessage);
 
             AllowedValues = null;
             return this;

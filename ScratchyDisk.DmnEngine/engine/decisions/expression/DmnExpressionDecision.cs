@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using ScratchyDisk.DmnEngine.Engine.Definition;
 using ScratchyDisk.DmnEngine.Engine.Execution.Context;
 using ScratchyDisk.DmnEngine.Engine.Execution.Result;
+using ScratchyDisk.DmnEngine.Feel;
 using ScratchyDisk.DmnEngine.Utils;
 
 namespace ScratchyDisk.DmnEngine.Engine.Decisions.Expression
@@ -21,6 +22,10 @@ namespace ScratchyDisk.DmnEngine.Engine.Decisions.Expression
         /// Decision output variable
         /// </summary>
         public IDmnVariable Output { get; }
+        /// <summary>
+        /// FEEL dialect used to evaluate <see cref="Expression"/>.
+        /// </summary>
+        public FeelDialect Dialect { get; }
 
         /// <summary>
         /// CTOR
@@ -37,11 +42,13 @@ namespace ScratchyDisk.DmnEngine.Engine.Decisions.Expression
             IDmnVariable output,
             IReadOnlyCollection<IDmnVariable> requiredInputs,
             IReadOnlyCollection<IDmnDecision> requiredDecisions,
-            string label=null)
+            string label=null,
+            FeelDialect dialect = FeelDialect.Feel)
         : base(name, requiredInputs, requiredDecisions,label)
         {
             Expression = expression;
             Output = output;
+            Dialect = dialect;
         }
 
         /// <summary>
@@ -56,7 +63,7 @@ namespace ScratchyDisk.DmnEngine.Engine.Decisions.Expression
             if (context == null) throw Logger.FatalCorr<ArgumentNullException>(executionId,$"{nameof(context)} is null");
 
             Logger.InfoCorr(executionId, $"Evaluating expressiong decision {Name} with expression {Expression}...");
-            var result = context.EvalExpression(Expression, Output.Type,executionId);
+            var result = context.EvalExpression(Expression, Output.Type, executionId, Dialect);
             Logger.InfoCorr(executionId, $"Evaluated expressiong decision {Name} with expression {Expression}");
             var outVariable = context.GetVariable(Output);
             outVariable.Value = result;

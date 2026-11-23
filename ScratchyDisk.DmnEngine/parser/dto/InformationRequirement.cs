@@ -13,33 +13,41 @@ namespace ScratchyDisk.DmnEngine.Parser.Dto
     /// </summary>
     public class InformationRequirement : IXmlSerializable
     {
+        private const string InformationRequirementElement = "informationRequirement";
         /// <summary>
         /// Serializer used for the serialization proxy class - DMN version 1.1
         /// </summary>
         private static readonly XmlSerializer InformationRequirementSerializableSerializer = new XmlSerializer(
             typeof(InformationRequirementSerializable), null, new Type[] { },
-            defaultNamespace: DmnParser.XmlNamespaceDmn11, root: new XmlRootAttribute("informationRequirement") { Namespace = DmnParser.XmlNamespaceDmn11 });
+            defaultNamespace: DmnParser.XmlNamespaceDmn11, root: new XmlRootAttribute(InformationRequirementElement) { Namespace = DmnParser.XmlNamespaceDmn11 });
 
         /// <summary>
         /// Serializer used for the serialization proxy class - DMN version 1.3
         /// </summary>
         private static readonly XmlSerializer InformationRequirementSerializableSerializer13 = new XmlSerializer(
             typeof(InformationRequirementSerializable), null, new Type[] { },
-            defaultNamespace: DmnParser.XmlNamespaceDmn13, root: new XmlRootAttribute("informationRequirement") { Namespace = DmnParser.XmlNamespaceDmn13 });
+            defaultNamespace: DmnParser.XmlNamespaceDmn13, root: new XmlRootAttribute(InformationRequirementElement) { Namespace = DmnParser.XmlNamespaceDmn13 });
 
         /// <summary>
         /// Serializer used for the serialization proxy class - DMN version 1.4
         /// </summary>
         private static readonly XmlSerializer InformationRequirementSerializableSerializer14 = new XmlSerializer(
             typeof(InformationRequirementSerializable), null, new Type[] { },
-            defaultNamespace: DmnParser.XmlNamespaceDmn14, root: new XmlRootAttribute("informationRequirement") { Namespace = DmnParser.XmlNamespaceDmn14 });
+            defaultNamespace: DmnParser.XmlNamespaceDmn14, root: new XmlRootAttribute(InformationRequirementElement) { Namespace = DmnParser.XmlNamespaceDmn14 });
 
         /// <summary>
         /// Serializer used for the serialization proxy class - DMN version 1.5
         /// </summary>
         private static readonly XmlSerializer InformationRequirementSerializableSerializer15 = new XmlSerializer(
             typeof(InformationRequirementSerializable), null, new Type[] { },
-            defaultNamespace: DmnParser.XmlNamespaceDmn15, root: new XmlRootAttribute("informationRequirement") { Namespace = DmnParser.XmlNamespaceDmn15 });
+            defaultNamespace: DmnParser.XmlNamespaceDmn15, root: new XmlRootAttribute(InformationRequirementElement) { Namespace = DmnParser.XmlNamespaceDmn15 });
+
+        /// <summary>
+        /// Serializer used for the serialization proxy class - DMN version 1.6
+        /// </summary>
+        private static readonly XmlSerializer InformationRequirementSerializableSerializer16 = new XmlSerializer(
+            typeof(InformationRequirementSerializable), null, new Type[] { },
+            defaultNamespace: DmnParser.XmlNamespaceDmn16, root: new XmlRootAttribute(InformationRequirementElement) { Namespace = DmnParser.XmlNamespaceDmn16 });
 
         /// <summary>
         /// Required input or decision reference
@@ -95,7 +103,7 @@ namespace ScratchyDisk.DmnEngine.Parser.Dto
             if (string.IsNullOrWhiteSpace(reference))
                 throw new DmnParserException("Can't parse InformationRequirement - reference is null or empty");
 
-            if (!reference.StartsWith("#"))
+            if (!reference.StartsWith('#'))
                 throw new DmnParserException("Can't parse InformationRequirement - reference doesn't start with #");
 
             if (reference.Length < 2)
@@ -132,6 +140,8 @@ namespace ScratchyDisk.DmnEngine.Parser.Dto
                 serializer = InformationRequirementSerializableSerializer14;
             else if (reader.NamespaceURI == DmnParser.XmlNamespaceDmn15)
                 serializer = InformationRequirementSerializableSerializer15;
+            else if (reader.NamespaceURI == DmnParser.XmlNamespaceDmn16)
+                serializer = InformationRequirementSerializableSerializer16;
             else
                 serializer = InformationRequirementSerializableSerializer13;
 

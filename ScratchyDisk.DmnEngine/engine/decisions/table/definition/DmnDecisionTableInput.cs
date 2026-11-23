@@ -1,5 +1,6 @@
 ﻿using System.Diagnostics.CodeAnalysis;
 using ScratchyDisk.DmnEngine.Engine.Definition;
+using ScratchyDisk.DmnEngine.Feel;
 
 namespace ScratchyDisk.DmnEngine.Engine.Decisions.Table.Definition
 {
@@ -33,6 +34,10 @@ namespace ScratchyDisk.DmnEngine.Engine.Decisions.Table.Definition
         /// Optional array of allowed values
         /// </summary>
         public string[] AllowedValues { get; }
+        /// <summary>
+        /// FEEL dialect used to evaluate <see cref="Expression"/>.
+        /// </summary>
+        public FeelDialect Dialect { get; }
 
         /// <summary>
         /// CTOR
@@ -47,13 +52,15 @@ namespace ScratchyDisk.DmnEngine.Engine.Decisions.Table.Definition
             IDmnVariable variable,
             string expression = null,
             string[] allowedValues = null,
-            string label=null)
+            string label=null,
+            FeelDialect dialect = FeelDialect.Feel)
         {
             Index = index;
             Label = string.IsNullOrWhiteSpace(label) ? $"Input#{Index+1}" : label;
             Variable = variable;
             Expression = expression;
             AllowedValues = allowedValues;
+            Dialect = dialect;
         }
 
         /// <summary>Returns a string that represents the current object.</summary>

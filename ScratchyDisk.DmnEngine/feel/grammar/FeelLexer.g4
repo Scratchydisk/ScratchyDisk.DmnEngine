@@ -38,6 +38,7 @@ STAR        : '*' ;
 FSLASH      : '/' ;
 PERCENT     : '%' ;
 STARSTAR    : '**' ;
+ELLIPSIS    : '...' ;
 DOTDOT      : '..' ;
 DOT         : '.' ;
 AMPAMP      : '&&' ;
@@ -61,11 +62,15 @@ AT          : '@' ;
 // ===================== Literals =====================
 
 IntegerLiteral
-    : Digits
+    : Digits Exponent?
     ;
 
 FloatLiteral
-    : Digits '.' Digits
+    : (Digits '.' Digits | '.' Digits) Exponent?
+    ;
+
+fragment Exponent
+    : [eE] [+-]? Digits
     ;
 
 StringLiteral

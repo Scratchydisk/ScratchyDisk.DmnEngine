@@ -46,13 +46,24 @@ public class DmnExecutionService
 
     public DefinitionInfo GetInfo(string name)
     {
-        var (definition, model) = GetDefinitionAndModel(name);
         var filePath = _fileService.GetFilePath(name);
-
+        var model = DmnParser.ParseAutoDetect(filePath);
+        var metadata = ExtractMetadata(filePath, model);
+        if (metadata.DialectStatus == "unsupported")
+        {
+            return new DefinitionInfo
+            {
+                FileName = Path.GetFileName(filePath),
+                Metadata = metadata,
+                InputData = [],
+                Decisions = []
+            };
+        }
+        var definition = DmnDefinitionFactory.CreateDmnDefinition(model);
         var info = new DefinitionInfo
         {
             FileName = Path.GetFileName(filePath),
-            Metadata = ExtractMetadata(filePath, model),
+            Metadata = metadata,
             InputData = definition.InputData.Values.Select(v => new VariableInfo
             {
                 Name = v.Name,
@@ -434,21 +445,16 @@ public class DmnExecutionService
     {
         var metadata = new FileMetadata
         {
-            DmnVersion = model.DmnVersion switch
-            {
-                DmnParser.DmnVersionEnum.V1_1 => "1.1",
-                DmnParser.DmnVersionEnum.V1_3 => "1.3",
-                DmnParser.DmnVersionEnum.V1_3ext => "1.3",
-                DmnParser.DmnVersionEnum.V1_4 => "1.4",
-                DmnParser.DmnVersionEnum.V1_5 => "1.5",
-                _ => model.DmnVersion.ToString()
-            }
+            DmnVersion = DmnVersionInfo.GetMetadataVersion(model.DmnVersion)
         };
 
         // Parse the raw XML to extract <definitions> element attributes
         try
         {
             var xmlContent = File.ReadAllText(filePath);
+            var language = DmnExpressionLanguageInspector.Detect(xmlContent);
+            metadata.ExpressionLanguage = language.ExpressionLanguage;
+            metadata.DialectStatus = language.IsSupported ? "supported" : "unsupported";
             using var reader = XmlReader.Create(new StringReader(xmlContent));
             while (reader.Read())
             {

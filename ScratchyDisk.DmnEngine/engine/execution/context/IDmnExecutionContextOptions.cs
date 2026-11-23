@@ -24,5 +24,13 @@
         /// Scope of the parsed expression cache (Cache parsed expressions for definition cross contexts by default)
         /// </summary>
         ParsedExpressionCacheScopeEnum ParsedExpressionCacheScope { get; }
+        /// <summary>
+        /// DMN 1.6 error handling mode (lenient by default).
+        /// </summary>
+        DmnErrorHandlingMode ErrorHandlingMode { get; }
+        /// <summary>
+        /// Flag whether to propagate input parameter values to expression alias variables.
+        /// </summary>
+        bool ResolveInputAliases { get; }
     }
 }

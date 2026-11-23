@@ -1,0 +1,12 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<definitions xmlns="https://www.omg.org/spec/DMN/20240513/MODEL/"
+             id="descendant_def"
+             name="Descendant fixture"
+             namespace="http://example.com/dmn16/descendant">
+  <decision id="descendant_decision" name="Descendants">
+    <literalExpression id="descendant_expression">
+      <text>count({a: {b: {b: 1}}}...b)</text>
+    </literalExpression>
+    <variable id="descendant_variable" name="Descendants" typeRef="number" />
+  </decision>
+</definitions>

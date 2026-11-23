@@ -1,4 +1,5 @@
 ﻿using System.Diagnostics.CodeAnalysis;
+using ScratchyDisk.DmnEngine.Feel;
 
 namespace ScratchyDisk.DmnEngine.Engine.Decisions.Table.Definition
 {
@@ -15,16 +16,21 @@ namespace ScratchyDisk.DmnEngine.Engine.Decisions.Table.Definition
         /// Expression used to calculate the value of rule output
         /// </summary>
         public string Expression { get; }
+        /// <summary>
+        /// FEEL dialect used to evaluate <see cref="Expression"/>.
+        /// </summary>
+        public FeelDialect Dialect { get; }
        
         /// <summary>
         /// CTOR
         /// </summary>
         /// <param name="output">Corresponding table output</param>
         /// <param name="expression">Expression used to calculate the value of rule output</param>
-        public DmnDecisionTableRuleOutput(DmnDecisionTableOutput output, string expression)
+        public DmnDecisionTableRuleOutput(DmnDecisionTableOutput output, string expression, FeelDialect dialect = FeelDialect.Feel)
         {
             Output = output;
             Expression = expression;
+            Dialect = dialect;
         }
 
         /// <summary>Returns a string that represents the current object.</summary>

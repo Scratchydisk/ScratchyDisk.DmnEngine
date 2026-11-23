@@ -1,0 +1,34 @@
+name: DMN conformance
+
+on:
+  push:
+    branches: [ master, main ]
+  pull_request:
+
+jobs:
+  conformance:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup .NET
+        uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: '10.0.x'
+
+      - name: Restore
+        run: dotnet restore ScratchyDisk.DmnEngine.Tests/ScratchyDisk.DmnEngine.Tests.csproj
+
+      - name: DMN 1.5 and 1.6 conformance
+        run: >
+          dotnet test ScratchyDisk.DmnEngine.Tests/ScratchyDisk.DmnEngine.Tests.csproj
+          --no-restore
+          --filter "TestCategory=DMN 1.6 conformance|TestCategory=DMN 1.5 conformance"
+          --logger "console;verbosity=normal"
+
+      - name: Full regression suite
+        run: >
+          dotnet test ScratchyDisk.DmnEngine.Tests/ScratchyDisk.DmnEngine.Tests.csproj
+          --no-build
+          --logger "console;verbosity=normal"

@@ -153,12 +153,12 @@ function destroyViewer() {
 // is null when onMounted fires. This watch triggers when the DOM element appears.
 watch(containerRef, (el) => {
   if (el && props.dmnXml) {
-    initViewer()
+    void initViewer()
   }
 })
 
 watch(() => props.dmnXml, () => {
-  initViewer()
+  void initViewer()
 })
 
 watch(() => props.highlightedRules, () => {
@@ -168,7 +168,7 @@ watch(() => props.highlightedRules, () => {
 defineExpose({
   switchToDecision(decisionId) {
     const view = availableViews.value.find(v => v.id === decisionId)
-    if (view) switchView(view)
+    if (view) void switchView(view)
   },
   getActiveViewId() {
     return activeViewId.value
@@ -176,7 +176,7 @@ defineExpose({
 })
 
 onMounted(() => {
-  initViewer()
+  void initViewer()
 })
 
 onBeforeUnmount(() => {

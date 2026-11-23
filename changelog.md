@@ -2,6 +2,16 @@
 All notable changes to this project will be documented in this file.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
+## [Unreleased] ##
+### Added ###
+- **DMN 1.6 support** — `20240513/MODEL/` namespace, `Parse16`/`ParseString16`, CLI/testbed version metadata and 1.6 fixtures.
+- **FEEL 1.6 additions** — descendant expressions (`...`), temporal `.value`, single-parameter rounding, `date and time(date, time, timezone)`, exponential/leading-dot numeric literals and decimal-to-integer conversion.
+- **DMN 1.6 error handling** — lenient diagnostics by default and opt-in strict mode.
+- **FEEL 1.5 gap closure** — `list replace`, `range(string)` and range expressions, `overlaps before/after`, temporal and range properties, IANA timezone strings, and corrected `round half down` / `decimal` rounding.
+- **Conformance infrastructure** — canonical-source test policy, traceability manifest and a CI conformance workflow.
+### Changed ###
+- B-FEEL `expressionLanguage` models now fail fast with a clear unsupported-language error instead of being evaluated as FEEL.
+- Expression language is retained on expressions and routed through a dialect-aware evaluator.
 ## [2.0.1] - 2026-02-23 ##
 
 ### Added ###

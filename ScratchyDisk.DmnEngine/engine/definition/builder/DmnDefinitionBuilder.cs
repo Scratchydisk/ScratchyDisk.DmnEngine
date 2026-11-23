@@ -10,6 +10,7 @@ namespace ScratchyDisk.DmnEngine.Engine.Definition.Builder
     /// </summary>
     public class DmnDefinitionBuilder
     {
+        private const string AlreadyBuiltMessage = "Definition is already built";
         /// <summary>
         /// Logger
         /// </summary>
@@ -41,7 +42,7 @@ namespace ScratchyDisk.DmnEngine.Engine.Definition.Builder
         /// <exception cref="DmnBuilderException">Throws <see cref="DmnBuilderException"/> when the definition has already been built</exception>
         public DmnDefinitionBuilder WithInputs<TVariableType>(params string[] names)
         {
-            if (IsBuilt) throw Logger.Error<DmnBuilderException>("Definition is already built");
+            if (IsBuilt) throw Logger.Error<DmnBuilderException>(AlreadyBuiltMessage);
 
             // ReSharper disable once InvertIf
             if ((names?.Length ?? 0) > 0)
@@ -203,7 +204,7 @@ namespace ScratchyDisk.DmnEngine.Engine.Definition.Builder
         /// <exception cref="DmnBuilderException">Throws <see cref="DmnBuilderException"/> when the definition has already been built</exception>
         public DmnDefinitionBuilder WithInput(string name, string label, Type variableType, out Variable.Ref inputVariable)
         {
-            if (IsBuilt) throw Logger.Error<DmnBuilderException>("Definition is already built");
+            if (IsBuilt) throw Logger.Error<DmnBuilderException>(AlreadyBuiltMessage);
             if (name == null) throw new ArgumentNullException(nameof(name));
             if (string.IsNullOrWhiteSpace(name)) throw new ArgumentException("Missing input name", nameof(name));
 
@@ -231,7 +232,7 @@ namespace ScratchyDisk.DmnEngine.Engine.Definition.Builder
         /// <exception cref="DmnBuilderException">Throws <see cref="DmnBuilderException"/> when the definition has already been built</exception>
         public DmnDefinitionBuilder WithVariables<TVariableType>(params string[] names)
         {
-            if (IsBuilt) throw Logger.Error<DmnBuilderException>("Definition is already built");
+            if (IsBuilt) throw Logger.Error<DmnBuilderException>(AlreadyBuiltMessage);
 
             // ReSharper disable once InvertIf
             if ((names?.Length ?? 0) > 0)
@@ -292,7 +293,7 @@ namespace ScratchyDisk.DmnEngine.Engine.Definition.Builder
         /// <exception cref="DmnBuilderException">Throws <see cref="DmnBuilderException"/> when the definition has already been built</exception>
         public DmnDefinitionBuilder WithVariable(string name, Type variableType, out Variable.Ref variableRef)
         {
-            if (IsBuilt) throw Logger.Error<DmnBuilderException>("Definition is already built");
+            if (IsBuilt) throw Logger.Error<DmnBuilderException>(AlreadyBuiltMessage);
             if (name == null) throw new ArgumentNullException(nameof(name));
             if (string.IsNullOrWhiteSpace(name)) throw new ArgumentException("Missing variable name", nameof(name));
 
@@ -359,7 +360,7 @@ namespace ScratchyDisk.DmnEngine.Engine.Definition.Builder
         /// <exception cref="DmnBuilderException">Throws <see cref="DmnBuilderException"/> when the definition has already been built</exception>
         public DmnDefinitionBuilder WithExpressionDecision(string name, Func<ExpressionDecision.ExpressionDecisionSrcBuilder, ExpressionDecision> builder, out Decision.Ref decisionRef, string label = null)
         {
-            if (IsBuilt) throw Logger.Error<DmnBuilderException>("Definition is already built");
+            if (IsBuilt) throw Logger.Error<DmnBuilderException>(AlreadyBuiltMessage);
             if (name == null) throw new ArgumentNullException(nameof(name));
             if (string.IsNullOrWhiteSpace(name)) throw new ArgumentException("Missing decision name", nameof(name));
             if (builder is null) throw new ArgumentNullException(nameof(builder));
@@ -397,7 +398,7 @@ namespace ScratchyDisk.DmnEngine.Engine.Definition.Builder
         /// <exception cref="DmnBuilderException">Throws <see cref="DmnBuilderException"/> when the definition has already been built</exception>
         public DmnDefinitionBuilder WithTableDecision(string name, Func<TableDecision, TableDecision> builder, out Decision.Ref decisionRef, string label = null)
         {
-            if (IsBuilt) throw Logger.Error<DmnBuilderException>("Definition is already built");
+            if (IsBuilt) throw Logger.Error<DmnBuilderException>(AlreadyBuiltMessage);
             if (name == null) throw new ArgumentNullException(nameof(name));
             if (string.IsNullOrWhiteSpace(name)) throw new ArgumentException("Missing decision name", nameof(name));
             if (builder is null) throw new ArgumentNullException(nameof(builder));
@@ -421,7 +422,7 @@ namespace ScratchyDisk.DmnEngine.Engine.Definition.Builder
         /// <exception cref="DmnBuilderException">Throws <see cref="DmnBuilderException"/> when the definition has already been built</exception>
         public DmnDefinition Build()
         {
-            if (IsBuilt) throw Logger.Error<DmnBuilderException>("Definition is already built");
+            if (IsBuilt) throw Logger.Error<DmnBuilderException>(AlreadyBuiltMessage);
 
             IsBuilt = true;
             if (Decisions.Decisions.Count == 0)

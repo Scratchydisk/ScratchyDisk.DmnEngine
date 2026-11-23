@@ -1,5 +1,7 @@
 ﻿using System;
 using System.Linq;
+using System.Reflection;
+using System.Runtime.ExceptionServices;
 using ScratchyDisk.DmnEngine.Engine.Definition;
 using ScratchyDisk.DmnEngine.Parser.Dto;
 
@@ -88,7 +90,15 @@ namespace ScratchyDisk.DmnEngine.Engine.Execution.Context
                 .ToDictionary(
                     sourceDecision => sourceDecision.Key,
                     sourceDecision => sourceDecision.Value);
-            return (T)Activator.CreateInstance(typeof(T), sourceDefinition, variables, decisions, configure);
+            try
+            {
+                return (T)Activator.CreateInstance(typeof(T), sourceDefinition, variables, decisions, configure);
+            }
+            catch (TargetInvocationException exception) when (exception.InnerException != null)
+            {
+                ExceptionDispatchInfo.Capture(exception.InnerException).Throw();
+                throw;
+            }
 
         }
     }

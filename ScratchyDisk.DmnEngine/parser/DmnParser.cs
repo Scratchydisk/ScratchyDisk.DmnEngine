@@ -15,6 +15,7 @@ namespace ScratchyDisk.DmnEngine.Parser
     /// </summary>
     public class DmnParser
     {
+        private const string DefinitionsElement = "definitions";
         /// <summary>
         /// XML namespace for DMN 1.1 documents
         /// </summary>
@@ -31,6 +32,10 @@ namespace ScratchyDisk.DmnEngine.Parser
         /// XML namespace for DMN 1.5 documents
         /// </summary>
         public const string XmlNamespaceDmn15 = "https://www.omg.org/spec/DMN/20230324/MODEL/";
+        /// <summary>
+        /// XML namespace for DMN 1.6 documents
+        /// </summary>
+        public const string XmlNamespaceDmn16 = "https://www.omg.org/spec/DMN/20240513/MODEL/";
 
         /// <summary>
         /// DMNDI namespace for DMN 1.3 documents
@@ -70,7 +75,11 @@ namespace ScratchyDisk.DmnEngine.Parser
             /// <summary>
             /// DMN version 1.5
             /// </summary>
-            V1_5
+            V1_5,
+            /// <summary>
+            /// DMN version 1.6
+            /// </summary>
+            V1_6
         }
 
         internal static readonly Logger Logger = LogManager.GetCurrentClassLogger();
@@ -78,17 +87,17 @@ namespace ScratchyDisk.DmnEngine.Parser
         /// <summary>
         /// DMN Model XML serializer for DMN v1.1
         /// </summary>
-        protected static XmlSerializer DmnDefinitionsSerializer = new XmlSerializer(
+        protected static readonly XmlSerializer DmnDefinitionsSerializer = new XmlSerializer(
             typeof(DmnModel), null, new Type[] { },
-            defaultNamespace: XmlNamespaceDmn11, root: new XmlRootAttribute("definitions") { Namespace = XmlNamespaceDmn11 }
+            defaultNamespace: XmlNamespaceDmn11, root: new XmlRootAttribute(DefinitionsElement) { Namespace = XmlNamespaceDmn11 }
             );
 
         /// <summary>
         /// DMN Model XML serializer for DMN v1.3
         /// </summary>
-        protected static XmlSerializer DmnDefinitionsSerializer13 = new XmlSerializer(
+        protected static readonly XmlSerializer DmnDefinitionsSerializer13 = new XmlSerializer(
             typeof(DmnModel), null, new Type[] { },
-            defaultNamespace: XmlNamespaceDmn13, root: new XmlRootAttribute("definitions") { Namespace = XmlNamespaceDmn13 }
+            defaultNamespace: XmlNamespaceDmn13, root: new XmlRootAttribute(DefinitionsElement) { Namespace = XmlNamespaceDmn13 }
             );
 
         /// <summary>
@@ -117,18 +126,24 @@ namespace ScratchyDisk.DmnEngine.Parser
             return new XmlSerializer(
                 typeof(DmnModel), overrides, new Type[] { },
                 defaultNamespace: modelNamespace,
-                root: new XmlRootAttribute("definitions") { Namespace = modelNamespace });
+                root: new XmlRootAttribute(DefinitionsElement) { Namespace = modelNamespace });
         }
 
         /// <summary>
         /// DMN Model XML serializer for DMN v1.4
         /// </summary>
-        protected static XmlSerializer DmnDefinitionsSerializer14 = CreateDmnSerializer(XmlNamespaceDmn14, XmlNamespaceDmndi14);
+        protected static readonly XmlSerializer DmnDefinitionsSerializer14 = CreateDmnSerializer(XmlNamespaceDmn14, XmlNamespaceDmndi14);
 
         /// <summary>
         /// DMN Model XML serializer for DMN v1.5
         /// </summary>
-        protected static XmlSerializer DmnDefinitionsSerializer15 = CreateDmnSerializer(XmlNamespaceDmn15, XmlNamespaceDmndi15);
+        protected static readonly XmlSerializer DmnDefinitionsSerializer15 = CreateDmnSerializer(XmlNamespaceDmn15, XmlNamespaceDmndi15);
+
+        /// <summary>
+        /// DMN Model XML serializer for DMN v1.6.
+        /// DMN 1.6 continues to import the DMN 1.5 Diagram Interchange namespace.
+        /// </summary>
+        protected static readonly XmlSerializer DmnDefinitionsSerializer16 = CreateDmnSerializer(XmlNamespaceDmn16, XmlNamespaceDmndi15);
 
         /// <summary>
         /// Parse the <paramref name="filePath">file</paramref> with DMN Model XML definition based on <see cref="DmnVersionEnum.V1_3">DMN standard version 1.3</see>.
@@ -176,6 +191,15 @@ namespace ScratchyDisk.DmnEngine.Parser
         {
             return Parse(filePath, DmnVersionEnum.V1_5);
         }
+        /// <summary>
+        /// Parse the <paramref name="filePath">file</paramref> with DMN Model XML definition based on <see cref="DmnVersionEnum.V1_6">DMN standard version 1.6</see>.
+        /// </summary>
+        /// <param name="filePath">Path to the file to be parsed</param>
+        /// <returns>Parsed DMN Model</returns>
+        public static DmnModel Parse16(string filePath)
+        {
+            return Parse(filePath, DmnVersionEnum.V1_6);
+        }
 
         /// <summary>
         /// Detects the DMN version from the root element namespace of the given XML content.
@@ -188,7 +212,7 @@ namespace ScratchyDisk.DmnEngine.Parser
             using var reader = XmlReader.Create(new StringReader(xmlContent));
             while (reader.Read())
             {
-                if (reader.NodeType == XmlNodeType.Element && reader.LocalName == "definitions")
+                if (reader.NodeType == XmlNodeType.Element && reader.LocalName == DefinitionsElement)
                 {
                     return reader.NamespaceURI switch
                     {
@@ -196,6 +220,7 @@ namespace ScratchyDisk.DmnEngine.Parser
                         XmlNamespaceDmn13 => DmnVersionEnum.V1_3,
                         XmlNamespaceDmn14 => DmnVersionEnum.V1_4,
                         XmlNamespaceDmn15 => DmnVersionEnum.V1_5,
+                        XmlNamespaceDmn16 => DmnVersionEnum.V1_6,
                         _ => throw Logger.Fatal<DmnParserException>($"Unknown DMN namespace: {reader.NamespaceURI}")
                     };
                 }
@@ -248,7 +273,7 @@ namespace ScratchyDisk.DmnEngine.Parser
                 using var reader = XmlReader.Create(new StringReader(xmlContent));
                 while (reader.Read())
                 {
-                    if (reader.NodeType == XmlNodeType.Element && reader.LocalName == "definitions")
+                    if (reader.NodeType == XmlNodeType.Element && reader.LocalName == DefinitionsElement)
                     {
                         var exporter = reader.GetAttribute("exporter");
                         return exporter != null &&
@@ -296,6 +321,9 @@ namespace ScratchyDisk.DmnEngine.Parser
                             break;
                         case DmnVersionEnum.V1_5:
                             def = (DmnModel)DmnDefinitionsSerializer15.Deserialize(rdr);
+                            break;
+                        case DmnVersionEnum.V1_6:
+                            def = (DmnModel)DmnDefinitionsSerializer16.Deserialize(rdr);
                             break;
                         default:
                             throw new ArgumentOutOfRangeException(nameof(dmnVersion), dmnVersion, null);
@@ -357,6 +385,15 @@ namespace ScratchyDisk.DmnEngine.Parser
         {
             return ParseString(dmnDefinition, DmnVersionEnum.V1_5);
         }
+        /// <summary>
+        /// Parse the <paramref name="dmnDefinition">string</paramref> with DMN Model XML definition based on <see cref="DmnVersionEnum.V1_6">DMN standard version 1.6</see>.
+        /// </summary>
+        /// <param name="dmnDefinition">DMN Model XML definition</param>
+        /// <returns>Parsed DMN Model</returns>
+        public static DmnModel ParseString16(string dmnDefinition)
+        {
+            return ParseString(dmnDefinition, DmnVersionEnum.V1_6);
+        }
 
         /// <summary>
         /// Parse the <paramref name="dmnDefinition">string</paramref> with DMN Model XML definition based on <paramref name="dmnVersion">DMN standard version</paramref>.
@@ -395,6 +432,9 @@ namespace ScratchyDisk.DmnEngine.Parser
                             break;
                         case DmnVersionEnum.V1_5:
                             def = (DmnModel)DmnDefinitionsSerializer15.Deserialize(rdr);
+                            break;
+                        case DmnVersionEnum.V1_6:
+                            def = (DmnModel)DmnDefinitionsSerializer16.Deserialize(rdr);
                             break;
                         default:
                             throw new ArgumentOutOfRangeException(nameof(dmnVersion), dmnVersion, null);

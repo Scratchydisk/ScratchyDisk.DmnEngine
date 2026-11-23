@@ -11,8 +11,8 @@
     <!-- Section A: File Selector -->
     <div class="file-selector">
       <div class="selector-row">
-        <label class="selector-label">DMN file:</label>
-        <select v-model="selectedFileName" class="selector-dropdown" @change="onFileChange">
+        <label for="dmn-file" class="selector-label">DMN file:</label>
+        <select id="dmn-file" v-model="selectedFileName" class="selector-dropdown" @change="onFileChange">
           <option value="">Select a file...</option>
           <option v-for="f in files" :key="f.name" :value="f.name">
             {{ f.name }}
@@ -30,6 +30,9 @@
     <div class="metadata-bar" v-if="definitionInfo?.metadata">
       <span class="metadata-chip dmn-version" v-if="definitionInfo.metadata.dmnVersion" title="DMN specification version detected from the XML namespace">
         DMN {{ definitionInfo.metadata.dmnVersion }}
+      </span>
+      <span class="metadata-chip" v-if="definitionInfo.metadata.expressionLanguage" :title="definitionInfo.metadata.dialectStatus === 'unsupported' ? 'This expression dialect is not implemented' : 'Expression language declared by the model'">
+        {{ definitionInfo.metadata.expressionLanguage }}<template v-if="definitionInfo.metadata.dialectStatus === 'unsupported'"> (unsupported)</template>
       </span>
       <span class="metadata-chip" v-if="definitionInfo.metadata.definitionName" title="Definition name from the &lt;definitions name=&quot;...&quot;&gt; attribute">
         {{ definitionInfo.metadata.definitionName }}
@@ -66,8 +69,8 @@
     <!-- Section C: Decision Selector -->
     <div class="decision-selector" v-if="definitionInfo && definitionInfo.decisions.length > 0">
       <div class="selector-row">
-        <label class="selector-label">Decision under test:</label>
-        <select v-model="selectedDecisionName" class="selector-dropdown" @change="onDecisionChange">
+        <label for="decision-under-test" class="selector-label">Decision under test:</label>
+        <select id="decision-under-test" v-model="selectedDecisionName" class="selector-dropdown" @change="onDecisionChange">
           <option value="">Select a decision...</option>
           <option v-for="d in definitionInfo.decisions" :key="d.name" :value="d.name">
             {{ d.name }}
@@ -381,7 +384,7 @@
     </div>
 
     <!-- Save Test Case Dialog -->
-    <div v-if="showSaveDialog" class="dialog-overlay" @click.self="showSaveDialog = false">
+    <div v-if="showSaveDialog" class="dialog-overlay" tabindex="0" @click.self="showSaveDialog = false" @keydown.esc="showSaveDialog = false">
       <div class="dialog">
         <h3>Save Test Case</h3>
         <div class="dialog-field">
@@ -451,8 +454,10 @@
               v-for="tc in testCases"
               :key="tc.id"
               class="suite-row"
+              tabindex="0"
               :class="{ active: activeTestCaseId === tc.id }"
               @click="loadTestCase(tc)"
+              @keydown.enter="loadTestCase(tc)"
             >
               <td class="col-status">
                 <span class="status-icon" :class="getStatusClass(tc)">{{ getStatusIcon(tc) }}</span>
@@ -468,7 +473,7 @@
                 </span>
                 <span v-else class="result-none">--</span>
               </td>
-              <td class="col-actions" @click.stop>
+              <td class="col-actions" @click.stop @keydown.stop>
                 <button class="action-btn" @click="runSingleTest(tc)" title="Run">
                   <svg class="action-icon" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M14.752 11.168l-3.197-2.132A1 1 0 0010 9.87v4.263a1 1 0 001.555.832l3.197-2.132a1 1 0 000-1.664z" />
@@ -748,7 +753,7 @@ function getAllowedValuesForInput(inputName) {
       }
     }
   }
-  return values.size > 0 ? Array.from(values).sort() : null
+  return values.size > 0 ? Array.from(values).sort((a, b) => a.localeCompare(b)) : null
 }
 
 // Map input variable name -> list of upstream decision names that use it as a table input

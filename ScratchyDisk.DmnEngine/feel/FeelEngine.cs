@@ -86,8 +86,17 @@ namespace ScratchyDisk.DmnEngine.Feel
         /// <returns>The evaluation result</returns>
         public object Evaluate(FeelAstNode ast, FeelEvaluationContext evalContext)
         {
+            return Evaluate(ast, evalContext, FeelDialect.Feel);
+        }
+        /// <summary>
+        /// Evaluates a pre-parsed AST node with the selected FEEL dialect.
+        /// </summary>
+        public virtual object Evaluate(FeelAstNode ast, FeelEvaluationContext evalContext, FeelDialect dialect)
+        {
             if (ast == null) throw new ArgumentNullException(nameof(ast));
             if (evalContext == null) throw new ArgumentNullException(nameof(evalContext));
+            if (dialect == FeelDialect.BFeel)
+                throw new NotSupportedException("B-FEEL evaluation is not implemented. Supported dialect: FEEL.");
 
             var evaluator = new FeelEvaluator(evalContext, ResolveFunctionCall);
             return evaluator.Evaluate(ast);

@@ -129,6 +129,7 @@ unaryExpression
 
 postfixExpression
     : postfixExpression DOT simpleName                      # postfixMemberAccess
+    | postfixExpression ELLIPSIS simpleName                 # postfixDescendant
     | postfixExpression LBRACKET expression RBRACKET        # postfixFilter
     | postfixExpression LPAREN namedOrPositionalArgs RPAREN # postfixInvocation
     | postfixExpression LPAREN RPAREN                       # postfixEmptyInvocation
@@ -152,8 +153,13 @@ primary
     | AtLiteral                                             # primaryAtLiteralToken
     | simpleName                                            # primaryName
     | LPAREN expression RPAREN                              # primaryParen
+    | rangeLiteral                                          # primaryRange
     | list                                                  # primaryList
     | context                                               # primaryContext
+    ;
+
+rangeLiteral
+    : intervalStartBracket low=endpoint? DOTDOT high=endpoint? intervalEndBracket
     ;
 
 literal

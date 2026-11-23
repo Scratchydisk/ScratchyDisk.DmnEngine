@@ -1,0 +1,28 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<definitions xmlns="https://www.omg.org/spec/DMN/20240513/MODEL/"
+             id="decisiontable_def"
+             name="Decision table fixture"
+             namespace="http://example.com/dmn16/decisiontable">
+  <inputData id="age_input" name="Age" />
+  <decision id="eligible_decision" name="Eligible">
+    <informationRequirement id="eligible_requirement">
+      <requiredInput href="#age_input" />
+    </informationRequirement>
+    <decisionTable id="eligible_table" hitPolicy="UNIQUE">
+      <input id="age_input_clause">
+        <inputExpression id="age_input_expression" typeRef="number">
+          <text>Age</text>
+        </inputExpression>
+      </input>
+      <output id="eligible_output" name="Eligible" typeRef="boolean" />
+      <rule id="adult_rule">
+        <inputEntry id="adult_entry"><text>&gt;= 18</text></inputEntry>
+        <outputEntry id="adult_output"><text>true</text></outputEntry>
+      </rule>
+      <rule id="minor_rule">
+        <inputEntry id="minor_entry"><text>&lt; 18</text></inputEntry>
+        <outputEntry id="minor_output"><text>false</text></outputEntry>
+      </rule>
+    </decisionTable>
+  </decision>
+</definitions>

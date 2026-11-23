@@ -53,8 +53,7 @@ namespace ScratchyDisk.DmnEngine.Engine.Definition.Builder
             if (decision == null) throw new ArgumentNullException(nameof(decision));
 
             var name = decision.Name;
-            if (name == null) throw new ArgumentNullException(nameof(name));
-            if (string.IsNullOrWhiteSpace(name)) throw new ArgumentException("Missing decision name", nameof(name));
+            if (string.IsNullOrWhiteSpace(name)) throw new ArgumentException("Missing decision name", nameof(decision));
 
             decisions.Add(name, decision);
             DecisionsByRef.Add(decision.Reference, decision);

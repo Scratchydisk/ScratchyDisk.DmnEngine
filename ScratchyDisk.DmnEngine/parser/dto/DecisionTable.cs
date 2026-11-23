@@ -11,33 +11,41 @@ namespace ScratchyDisk.DmnEngine.Parser.Dto
     /// </summary>
     public class DecisionTable : IdedElement, IXmlSerializable
     {
+        private const string DecisionTableElement = "decisionTable";
         /// <summary>
         /// Serializer used for the serialization proxy class - DMN version 1.1
         /// </summary>
         private static readonly XmlSerializer DecisionTableSerializableSerializer = new XmlSerializer(
             typeof(DecisionTableSerializable), null, new Type[] { },
-            defaultNamespace: DmnParser.XmlNamespaceDmn11, root: new XmlRootAttribute("decisionTable") { Namespace = DmnParser.XmlNamespaceDmn11 });
+            defaultNamespace: DmnParser.XmlNamespaceDmn11, root: new XmlRootAttribute(DecisionTableElement) { Namespace = DmnParser.XmlNamespaceDmn11 });
 
         /// <summary>
         /// Serializer used for the serialization proxy class - DMN version 1.3
         /// </summary>
         private static readonly XmlSerializer DecisionTableSerializableSerializer13 = new XmlSerializer(
             typeof(DecisionTableSerializable), null, new Type[] { },
-            defaultNamespace: DmnParser.XmlNamespaceDmn13, root: new XmlRootAttribute("decisionTable") { Namespace = DmnParser.XmlNamespaceDmn13 });
+            defaultNamespace: DmnParser.XmlNamespaceDmn13, root: new XmlRootAttribute(DecisionTableElement) { Namespace = DmnParser.XmlNamespaceDmn13 });
 
         /// <summary>
         /// Serializer used for the serialization proxy class - DMN version 1.4
         /// </summary>
         private static readonly XmlSerializer DecisionTableSerializableSerializer14 = new XmlSerializer(
             typeof(DecisionTableSerializable), null, new Type[] { },
-            defaultNamespace: DmnParser.XmlNamespaceDmn14, root: new XmlRootAttribute("decisionTable") { Namespace = DmnParser.XmlNamespaceDmn14 });
+            defaultNamespace: DmnParser.XmlNamespaceDmn14, root: new XmlRootAttribute(DecisionTableElement) { Namespace = DmnParser.XmlNamespaceDmn14 });
 
         /// <summary>
         /// Serializer used for the serialization proxy class - DMN version 1.5
         /// </summary>
         private static readonly XmlSerializer DecisionTableSerializableSerializer15 = new XmlSerializer(
             typeof(DecisionTableSerializable), null, new Type[] { },
-            defaultNamespace: DmnParser.XmlNamespaceDmn15, root: new XmlRootAttribute("decisionTable") { Namespace = DmnParser.XmlNamespaceDmn15 });
+            defaultNamespace: DmnParser.XmlNamespaceDmn15, root: new XmlRootAttribute(DecisionTableElement) { Namespace = DmnParser.XmlNamespaceDmn15 });
+
+        /// <summary>
+        /// Serializer used for the serialization proxy class - DMN version 1.6
+        /// </summary>
+        private static readonly XmlSerializer DecisionTableSerializableSerializer16 = new XmlSerializer(
+            typeof(DecisionTableSerializable), null, new Type[] { },
+            defaultNamespace: DmnParser.XmlNamespaceDmn16, root: new XmlRootAttribute(DecisionTableElement) { Namespace = DmnParser.XmlNamespaceDmn16 });
 
         /// <summary>
         /// Hit policy attribute
@@ -136,6 +144,8 @@ namespace ScratchyDisk.DmnEngine.Parser.Dto
                 serializer = DecisionTableSerializableSerializer14;
             else if (reader.NamespaceURI == DmnParser.XmlNamespaceDmn15)
                 serializer = DecisionTableSerializableSerializer15;
+            else if (reader.NamespaceURI == DmnParser.XmlNamespaceDmn16)
+                serializer = DecisionTableSerializableSerializer16;
             else
                 serializer = DecisionTableSerializableSerializer13;
 

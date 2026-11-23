@@ -40,7 +40,7 @@ namespace ScratchyDisk.DmnEngine.Engine.Definition.Builder
             /// </summary>
             /// <param name="s">String constant (<paramref name="isValue"/> is true) or expression</param>
             /// <param name="isValue">Flag whether <param name="s"> represents the expression (value) or string constant</param></param>
-            internal Token(string s, bool isValue = false)
+            internal Token(string s, bool isValue)
             {
                 if (s is null) throw new ArgumentNullException(nameof(s));
                 if (string.IsNullOrWhiteSpace(s)) throw new ArgumentException("Missing token value", nameof(s));
@@ -440,7 +440,7 @@ namespace ScratchyDisk.DmnEngine.Engine.Definition.Builder
         private static string DateTimeStr(int year, int month, int day, int hour, int minute, int second)
         {
             var d = DateStr(year, month, day);
-            var t = (hour > 0 | minute > 0 | second > 0) ? $"T{TimeStr(hour, minute, second)}" : "";
+            var t = (hour > 0 || minute > 0 || second > 0) ? $"T{TimeStr(hour, minute, second)}" : "";
             return $"{d}{t}";
         }
 

@@ -50,6 +50,15 @@
     <None Include="..\ScratchyDisk.DmnEngine.Test.Shared\nlog.config">
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>
     </None>
+    <None Include="..\docs\conformance-test-policy.md" LinkBase="docs">
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </None>
+    <None Include="..\.github\workflows\conformance.yml" LinkBase=".github/workflows">
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </None>
+    <None Include="..\readme.md" LinkBase="">
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </None>
   </ItemGroup>
 
 </Project>

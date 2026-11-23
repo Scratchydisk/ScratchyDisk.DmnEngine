@@ -60,8 +60,7 @@ namespace ScratchyDisk.DmnEngine.Engine.Definition.Builder
             if (IsBuilt) throw new DmnBuilderException("Variable catalog is already built");
             if (variable == null) throw new ArgumentNullException(nameof(variable));
             var name = DmnVariableDefinition.NormalizeVariableName(variable.Name);
-            if (name == null) throw new ArgumentNullException(nameof(name));
-            if (string.IsNullOrWhiteSpace(name)) throw new ArgumentException("Missing variable name", nameof(name));
+            if (string.IsNullOrWhiteSpace(name)) throw new ArgumentException("Missing variable name", nameof(variable));
 
             VariablesInternal.Add(name, variable);
             VariablesByRef.Add(variable.Reference, variable);

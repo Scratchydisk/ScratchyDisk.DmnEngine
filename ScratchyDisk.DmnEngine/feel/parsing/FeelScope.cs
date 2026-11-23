@@ -56,6 +56,9 @@ namespace ScratchyDisk.DmnEngine.Feel.Parsing
             "day of week",
             "month of year",
             "week of year",
+            "time offset",
+            "start included",
+            "end included",
 
             // Context functions
             "get value",

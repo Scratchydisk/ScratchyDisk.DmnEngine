@@ -289,7 +289,7 @@ namespace ScratchyDisk.DmnEngine.Engine.Decisions.Table
                     if (!string.IsNullOrWhiteSpace(ruleInput.Input.Expression))
                     {
                         //input is mapped to expression, so evaluate it to get the value
-                        inputValue = context.EvalExpression<object>(ruleInput.Input.Expression, executionId);
+                        inputValue = context.EvalExpression<object>(ruleInput.Input.Expression, executionId, ruleInput.Input.Dialect);
                     }
                     else
                     {
@@ -325,7 +325,7 @@ namespace ScratchyDisk.DmnEngine.Engine.Decisions.Table
                     if (Logger.IsTraceEnabled)
                         Logger.TraceCorr(executionId,
                             $"Evaluating decision table {Name} rule {rule} input #{ruleInput.Input.Index}: {ruleInput.UnparsedExpression}... ");
-                    var result = context.EvalUnaryTests(ruleInput.UnparsedExpression, inputValue, executionId);
+                    var result = context.EvalUnaryTests(ruleInput.UnparsedExpression, inputValue, executionId, ruleInput.Dialect);
                     if (Logger.IsTraceEnabled)
                         Logger.TraceCorr(executionId,
                             $"Evaluated decision table {Name} rule {rule} input #{ruleInput.Input.Index}: {ruleInput.UnparsedExpression} with result {result}");
@@ -368,7 +368,7 @@ namespace ScratchyDisk.DmnEngine.Engine.Decisions.Table
         {
             if (context == null) throw Logger.FatalCorr<ArgumentNullException>(executionId, $"{nameof(context)} is null");
 
-            var positiveRules = new ConcurrentBag<DmnDecisionTableRule>(); // List<DmnDecisionTableRule>();
+            var positiveRules = new ConcurrentBag<DmnDecisionTableRule>();
 
             //EVALUATE RULES
             Logger.InfoCorr(executionId, $"Evaluating decision table {Name} rules...");
@@ -382,7 +382,7 @@ namespace ScratchyDisk.DmnEngine.Engine.Decisions.Table
                     if (!string.IsNullOrWhiteSpace(ruleInput.Input.Expression))
                     {
                         //input is mapped to expression, so evaluate it to get the value
-                        inputValue = context.EvalExpression<object>(ruleInput.Input.Expression, executionId);
+                        inputValue = context.EvalExpression<object>(ruleInput.Input.Expression, executionId, ruleInput.Input.Dialect);
                     }
                     else
                     {
@@ -418,7 +418,7 @@ namespace ScratchyDisk.DmnEngine.Engine.Decisions.Table
                     if (Logger.IsTraceEnabled)
                         Logger.TraceCorr(executionId,
                             $"Evaluating decision table {Name} rule {rule} input #{ruleInput.Input.Index}: {ruleInput.UnparsedExpression}... ");
-                    var result = context.EvalUnaryTests(ruleInput.UnparsedExpression, inputValue, executionId);
+                    var result = context.EvalUnaryTests(ruleInput.UnparsedExpression, inputValue, executionId, ruleInput.Dialect);
                     if (Logger.IsTraceEnabled)
                         Logger.TraceCorr(executionId,
                             $"Evaluated decision table {Name} rule {rule} input #{ruleInput.Input.Index}: {ruleInput.UnparsedExpression} with result {result}");
@@ -466,19 +466,17 @@ namespace ScratchyDisk.DmnEngine.Engine.Decisions.Table
                         continue;
                     }
 
-                    var result = context.EvalExpression(ruleOutput.Expression, ruleOutput.Output.Variable.Type ?? typeof(object), executionId);
+                    var result = context.EvalExpression(ruleOutput.Expression, ruleOutput.Output.Variable.Type ?? typeof(object), executionId, ruleOutput.Dialect);
 
                     // check allowed output values
                     var allowedValues = ruleOutput.Output.AllowedValues;
                     if (allowedValues != null && allowedValues.Length > 0 &&
-                        !string.IsNullOrWhiteSpace(result?.ToString()))
+                        !string.IsNullOrWhiteSpace(result?.ToString()) &&
+                        !allowedValues.Contains(result.ToString()))
                     {
-                        if (!ruleOutput.Output.AllowedValues.Contains(result.ToString()))
-                        {
-                            throw Logger.ErrorCorr<DmnExecutorException>(
-                                executionId,
-                                $"Decision table {Name}, rule {positiveRule}: Output value '{result}' is not in allowed values list ({string.Join(",", allowedValues)})");
-                        }
+                        throw Logger.ErrorCorr<DmnExecutorException>(
+                            executionId,
+                            $"Decision table {Name}, rule {positiveRule}: Output value '{result}' is not in allowed values list ({string.Join(",", allowedValues)})");
                     }
 
                     var output = new DmnExecutionVariable(ruleOutput.Output.Variable) { Value = result };
@@ -523,19 +521,18 @@ namespace ScratchyDisk.DmnEngine.Engine.Decisions.Table
                 {
                     var result = context.EvalExpression(ruleOutput.Expression,
                         ruleOutput.Output.Variable.Type ?? typeof(object),
-                        executionId);
+                        executionId,
+                        ruleOutput.Dialect);
 
                     // check allowed output values
                     var allowedValues = ruleOutput.Output.AllowedValues;
                     if (allowedValues != null && allowedValues.Length > 0 &&
-                        !string.IsNullOrWhiteSpace(result?.ToString()))
+                        !string.IsNullOrWhiteSpace(result?.ToString()) &&
+                        !allowedValues.Contains(result.ToString()))
                     {
-                        if (!ruleOutput.Output.AllowedValues.Contains(result.ToString()))
-                        {
-                            throw Logger.ErrorCorr<DmnExecutorException>(
-                                executionId,
-                                $"Decision table {Name}, rule {positiveRule}: Output value '{result}' is not in allowed values list ({string.Join(",", allowedValues)})");
-                        }
+                        throw Logger.ErrorCorr<DmnExecutorException>(
+                            executionId,
+                            $"Decision table {Name}, rule {positiveRule}: Output value '{result}' is not in allowed values list ({string.Join(",", allowedValues)})");
                     }
 
                     var output = new DmnExecutionVariable(ruleOutput.Output.Variable) { Value = result };

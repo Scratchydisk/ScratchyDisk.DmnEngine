@@ -1,6 +1,6 @@
 # ScratchyDisk.DmnEngine
 
-A .NET rule engine that executes decisions defined in [DMN (Decision Model and Notation)](https://www.omg.org/spec/DMN/) models. It evaluates decision tables and expression decisions from OMG-standard DMN XML files (versions 1.1, 1.3, 1.3ext, 1.4, 1.5), or from definitions built programmatically using a fluent API. Expressions are evaluated using a full [FEEL](https://www.omg.org/spec/DMN/) (Friendly Enough Expression Language) interpreter built on ANTLR4.
+A .NET rule engine that executes decisions defined in [DMN (Decision Model and Notation)](https://www.omg.org/spec/DMN/) models. It evaluates decision tables and expression decisions from OMG-standard DMN XML files (versions 1.1, 1.3, 1.3ext, 1.4, 1.5 and 1.6), or from definitions built programmatically using a fluent API. Expressions are evaluated using a full [FEEL](https://www.omg.org/spec/DMN/) (Friendly Enough Expression Language) interpreter built on ANTLR4.
 
 **NuGet package ID:** `ScratchyDisk.DmnEngine`
 **Target framework:** .NET 10.0
@@ -11,7 +11,9 @@ See the latest changes in the [changelog](changelog.md).
 ## Features
 
 - **Full FEEL evaluator** — ANTLR4-based lexer, parser, and tree-walking interpreter supporting the complete FEEL expression language, including `if`/`then`/`else`, `for`/`in`/`return`, `some`/`every` quantifiers, list/context operations, ranges, and ~80 built-in functions
-- **DMN 1.1 through 1.5** — auto-detects the DMN version from the XML namespace
+- **DMN 1.1 through 1.6** — auto-detects the DMN version from the XML namespace
+- **FEEL 1.6 additions** — descendant expressions, temporal `.value`, single-parameter rounding, zoned date-time construction and numeric literal forms
+- **DMN 1.6 error handling** — lenient diagnostics by default, with an opt-in strict mode
 - **Decision tables** with all standard hit policies (Unique, First, Priority, Any, Collect, RuleOrder, OutputOrder)
 - **Expression decisions** — single FEEL expression producing an output
 - **Decision requirement graphs (DRDs)** — complex models with dependent decisions resolved automatically
@@ -21,6 +23,48 @@ See the latest changes in the [changelog](changelog.md).
 - **Thread-safe definitions** — definitions are immutable after creation, safe for concurrent execution contexts
 - **Web-based testbed** — interactive test lab with regression test suite management
 - **CLI tool** — `dmnrunner` for batch execution and CI integration
+
+## DMN and FEEL support
+
+| Area | Status |
+|---|---|
+| DMN 1.1, 1.3, 1.3ext, 1.4, 1.5 | Supported |
+| DMN 1.6 model namespace and parsing | Supported |
+| FEEL 1.6 descendant expressions, `.value`, rounding overloads, zoned date-time, numeric literals, decimal-to-integer conversion | Supported |
+| DMN 1.6 lenient/strict error handling | Supported |
+| FEEL 1.5 gap closure (list replace, range, overlaps before/after, temporal and range properties, IANA timezones) | Supported |
+| B-FEEL dialect | Detection and fail-fast only; full chapter 11 semantics deferred |
+| ONNX external functions | Deferred (optional for Level 3 conformance) |
+
+Canonical references:
+
+- [DMN 1.6 specification](https://www.omg.org/spec/DMN/1.6/PDF) (`formal/25-12-02`)
+- [DMN 1.6 XSD](https://www.omg.org/spec/DMN/20240513/DMN16.xsd)
+- [DMN 1.5 specification](https://www.omg.org/spec/DMN/1.5/PDF)
+- [B-FEEL language URI](https://www.omg.org/spec/DMN/20240513/B-FEEL/)
+- [Conformance test policy](docs/conformance-test-policy.md)
+
+B-FEEL models are rejected with a clear unsupported-language error rather than being silently evaluated as FEEL. ONNX is optional for DMN 1.6 Level 3 conformance and is not implemented.
+
+## Testing and conformance
+
+The engine is developed test-first against the OMG specifications:
+
+1. Write a failing conformance test derived from a clause, table, grammar rule or official example.
+2. Confirm the failure is for the expected reason.
+3. Implement only enough to pass the test.
+4. Refactor with the full regression suite green.
+
+Every conformance test records its canonical source in its name or metadata, for example `Dmn16_10_3_1_2_Rule68_DescendantExpression` or `Dmn15_10_3_4_4_ListReplace_Positional`. `ConformanceManifest` maps each conformance test class to its source, and `ConformanceTraceabilityTests` fails when a source is missing.
+
+The canonical sources are:
+
+- [DMN 1.6 specification](https://www.omg.org/spec/DMN/1.6/PDF) (`formal/25-12-02`)
+- [DMN 1.6 XSD](https://www.omg.org/spec/DMN/20240513/DMN16.xsd)
+- [DMN 1.5 specification](https://www.omg.org/spec/DMN/1.5/PDF)
+- [B-FEEL language URI](https://www.omg.org/spec/DMN/20240513/B-FEEL/)
+
+The full policy and required evidence are in [docs/conformance-test-policy.md](docs/conformance-test-policy.md). CI runs the DMN 1.5/1.6 conformance subset and then the full regression suite via `.github/workflows/conformance.yml`.
 
 ## Quick Start
 
@@ -48,7 +92,7 @@ DMN XML --> DmnParser --> DmnModel --> DmnDefinitionFactory --> DmnDefinition --
 Code --> DmnDefinitionBuilder --> DmnDefinition ------------------------------------------------------------------>-+
 ```
 
-1. **Parsing** (`parser/`): `DmnParser` deserialises DMN XML (v1.1, 1.3, 1.3ext, 1.4, 1.5) into `DmnModel` DTOs. Supports auto-detection of DMN version from the XML namespace.
+1. **Parsing** (`parser/`): `DmnParser` deserialises DMN XML (v1.1, 1.3, 1.3ext, 1.4, 1.5, 1.6) into `DmnModel` DTOs. Supports auto-detection of DMN version from the XML namespace.
 2. **Definition** (`engine/definition/`): `DmnDefinitionFactory` transforms `DmnModel` into `DmnDefinition` — validation, variable type resolution, and dependency tree construction. Definitions are "virtually immutable" (exposed via read-only interfaces).
 3. **Builder** (`engine/definition/builder/`): `DmnDefinitionBuilder` provides a fluent API to create `DmnDefinition` programmatically without XML.
 4. **Decisions** (`engine/decisions/`): Two types — `DmnExpressionDecision` (single expression to output) and `DmnDecisionTable` (rules with inputs, outputs, hit policies).

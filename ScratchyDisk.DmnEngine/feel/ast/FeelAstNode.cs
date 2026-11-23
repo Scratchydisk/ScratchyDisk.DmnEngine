@@ -247,6 +247,16 @@ namespace ScratchyDisk.DmnEngine.Feel.Ast
         public string Member { get; }
         public PathNode(FeelAstNode source, string member) { Source = source; Member = member; }
     }
+    /// <summary>
+    /// FEEL 1.6 descendant expression: source...name (grammar rule 68).
+    /// Returns the values of the named key across the context and all nested contexts.
+    /// </summary>
+    public sealed class DescendantNode : FeelAstNode
+    {
+        public FeelAstNode Source { get; }
+        public string Name { get; }
+        public DescendantNode(FeelAstNode source, string name) { Source = source; Name = name; }
+    }
 
     // ==================== Functions ====================
 

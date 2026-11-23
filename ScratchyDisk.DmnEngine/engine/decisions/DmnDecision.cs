@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Linq;
 using NLog;
 using ScratchyDisk.DmnEngine.Engine.Definition;
+using ScratchyDisk.DmnEngine.Engine.Execution;
 using ScratchyDisk.DmnEngine.Engine.Execution.Context;
 using ScratchyDisk.DmnEngine.Engine.Execution.Result;
 using ScratchyDisk.DmnEngine.Utils;
@@ -85,7 +86,11 @@ namespace ScratchyDisk.DmnEngine.Engine.Decisions
         /// <param name="executionId">Identified of the execution run</param>
         /// <returns>Decision result</returns>
         /// <exception cref="ArgumentNullException"><paramref name="context"/> is null</exception>
-        public DmnDecisionResult Execute(DmnExecutionContext context, string executionId = null)
+        public DmnDecisionResult Execute(DmnExecutionContext context)
+        {
+            return Execute(context, null);
+        }
+        public DmnDecisionResult Execute(DmnExecutionContext context, string executionId)
         {
             if (context == null) throw Logger.Fatal<ArgumentNullException>($"{nameof(context)} is null");
 
@@ -114,7 +119,23 @@ namespace ScratchyDisk.DmnEngine.Engine.Decisions
                 Logger.InfoCorr(executionId, $"Resolved dependencies for decision {Name}");
             }
 
-            var result = Evaluate(context, executionId);
+            DmnDecisionResult result;
+            try
+            {
+                result = Evaluate(context, executionId);
+            }
+            catch (DmnEvaluationException exception)
+                when (context.Options.ErrorHandlingMode == DmnErrorHandlingMode.Strict)
+            {
+                context.AddDiagnostic(Name, exception);
+                throw;
+            }
+            catch (DmnEvaluationException exception)
+                when (context.Options.ErrorHandlingMode == DmnErrorHandlingMode.Lenient)
+            {
+                context.AddDiagnostic(Name, exception);
+                result = new DmnDecisionResult();
+            }
             context.CreateSnapshot(this, result);
 
             Logger.InfoCorr(executionId, $"Executed decision {Name}");

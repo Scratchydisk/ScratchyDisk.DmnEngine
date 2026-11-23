@@ -11,6 +11,7 @@ namespace ScratchyDisk.DmnEngine.Engine.Definition.Builder
     /// </summary>
     public sealed class Variable : DmnBuilderElement<Variable, DmnVariableDefinition>
     {
+        private const string AlreadyBuiltMessage = "Variable is already built";
         /// <summary>
         /// Reference CTOR delegate
         /// </summary>
@@ -131,7 +132,7 @@ namespace ScratchyDisk.DmnEngine.Engine.Definition.Builder
         /// <exception cref="DmnBuilderException">Throws <see cref="DmnBuilderException"/> when the definition has already been built</exception>
         public Variable ForInput()
         {
-            if (IsBuilt) throw Logger.Error<DmnBuilderException>("Variable is already built");
+            if (IsBuilt) throw Logger.Error<DmnBuilderException>(AlreadyBuiltMessage);
 
             IsInputParameter = true;
             AddValueSetter($"Input: {Name}");
@@ -145,7 +146,7 @@ namespace ScratchyDisk.DmnEngine.Engine.Definition.Builder
         /// <exception cref="DmnBuilderException">Throws <see cref="DmnBuilderException"/> when the definition has already been built</exception>
         public Variable AddValueSetter(string setter)
         {
-            if (IsBuilt) throw Logger.Error<DmnBuilderException>("Variable is already built");
+            if (IsBuilt) throw Logger.Error<DmnBuilderException>(AlreadyBuiltMessage);
 
             if (setter == null) throw new ArgumentNullException(nameof(setter));
             if (string.IsNullOrWhiteSpace(setter)) throw new ArgumentException("Setter not provided", nameof(setter));
@@ -164,7 +165,7 @@ namespace ScratchyDisk.DmnEngine.Engine.Definition.Builder
         /// <exception cref="DmnBuilderException">Throws <see cref="DmnBuilderException"/> when the definition has already been built</exception>
         public Variable CheckAndSetVariableType(Type newType)
         {
-            if (IsBuilt) throw Logger.Error<DmnBuilderException>("Variable is already built");
+            if (IsBuilt) throw Logger.Error<DmnBuilderException>(AlreadyBuiltMessage);
             if (newType == null) return this;
 
             //check
@@ -184,7 +185,7 @@ namespace ScratchyDisk.DmnEngine.Engine.Definition.Builder
         /// <exception cref="DmnBuilderException">Throws <see cref="DmnBuilderException"/> when the definition has already been built</exception>
         protected internal override DmnVariableDefinition Build()
         {
-            if (IsBuilt) throw Logger.Error<DmnBuilderException>("Variable is already built");
+            if (IsBuilt) throw Logger.Error<DmnBuilderException>(AlreadyBuiltMessage);
             if (string.IsNullOrWhiteSpace(Name))
                 throw new InvalidOperationException("Missing name in variable to be built");
 

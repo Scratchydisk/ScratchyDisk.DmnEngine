@@ -1,0 +1,38 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<definitions xmlns="https://www.omg.org/spec/DMN/20240513/MODEL/"
+             xmlns:dmndi="https://www.omg.org/spec/DMN/20230324/DMNDI/"
+             xmlns:dc="http://www.omg.org/spec/DMN/20180521/DC/"
+             xmlns:di="http://www.omg.org/spec/DMN/20180521/DI/"
+             id="fragments_def"
+             name="Embedded fragments fixture"
+             namespace="http://example.com/dmn16/fragments">
+  <inputData id="age_input" name="Age" />
+  <decision id="eligible_decision" name="Eligible">
+    <informationRequirement id="eligible_requirement">
+      <requiredInput href="#age_input" />
+    </informationRequirement>
+    <decisionTable id="eligible_table" hitPolicy="FIRST">
+      <input id="age_input_clause">
+        <inputExpression id="age_input_expression" typeRef="number">
+          <text>Age</text>
+        </inputExpression>
+      </input>
+      <output id="eligible_output" name="Eligible" typeRef="boolean" />
+      <rule id="adult_rule">
+        <inputEntry id="adult_entry"><text>&gt;= 18</text></inputEntry>
+        <outputEntry id="adult_output"><text>true</text></outputEntry>
+      </rule>
+      <rule id="minor_rule">
+        <inputEntry id="minor_entry"><text>&lt; 18</text></inputEntry>
+        <outputEntry id="minor_output"><text>false</text></outputEntry>
+      </rule>
+    </decisionTable>
+  </decision>
+  <dmndi:DMNDI>
+    <dmndi:DMNDiagram id="diagram_1">
+      <dmndi:DMNShape id="shape_1" dmnElementRef="eligible_decision">
+        <dc:Bounds x="100" y="100" width="180" height="80" />
+      </dmndi:DMNShape>
+    </dmndi:DMNDiagram>
+  </dmndi:DMNDI>
+</definitions>

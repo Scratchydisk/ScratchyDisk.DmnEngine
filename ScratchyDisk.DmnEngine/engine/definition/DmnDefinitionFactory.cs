@@ -32,7 +32,7 @@ namespace ScratchyDisk.DmnEngine.Engine.Definition
         /// <summary>
         /// Default known types recognized by factory
         /// </summary>
-        public static Dictionary<string, Type> DefaultKnowTypes = new Dictionary<string, Type>()
+        public static readonly Dictionary<string, Type> DefaultKnowTypes = new Dictionary<string, Type>()
         {
             { "string", typeof(string) },
             { "boolean", typeof(bool) },
@@ -115,9 +115,35 @@ namespace ScratchyDisk.DmnEngine.Engine.Definition
         public static DmnDefinition CreateDmnDefinition(DmnModel source)
         {
             if (source == null) throw new ArgumentNullException(nameof(source));
-
+            ValidateExpressionLanguages(source);
             var factory = new DmnDefinitionFactory(source);
             return factory.ProcessModel();
+        }
+        private static void ValidateExpressionLanguages(DmnModel source)
+        {
+            foreach (var decision in source.Decisions ?? Enumerable.Empty<Decision>())
+            {
+                ValidateExpressionLanguage(decision.Expression);
+                var table = decision.DecisionTable;
+                if (table == null) continue;
+                foreach (var input in table.Inputs ?? Enumerable.Empty<DecisionTableInput>())
+                    ValidateExpressionLanguage(input.InputExpression);
+                foreach (var rule in table.Rules ?? Enumerable.Empty<DecisionRule>())
+                {
+                    foreach (var entry in rule.InputEntries ?? Enumerable.Empty<Expression>())
+                        ValidateExpressionLanguage(entry);
+                    foreach (var entry in rule.OutputEntries ?? Enumerable.Empty<Expression>())
+                        ValidateExpressionLanguage(entry);
+                }
+            }
+        }
+        private static void ValidateExpressionLanguage(Expression expression)
+        {
+            if (string.IsNullOrWhiteSpace(expression?.Language)) return;
+            if (!string.Equals(expression.Language.Trim(), DmnExpressionLanguage.BFeel, StringComparison.OrdinalIgnoreCase))
+                return;
+            throw Logger.Fatal<DmnParserException>(
+                $"B-FEEL expression language is not supported: {DmnExpressionLanguage.BFeel}. Supported expression language: FEEL.");
         }
 
         /// <summary>
@@ -508,10 +534,12 @@ namespace ScratchyDisk.DmnEngine.Engine.Definition
                 {
                     //legacy mapping pre V1_3ext
                     //Label, Name, Id
-                    sourceVariableName =
-                    !string.IsNullOrWhiteSpace(sourceOutput.Label) ? sourceOutput.Label :
-                    !string.IsNullOrWhiteSpace(sourceOutput.Name) ? sourceOutput.Name :
-                    sourceOutput.Id;
+                    if (!string.IsNullOrWhiteSpace(sourceOutput.Label))
+                        sourceVariableName = sourceOutput.Label;
+                    else if (!string.IsNullOrWhiteSpace(sourceOutput.Name))
+                        sourceVariableName = sourceOutput.Name;
+                    else
+                        sourceVariableName = sourceOutput.Id;
                 }
                 else
                 {
@@ -620,7 +648,9 @@ namespace ScratchyDisk.DmnEngine.Engine.Definition
                 var allowedValues = sourceInput.AllowedInputValues?.Values;
                 var inputLabel = !string.IsNullOrWhiteSpace(xmlLabel) ? xmlLabel : isVariableInput ? sourceVariableName : null; //label??variable??null(will default to Input#n)
 
-                inputs.Add(new DmnDecisionTableInput(inputIdx, variable, expression, allowedValues, inputLabel));
+                inputs.Add(new DmnDecisionTableInput(
+                    inputIdx, variable, expression, allowedValues, inputLabel,
+                    DmnExpressionLanguage.Resolve(sourceInput.InputExpression?.Language)));
                 inputIdx++;
             }
 
@@ -648,7 +678,9 @@ namespace ScratchyDisk.DmnEngine.Engine.Definition
                 {
                     if (!string.IsNullOrWhiteSpace(sourceRuleInputEntry.Text) && sourceRuleInputEntry.Text != "-") //don't create rule inputs with no condition - can be also represented as single dash
                     {
-                        var ruleInput = new DmnDecisionTableRuleInput(inputs[ruleInputIdx], sourceRuleInputEntry.Text);
+                        var ruleInput = new DmnDecisionTableRuleInput(
+                            inputs[ruleInputIdx], sourceRuleInputEntry.Text,
+                            DmnExpressionLanguage.Resolve(sourceRuleInputEntry.Language));
                         ruleInputs.Add(ruleInput);
                     }
                     ruleInputIdx++;
@@ -658,7 +690,9 @@ namespace ScratchyDisk.DmnEngine.Engine.Definition
                 var ruleOutputIdx = 0;
                 foreach (var sourceRuleOutputEntry in sourceRule.OutputEntries)
                 {
-                    var ruleOutput = new DmnDecisionTableRuleOutput(outputs[ruleOutputIdx], sourceRuleOutputEntry.Text);
+                    var ruleOutput = new DmnDecisionTableRuleOutput(
+                        outputs[ruleOutputIdx], sourceRuleOutputEntry.Text,
+                        DmnExpressionLanguage.Resolve(sourceRuleOutputEntry.Language));
                     ruleOutputs.Add(ruleOutput);
                     ruleOutputIdx++;
                 }
@@ -724,7 +758,10 @@ namespace ScratchyDisk.DmnEngine.Engine.Definition
             var expr = $"{sourceDecision.Expression.Text}";
 
             //create
-            var expressionDecision = new DmnExpressionDecision(decisionName, expr, variable, requiredInputs, requiredDecisions, label: decisionName);
+            var expressionDecision = new DmnExpressionDecision(
+                decisionName, expr, variable, requiredInputs, requiredDecisions,
+                label: decisionName,
+                dialect: DmnExpressionLanguage.Resolve(sourceDecision.Expression.Language));
             return expressionDecision;
         }
 

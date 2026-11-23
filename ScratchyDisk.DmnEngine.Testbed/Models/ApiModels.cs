@@ -25,6 +25,8 @@ public class DefinitionInfo
 public class FileMetadata
 {
     public string DmnVersion { get; set; }
+    public string ExpressionLanguage { get; set; }
+    public string DialectStatus { get; set; }
     public string DefinitionName { get; set; }
     public string Namespace { get; set; }
     public string Exporter { get; set; }

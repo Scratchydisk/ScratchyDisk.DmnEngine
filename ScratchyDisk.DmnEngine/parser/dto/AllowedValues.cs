@@ -25,7 +25,7 @@ namespace ScratchyDisk.DmnEngine.Parser.Dto
                 : Text.Split(',').Select(i =>
                 {
                     var s = i.Trim();
-                    if (s.StartsWith("\"") && s.EndsWith("\"")) s = s.Substring(1, s.Length - 2);
+                    if (s.StartsWith('"') && s.EndsWith('"')) s = s.Substring(1, s.Length - 2);
                     return s;
 
                 }).ToArray();
@@ -53,7 +53,6 @@ namespace ScratchyDisk.DmnEngine.Parser.Dto
             reader.MoveToContent();
             reader.ReadStartElement();
             reader.MoveToContent();
-            //Text = reader.ReadElementString("text");
             Text = reader.ReadElementContentAsString("text",reader.NamespaceURI);
             reader.ReadEndElement();
         }

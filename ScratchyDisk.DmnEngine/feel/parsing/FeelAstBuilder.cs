@@ -260,6 +260,12 @@ namespace ScratchyDisk.DmnEngine.Feel.Parsing
             var member = context.simpleName().GetText();
             return new PathNode(source, member);
         }
+        public override FeelAstNode VisitPostfixDescendant(FeelParser.PostfixDescendantContext context)
+        {
+            var source = Visit(context.postfixExpression());
+            var name = context.simpleName().GetText();
+            return new DescendantNode(source, name);
+        }
 
         public override FeelAstNode VisitPostfixFilter(FeelParser.PostfixFilterContext context)
         {
@@ -334,6 +340,15 @@ namespace ScratchyDisk.DmnEngine.Feel.Parsing
         {
             return Visit(context.expression());
         }
+        public override FeelAstNode VisitPrimaryRange(FeelParser.PrimaryRangeContext context)
+        {
+            var range = context.rangeLiteral();
+            var low = range.low == null ? null : Visit(range.low);
+            var high = range.high == null ? null : Visit(range.high);
+            var lowInclusive = range.intervalStartBracket().LBRACKET() != null;
+            var highInclusive = range.intervalEndBracket().RBRACKET() != null;
+            return new RangeNode(low, lowInclusive, high, highInclusive);
+        }
 
         public override FeelAstNode VisitPrimaryList(FeelParser.PrimaryListContext context)
         {
@@ -349,12 +364,12 @@ namespace ScratchyDisk.DmnEngine.Feel.Parsing
 
         public override FeelAstNode VisitLiteralInteger(FeelParser.LiteralIntegerContext context)
         {
-            return new NumberLiteral(decimal.Parse(context.IntegerLiteral().GetText(), CultureInfo.InvariantCulture));
+            return new NumberLiteral(decimal.Parse(context.IntegerLiteral().GetText(), NumberStyles.Float, CultureInfo.InvariantCulture));
         }
 
         public override FeelAstNode VisitLiteralFloat(FeelParser.LiteralFloatContext context)
         {
-            return new NumberLiteral(decimal.Parse(context.FloatLiteral().GetText(), CultureInfo.InvariantCulture));
+            return new NumberLiteral(decimal.Parse(context.FloatLiteral().GetText(), NumberStyles.Float, CultureInfo.InvariantCulture));
         }
 
         public override FeelAstNode VisitLiteralString(FeelParser.LiteralStringContext context)

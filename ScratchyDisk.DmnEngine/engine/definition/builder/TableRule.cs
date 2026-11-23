@@ -34,6 +34,7 @@ namespace ScratchyDisk.DmnEngine.Engine.Definition.Builder
     /// </summary>
     public sealed class TableRule : DmnBuilderElement<TableRule, DmnDecisionTableRule>
     {
+        private const string AlreadyBuiltMessage = "Table rule is already built";
         /// <summary>
         /// Index (order) of the rule within the decision table
         /// </summary>
@@ -112,7 +113,7 @@ namespace ScratchyDisk.DmnEngine.Engine.Definition.Builder
         /// <exception cref="DmnBuilderException">Throws <see cref="DmnBuilderException"/> when the <paramref name="inputRef"/> is not recognized as the valid table input</exception>
         private void SetInput(TableInput.Ref inputRef, string inputExpression)
         {
-            if (IsBuilt) throw Logger.Error<DmnBuilderException>("Table rule is already built");
+            if (IsBuilt) throw Logger.Error<DmnBuilderException>(AlreadyBuiltMessage);
 
             if (inputRef == null) throw new ArgumentNullException(nameof(inputRef));
             if (!AllTableInputs.ContainsKey(inputRef))
@@ -134,7 +135,7 @@ namespace ScratchyDisk.DmnEngine.Engine.Definition.Builder
         /// <exception cref="DmnBuilderException">Throws <see cref="DmnBuilderException"/> when the definition has already been built</exception>
         private void ClearInputs()
         {
-            if (IsBuilt) throw Logger.Error<DmnBuilderException>("Table rule is already built");
+            if (IsBuilt) throw Logger.Error<DmnBuilderException>(AlreadyBuiltMessage);
 
             InputsInternal.Clear();
         }
@@ -154,7 +155,7 @@ namespace ScratchyDisk.DmnEngine.Engine.Definition.Builder
         /// <exception cref="DmnBuilderException">Throws <see cref="DmnBuilderException"/> when the <paramref name="outputRef"/> is not recognized as the valid table output</exception>
         private void SetOutput(TableOutput.Ref outputRef, string outputExpression)
         {
-            if (IsBuilt) throw Logger.Error<DmnBuilderException>("Table rule is already built");
+            if (IsBuilt) throw Logger.Error<DmnBuilderException>(AlreadyBuiltMessage);
 
             if (outputRef == null) throw new ArgumentNullException(nameof(outputRef));
             if (!AllTableOutputs.ContainsKey(outputRef))
@@ -176,7 +177,7 @@ namespace ScratchyDisk.DmnEngine.Engine.Definition.Builder
         /// <exception cref="DmnBuilderException">Throws <see cref="DmnBuilderException"/> when the definition has already been built</exception>
         private void ClearOutputs()
         {
-            if (IsBuilt) throw Logger.Error<DmnBuilderException>("Table rule is already built");
+            if (IsBuilt) throw Logger.Error<DmnBuilderException>(AlreadyBuiltMessage);
 
             OutputsInternal.Clear();
         }

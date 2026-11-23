@@ -63,7 +63,7 @@ namespace ScratchyDisk.DmnEngine.Engine.Execution.Context
             set
             {
                 if (IsInputParameter) throw Logger.Error<DmnExecutorException>("Can't override input parameter");
-                SetValueInternal(value);
+                _value = CoerceValue(value);
             }
         }
 
@@ -91,18 +91,22 @@ namespace ScratchyDisk.DmnEngine.Engine.Execution.Context
         /// <exception cref="DmnExecutorException">Can't cast value to target type</exception>
         protected void SetValueInternal(object value)
         {
+            _value = CoerceValue(value);
+        }
+        /// <summary>
+        /// Coerces the value to the variable type.
+        /// </summary>
+        private object CoerceValue(object value)
+        {
             try
             {
                 if (Type != null && value != null)
                 {
                     // Try FEEL type coercion first (handles decimal→int, DateOnly→DateTime, etc.)
                     var coerced = ScratchyDisk.DmnEngine.Feel.Types.FeelTypeCoercion.CoerceToClr(value, Type);
-                    _value = coerced ?? Convert.ChangeType(value, Type);
+                    return coerced ?? Convert.ChangeType(value, Type);
                 }
-                else
-                {
-                    _value = value;
-                }
+                return value;
             }
             catch (Exception ex)
                 when (ex is InvalidCastException ||
@@ -117,6 +121,7 @@ namespace ScratchyDisk.DmnEngine.Engine.Execution.Context
             catch (Exception ex) when (Logger.FatalFltr(ex))
             {
                 //just log it and as Logger.FatalFltr returns false by default, the exception will not be catch (will be thrown)
+                return value;
             }
         }
 
@@ -158,7 +163,6 @@ namespace ScratchyDisk.DmnEngine.Engine.Execution.Context
         public virtual void SetInputParameterValue(object value)
         {
             if (!IsInputParameter) throw Logger.Error<DmnExecutorException>($"{Name} is not an input parameter");
-           // _value = value;
            SetValueInternal(value);
         }
 
@@ -174,6 +178,12 @@ namespace ScratchyDisk.DmnEngine.Engine.Execution.Context
         /// Gets the variable hashcode from name and value
         /// </summary>
         /// <returns>Variable hashcode</returns>
+        public override bool Equals(object obj)
+        {
+            return obj is DmnExecutionVariable other
+                   && string.Equals(Name, other.Name, StringComparison.Ordinal)
+                   && Equals(Value, other.Value);
+        }
         public override int GetHashCode()
         {
             unchecked

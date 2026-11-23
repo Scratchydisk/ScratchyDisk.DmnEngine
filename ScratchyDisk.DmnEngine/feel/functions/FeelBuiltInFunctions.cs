@@ -3,7 +3,9 @@ using System.Collections.Generic;
 using System.Globalization;
 using System.Linq;
 using System.Text.RegularExpressions;
+using ScratchyDisk.DmnEngine.Feel.Eval;
 using ScratchyDisk.DmnEngine.Feel.Types;
+using ScratchyDisk.DmnEngine.Utils;
 
 namespace ScratchyDisk.DmnEngine.Feel.Functions
 {
@@ -175,7 +177,7 @@ namespace ScratchyDisk.DmnEngine.Feel.Functions
                 }
                 try
                 {
-                    return (object)Regex.IsMatch(input, pattern, regexOpts);
+                    return (object)Regex.IsMatch(input, pattern, regexOpts, RegexDefaults.Timeout);
                 }
                 catch
                 {
@@ -199,7 +201,7 @@ namespace ScratchyDisk.DmnEngine.Feel.Functions
                 }
                 try
                 {
-                    return Regex.Replace(input, pattern, replacement, regexOpts);
+                    return Regex.Replace(input, pattern, replacement, regexOpts, RegexDefaults.Timeout);
                 }
                 catch
                 {
@@ -234,7 +236,7 @@ namespace ScratchyDisk.DmnEngine.Feel.Functions
                 var n = ArgDecimal(args, 0);
                 var scale = ArgDecimal(args, 1);
                 if (n == null || scale == null) return null;
-                return Math.Round(n.Value, (int)scale.Value, MidpointRounding.AwayFromZero);
+                return Math.Round(n.Value, (int)scale.Value, MidpointRounding.ToEven);
             });
 
             Register("floor", new[] { "n" }, args =>
@@ -258,7 +260,7 @@ namespace ScratchyDisk.DmnEngine.Feel.Functions
             Register("round up", new[] { "n", "scale" }, args =>
             {
                 var n = ArgDecimal(args, 0);
-                var scale = ArgDecimal(args, 1);
+                var scale = args.Length > 1 ? ArgDecimal(args, 1) : 0m;
                 if (n == null || scale == null) return null;
                 var factor = PowerOf10(scale.Value);
                 return n.Value >= 0
@@ -269,7 +271,7 @@ namespace ScratchyDisk.DmnEngine.Feel.Functions
             Register("round down", new[] { "n", "scale" }, args =>
             {
                 var n = ArgDecimal(args, 0);
-                var scale = ArgDecimal(args, 1);
+                var scale = args.Length > 1 ? ArgDecimal(args, 1) : 0m;
                 if (n == null || scale == null) return null;
                 var factor = PowerOf10(scale.Value);
                 return n.Value >= 0
@@ -280,7 +282,7 @@ namespace ScratchyDisk.DmnEngine.Feel.Functions
             Register("round half up", new[] { "n", "scale" }, args =>
             {
                 var n = ArgDecimal(args, 0);
-                var scale = ArgDecimal(args, 1);
+                var scale = args.Length > 1 ? ArgDecimal(args, 1) : 0m;
                 if (n == null || scale == null) return null;
                 return Math.Round(n.Value, (int)scale.Value, MidpointRounding.AwayFromZero);
             });
@@ -288,9 +290,9 @@ namespace ScratchyDisk.DmnEngine.Feel.Functions
             Register("round half down", new[] { "n", "scale" }, args =>
             {
                 var n = ArgDecimal(args, 0);
-                var scale = ArgDecimal(args, 1);
+                var scale = args.Length > 1 ? ArgDecimal(args, 1) : 0m;
                 if (n == null || scale == null) return null;
-                return Math.Round(n.Value, (int)scale.Value, MidpointRounding.ToEven);
+                return RoundHalfDown(n.Value, (int)scale.Value);
             });
 
             Register("abs", new[] { "n" }, args =>
@@ -353,6 +355,51 @@ namespace ScratchyDisk.DmnEngine.Feel.Functions
             decimal result = 1;
             for (var i = 0; i < Math.Abs(s); i++) result *= 10;
             return s >= 0 ? result : 1 / result;
+        }
+        /// <summary>
+        /// FEEL round half down: exact ties go toward zero, all other values round normally.
+        /// </summary>
+        private static decimal RoundHalfDown(decimal n, int scale)
+        {
+            var factor = PowerOf10(scale);
+            var scaled = n * factor;
+            var truncated = Math.Truncate(scaled);
+            if (Math.Abs(scaled - truncated) == 0.5m)
+                return truncated / factor;
+            return Math.Round(n, scale, MidpointRounding.AwayFromZero);
+        }
+        /// <summary>
+        /// Resolves an IANA or Windows time zone identifier, accepting "Z" and "UTC".
+        /// </summary>
+        private static TimeZoneInfo ResolveTimeZone(string identifier)
+        {
+            if (string.IsNullOrWhiteSpace(identifier)) return null;
+            if (identifier == "Z" || string.Equals(identifier, "UTC", StringComparison.OrdinalIgnoreCase))
+                return TimeZoneInfo.Utc;
+            try
+            {
+                return TimeZoneInfo.FindSystemTimeZoneById(identifier);
+            }
+            catch (TimeZoneNotFoundException)
+            {
+            }
+            catch (InvalidTimeZoneException)
+            {
+            }
+            if (TimeZoneInfo.TryConvertIanaIdToWindowsId(identifier, out var windowsId))
+            {
+                try
+                {
+                    return TimeZoneInfo.FindSystemTimeZoneById(windowsId);
+                }
+                catch (TimeZoneNotFoundException)
+                {
+                }
+                catch (InvalidTimeZoneException)
+                {
+                }
+            }
+            return null;
         }
 
         // ==================== List Functions ====================
@@ -510,6 +557,34 @@ namespace ScratchyDisk.DmnEngine.Feel.Functions
                 return (object)result;
             });
 
+            Register("list replace", new[] { "list", "position", "newItem" }, args =>
+            {
+                var list = ArgList(args, 0);
+                var selector = Arg(args, 1);
+                var newItem = Arg(args, 2);
+                if (list == null || selector == null) return null;
+
+                if (selector is FeelFunction match)
+                {
+                    var result = new List<object>(list);
+                    for (var i = 0; i < list.Count; i++)
+                    {
+                        if (match.Invoke(list[i], newItem) is bool replace && replace)
+                            result[i] = newItem;
+                    }
+                    return (object)result;
+                }
+
+                if (!FeelValueComparer.IsNumeric(selector)) return null;
+                var position = FeelValueComparer.ToDecimal(selector);
+                var idx = (int)position;
+                if (idx == 0) return null;
+                idx = idx > 0 ? idx - 1 : list.Count + idx;
+                if (idx < 0 || idx >= list.Count) return null;
+                var replaced = new List<object>(list);
+                replaced[idx] = newItem;
+                return (object)replaced;
+            });
             Register("reverse", new[] { "list" }, args =>
             {
                 var list = ArgList(args, 0);
@@ -765,6 +840,19 @@ namespace ScratchyDisk.DmnEngine.Feel.Functions
                         date = dp;
                     else return null;
 
+                    if (args.Length >= 3 && Arg(args, 2) is string timezone)
+                    {
+                        var zone = ResolveTimeZone(timezone);
+                        if (zone == null) return null;
+                        TimeOnly time;
+                        if (timeVal is FeelTime zonedTime) time = zonedTime.Time;
+                        else if (timeVal is string zonedTimeString && TryParseTime(zonedTimeString, out var parsedTime))
+                            time = parsedTime.Time;
+                        else return null;
+                        var local = date.ToDateTime(time, DateTimeKind.Unspecified);
+                        if (zone.IsInvalidTime(local)) return null;
+                        return new DateTimeOffset(local, zone.GetUtcOffset(local));
+                    }
                     if (timeVal is FeelTime ft)
                         return new DateTimeOffset(date.ToDateTime(ft.Time), ft.Offset ?? TimeSpan.Zero);
                     if (timeVal is string ts && TryParseTime(ts, out var t))
@@ -774,6 +862,16 @@ namespace ScratchyDisk.DmnEngine.Feel.Functions
                 var val = Arg(args, 0);
                 if (val is string s)
                 {
+                    var at = s.LastIndexOf('@');
+                    if (at > 0)
+                    {
+                        var zone = ResolveTimeZone(s.Substring(at + 1));
+                        if (zone == null) return null;
+                        if (!DateTime.TryParse(s.Substring(0, at), CultureInfo.InvariantCulture, DateTimeStyles.None, out var local))
+                            return null;
+                        if (zone.IsInvalidTime(local)) return null;
+                        return new DateTimeOffset(local, zone.GetUtcOffset(local));
+                    }
                     if (DateTimeOffset.TryParse(s, CultureInfo.InvariantCulture, DateTimeStyles.None, out var dto))
                         return dto;
                     return null;
@@ -849,7 +947,7 @@ namespace ScratchyDisk.DmnEngine.Feel.Functions
         private static bool TryParseTime(string raw, out FeelTime result)
         {
             result = default;
-            var match = Regex.Match(raw, @"^(\d{1,2}):(\d{2})(?::(\d{2})(?:\.(\d+))?)?(?:(Z)|([+-]\d{2}:\d{2}))?$");
+            var match = Regex.Match(raw, @"^(\d{1,2}):(\d{2})(?::(\d{2})(?:\.(\d+))?)?(?:(Z)|([+-]\d{2}:\d{2})|@(.+))?$", RegexOptions.None, RegexDefaults.Timeout);
             if (!match.Success) return false;
             var hour = int.Parse(match.Groups[1].Value);
             var minute = int.Parse(match.Groups[2].Value);
@@ -857,24 +955,30 @@ namespace ScratchyDisk.DmnEngine.Feel.Functions
             TimeSpan? offset = null;
             if (match.Groups[5].Success) offset = TimeSpan.Zero;
             else if (match.Groups[6].Success) offset = TimeSpan.Parse(match.Groups[6].Value);
+            else if (match.Groups[7].Success)
+            {
+                var zone = ResolveTimeZone(match.Groups[7].Value);
+                if (zone == null) return false;
+                offset = zone.GetUtcOffset(DateTimeOffset.UtcNow);
+            }
             result = new FeelTime(hour, minute, second, offset);
             return true;
         }
 
         private static object ParseDuration(string s)
         {
-            var negative = s.StartsWith("-");
+            var negative = s.StartsWith('-');
             var raw = negative ? s.Substring(1) : s;
-            if (!raw.StartsWith("P")) return null;
+            if (!raw.StartsWith('P')) return null;
             raw = raw.Substring(1);
 
             if (!raw.Contains('T') && !raw.Contains('D') && !raw.Contains('H') && !raw.Contains('S'))
             {
                 var years = 0;
                 var months = 0;
-                var yMatch = Regex.Match(raw, @"(\d+)Y");
+                var yMatch = Regex.Match(raw, @"(\d+)Y", RegexOptions.None, RegexDefaults.Timeout);
                 if (yMatch.Success) years = int.Parse(yMatch.Groups[1].Value);
-                var mMatch = Regex.Match(raw, @"(\d+)M");
+                var mMatch = Regex.Match(raw, @"(\d+)M", RegexOptions.None, RegexDefaults.Timeout);
                 if (mMatch.Success) months = int.Parse(mMatch.Groups[1].Value);
                 var total = years * 12 + months;
                 if (negative) total = -total;
@@ -885,17 +989,17 @@ namespace ScratchyDisk.DmnEngine.Feel.Functions
             var hours = 0;
             var minutes = 0;
             var seconds = 0;
-            var dMatch = Regex.Match(raw, @"(\d+)D");
+            var dMatch = Regex.Match(raw, @"(\d+)D", RegexOptions.None, RegexDefaults.Timeout);
             if (dMatch.Success) days = int.Parse(dMatch.Groups[1].Value);
             var tIdx = raw.IndexOf('T');
             if (tIdx >= 0)
             {
                 var timePart = raw.Substring(tIdx + 1);
-                var hMatch = Regex.Match(timePart, @"(\d+)H");
+                var hMatch = Regex.Match(timePart, @"(\d+)H", RegexOptions.None, RegexDefaults.Timeout);
                 if (hMatch.Success) hours = int.Parse(hMatch.Groups[1].Value);
-                var minMatch = Regex.Match(timePart, @"(\d+)M");
+                var minMatch = Regex.Match(timePart, @"(\d+)M", RegexOptions.None, RegexDefaults.Timeout);
                 if (minMatch.Success) minutes = int.Parse(minMatch.Groups[1].Value);
-                var sMatch = Regex.Match(timePart, @"(\d+)S");
+                var sMatch = Regex.Match(timePart, @"(\d+)S", RegexOptions.None, RegexDefaults.Timeout);
                 if (sMatch.Success) seconds = int.Parse(sMatch.Groups[1].Value);
             }
             var ts = new TimeSpan(days, hours, minutes, seconds);
@@ -938,6 +1042,25 @@ namespace ScratchyDisk.DmnEngine.Feel.Functions
                 if (val is TimeSpan ts) return FormatTimeSpanDuration(ts);
                 if (val is FeelYmDuration ym) return ym.ToString();
                 return val.ToString();
+            });
+            Register("range", new[] { "from" }, args =>
+            {
+                var text = ArgString(args, 0);
+                if (string.IsNullOrWhiteSpace(text)) return null;
+                try
+                {
+                    var value = new FeelEngine().EvaluateExpression(
+                        text,
+                        new FeelEvaluationContext());
+                    var range = value as FeelRange;
+                    if (range == null) return null;
+                    // Both endpoints unbounded is not a valid range string.
+                    return range.LowEndpoint == null && range.HighEndpoint == null ? null : range;
+                }
+                catch
+                {
+                    return null;
+                }
             });
         }
 
@@ -1083,6 +1206,18 @@ namespace ScratchyDisk.DmnEngine.Feel.Functions
                 var bEndsBefore = bBeforeA < 0 || (bBeforeA == 0 && !(b.HighInclusive && a.LowInclusive));
                 return (object)(!aEndsBefore && !bEndsBefore);
             });
+            Register("overlaps before", new[] { "range1", "range2" }, args =>
+            {
+                var a = Arg(args, 0) as FeelRange;
+                var b = Arg(args, 1) as FeelRange;
+                return OverlapsBefore(a, b);
+            });
+            Register("overlaps after", new[] { "range1", "range2" }, args =>
+            {
+                var a = Arg(args, 0) as FeelRange;
+                var b = Arg(args, 1) as FeelRange;
+                return OverlapsBefore(b, a);
+            });
 
             Register("includes", new[] { "range", "point" }, args =>
             {
@@ -1162,6 +1297,16 @@ namespace ScratchyDisk.DmnEngine.Feel.Functions
             });
         }
 
+        private static bool? OverlapsBefore(FeelRange a, FeelRange b)
+        {
+            if (a == null || b == null) return null;
+            var start = FeelValueComparer.Compare(a.LowEndpoint, b.LowEndpoint);
+            var end = FeelValueComparer.Compare(a.HighEndpoint, b.LowEndpoint);
+            if (start == null || end == null) return null;
+            var startOk = start < 0 || (start == 0 && a.LowInclusive && !b.LowInclusive);
+            var endOk = end > 0 || (end == 0 && a.HighInclusive && b.LowInclusive);
+            return startOk && endOk;
+        }
         private static object RangeRelation(object a, object b, string relation)
         {
             // Point before/after point

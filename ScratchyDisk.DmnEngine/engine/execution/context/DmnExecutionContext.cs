@@ -42,6 +42,10 @@ namespace ScratchyDisk.DmnEngine.Engine.Execution.Context
         /// Shared FEEL engine instance
         /// </summary>
         protected static readonly FeelEngine FeelEngine = new();
+        /// <summary>
+        /// Returns the FEEL engine used by this context. Override to inject a dialect-aware engine in tests.
+        /// </summary>
+        protected virtual FeelEngine GetFeelEngine() => FeelEngine;
 
         /// <summary>
         /// Unique identifier of the execution context (set at CTOR)
@@ -69,6 +73,18 @@ namespace ScratchyDisk.DmnEngine.Engine.Execution.Context
         /// Snapshots of the context state during the execution
         /// </summary>
         public DmnExecutionSnapshots Snapshots { get; } = new DmnExecutionSnapshots();
+        private readonly List<DmnDiagnostic> diagnostics = new();
+        /// <summary>
+        /// Semantic errors collected during lenient execution.
+        /// </summary>
+        public IReadOnlyList<DmnDiagnostic> Diagnostics => diagnostics;
+        /// <summary>
+        /// Adds a semantic error to the execution diagnostics.
+        /// </summary>
+        internal void AddDiagnostic(string decisionName, Exception exception)
+        {
+            diagnostics.Add(new DmnDiagnostic(decisionName, exception.Message, exception.GetType().Name));
+        }
 
         /// <summary>
         /// Execution context options
@@ -101,6 +117,11 @@ namespace ScratchyDisk.DmnEngine.Engine.Execution.Context
             Decisions = decisions ?? throw Logger.Fatal<ArgumentNullException>($"{nameof(decisions)} is null");
 
             configure?.Invoke(options);
+            if (!Enum.IsDefined(options.ErrorHandlingMode))
+                throw new ArgumentOutOfRangeException(
+                    nameof(configure),
+                    options.ErrorHandlingMode,
+                    "Unsupported DMN error handling mode");
         }
 
         /// <summary>
@@ -117,6 +138,7 @@ namespace ScratchyDisk.DmnEngine.Engine.Execution.Context
             }
 
             Snapshots.Reset();
+            diagnostics.Clear();
             return this;
         }
 
@@ -296,6 +318,13 @@ namespace ScratchyDisk.DmnEngine.Engine.Execution.Context
         /// <returns>The expression result converted to <paramref name="outputType"/></returns>
         public virtual object EvalExpression(string expression, Type outputType, string executionId)
         {
+            return EvalExpression(expression, outputType, executionId, FeelDialect.Feel);
+        }
+        /// <summary>
+        /// Evaluates an expression using the selected FEEL dialect.
+        /// </summary>
+        public virtual object EvalExpression(string expression, Type outputType, string executionId, FeelDialect dialect)
+        {
             if (string.IsNullOrWhiteSpace(expression))
                 throw Logger.Fatal<ArgumentException>($"{nameof(expression)} is null or empty");
             if (outputType == null) throw Logger.Fatal<ArgumentNullException>($"{nameof(outputType)} is null");
@@ -310,11 +339,11 @@ namespace ScratchyDisk.DmnEngine.Engine.Execution.Context
             {
                 try
                 {
-                    parsedAst = FeelEngine.ParseExpression(expression, scope);
+                    parsedAst = GetFeelEngine().ParseExpression(expression, scope);
                 }
                 catch (Exception exception)
                 {
-                    throw Logger.Fatal<DmnExecutorException>($"Exception while parsing the expression {expression}",
+                    throw Logger.Fatal<DmnEvaluationException>($"Exception while parsing the expression {expression}",
                         exception);
                 }
 
@@ -327,11 +356,11 @@ namespace ScratchyDisk.DmnEngine.Engine.Execution.Context
             object result;
             try
             {
-                result = FeelEngine.Evaluate(parsedAst, evalContext);
+                result = GetFeelEngine().Evaluate(parsedAst, evalContext, dialect);
             }
             catch (Exception exception)
             {
-                throw Logger.Fatal<DmnExecutorException>($"Exception while invoking the expression {expression}",
+                throw Logger.Fatal<DmnEvaluationException>($"Exception while invoking the expression {expression}",
                     exception);
             }
 
@@ -343,7 +372,7 @@ namespace ScratchyDisk.DmnEngine.Engine.Execution.Context
             }
             catch (Exception exception)
             {
-                throw Logger.Fatal<DmnExecutorException>($"Can't convert the expression result to {outputType.Name}",
+                throw Logger.Fatal<DmnEvaluationException>($"Can't convert the expression result to {outputType.Name}",
                     exception);
             }
 
@@ -360,6 +389,13 @@ namespace ScratchyDisk.DmnEngine.Engine.Execution.Context
         /// <returns>True if the input value matches the unary tests</returns>
         public virtual bool EvalUnaryTests(string unaryTestsExpression, object inputValue, string executionId)
         {
+            return EvalUnaryTests(unaryTestsExpression, inputValue, executionId, FeelDialect.Feel);
+        }
+        /// <summary>
+        /// Evaluates unary tests using the selected FEEL dialect.
+        /// </summary>
+        public virtual bool EvalUnaryTests(string unaryTestsExpression, object inputValue, string executionId, FeelDialect dialect)
+        {
             if (string.IsNullOrWhiteSpace(unaryTestsExpression))
                 throw Logger.Fatal<ArgumentException>($"{nameof(unaryTestsExpression)} is null or empty");
 
@@ -373,7 +409,7 @@ namespace ScratchyDisk.DmnEngine.Engine.Execution.Context
             {
                 try
                 {
-                    parsedAst = FeelEngine.ParseSimpleUnaryTests(unaryTestsExpression, scope);
+                    parsedAst = GetFeelEngine().ParseSimpleUnaryTests(unaryTestsExpression, scope);
                 }
                 catch
                 {
@@ -381,11 +417,11 @@ namespace ScratchyDisk.DmnEngine.Engine.Execution.Context
                     // (with or/and operators) in input entries, not just simple unary tests.
                     try
                     {
-                        parsedAst = FeelEngine.ParseExpression(unaryTestsExpression, scope);
+                        parsedAst = GetFeelEngine().ParseExpression(unaryTestsExpression, scope);
                     }
                     catch (Exception fallbackException)
                     {
-                        throw Logger.Fatal<DmnExecutorException>(
+                        throw Logger.Fatal<DmnEvaluationException>(
                             $"Exception while parsing the unary tests expression {unaryTestsExpression}", fallbackException);
                     }
                 }
@@ -400,12 +436,14 @@ namespace ScratchyDisk.DmnEngine.Engine.Execution.Context
 
             try
             {
+                if (dialect == FeelDialect.BFeel)
+                    throw new NotSupportedException("B-FEEL evaluation is not implemented. Supported dialect: FEEL.");
                 var evaluator = new FeelEvaluator(evalContext, ScratchyDisk.DmnEngine.Feel.Functions.FeelBuiltInFunctions.Resolve);
                 return evaluator.EvaluateAsUnaryTest(parsedAst);
             }
             catch (Exception exception)
             {
-                throw Logger.Fatal<DmnExecutorException>(
+                throw Logger.Fatal<DmnEvaluationException>(
                     $"Exception while evaluating the unary tests expression {unaryTestsExpression}", exception);
             }
         }
@@ -505,7 +543,10 @@ namespace ScratchyDisk.DmnEngine.Engine.Execution.Context
                     prefix = "";
                     break;
                 default:
-                    throw new ArgumentOutOfRangeException();
+                    throw new ArgumentOutOfRangeException(
+                        nameof(Options.ParsedExpressionCacheScope),
+                        Options.ParsedExpressionCacheScope,
+                        "Unsupported parsed-expression cache scope");
             }
 
             return $"{prefix}||{expression}||{outputType.AssemblyQualifiedName}";
@@ -610,7 +651,9 @@ namespace ScratchyDisk.DmnEngine.Engine.Execution.Context
                 {
                     if (!match.Groups[1].Success) return match.Value; // string literal — keep as-is
                     return $"{match.Groups[1].Value}(\"{match.Groups[2].Value}\")";
-                });
+                },
+                RegexOptions.None,
+                RegexDefaults.Timeout);
 
             return expression;
         }
@@ -625,10 +668,14 @@ namespace ScratchyDisk.DmnEngine.Engine.Execution.Context
         /// <returns>The expression result converted to <typeparamref name="TOutputType"/></returns>
         public TOutputType EvalExpression<TOutputType>(string expression, string executionId)
         {
+            return EvalExpression<TOutputType>(expression, executionId, FeelDialect.Feel);
+        }
+        public TOutputType EvalExpression<TOutputType>(string expression, string executionId, FeelDialect dialect)
+        {
             if (string.IsNullOrWhiteSpace(expression))
                 throw Logger.Fatal<ArgumentNullException>($"EvalExpression: - {nameof(expression)} is null or empty");
 
-            var result = EvalExpression(expression, typeof(TOutputType), executionId);
+            var result = EvalExpression(expression, typeof(TOutputType), executionId, dialect);
             var resultConverted = (TOutputType)result;
             return resultConverted;
         }

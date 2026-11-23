@@ -5,6 +5,7 @@ using System.Linq;
 using System.Text.RegularExpressions;
 using ScratchyDisk.DmnEngine.Feel.Ast;
 using ScratchyDisk.DmnEngine.Feel.Types;
+using ScratchyDisk.DmnEngine.Utils;
 
 namespace ScratchyDisk.DmnEngine.Feel.Eval
 {
@@ -77,6 +78,7 @@ namespace ScratchyDisk.DmnEngine.Feel.Eval
                 RangeNode range => EvalRange(range),
                 FilterNode filter => EvalFilter(filter),
                 PathNode path => EvalPath(path),
+                DescendantNode descendant => EvalDescendant(descendant),
 
                 // Functions
                 FunctionDefinitionNode fd => EvalFunctionDefinition(fd),
@@ -156,6 +158,17 @@ namespace ScratchyDisk.DmnEngine.Feel.Eval
             // List projection: list.member → [item.member for item in list]
             if (source is List<object> list)
                 return list.Select(item => AccessMember(item, member)).ToList();
+            if (source is FeelRange range)
+            {
+                return member switch
+                {
+                    "start" => range.LowEndpoint,
+                    "end" => range.HighEndpoint,
+                    "start included" => range.LowInclusive,
+                    "end included" => range.HighInclusive,
+                    _ => null
+                };
+            }
 
             // Try property access via reflection for CLR objects
             var prop = source.GetType().GetProperty(member);
@@ -174,6 +187,8 @@ namespace ScratchyDisk.DmnEngine.Feel.Eval
                     "year" => (decimal)d.Year,
                     "month" => (decimal)d.Month,
                     "day" => (decimal)d.Day,
+                    "weekday" => Weekday(d),
+                    "value" => (decimal)new DateTimeOffset(d.ToDateTime(TimeOnly.MinValue), TimeSpan.Zero).ToUnixTimeSeconds(),
                     _ => null
                 },
                 DateTimeOffset dt => member switch
@@ -181,11 +196,14 @@ namespace ScratchyDisk.DmnEngine.Feel.Eval
                     "year" => (decimal)dt.Year,
                     "month" => (decimal)dt.Month,
                     "day" => (decimal)dt.Day,
+                    "weekday" => Weekday(DateOnly.FromDateTime(dt.DateTime)),
                     "hour" => (decimal)dt.Hour,
                     "minute" => (decimal)dt.Minute,
                     "second" => (decimal)dt.Second,
+                    "value" => dt.ToUnixTimeMilliseconds() / 1000m,
                     "offset" => dt.Offset,
-                    "timezone" => dt.Offset,
+                    "time offset" => dt.Offset,
+                    "timezone" => null,
                     _ => null
                 },
                 FeelTime t => member switch
@@ -193,8 +211,10 @@ namespace ScratchyDisk.DmnEngine.Feel.Eval
                     "hour" => (decimal)t.Time.Hour,
                     "minute" => (decimal)t.Time.Minute,
                     "second" => (decimal)t.Time.Second,
+                    "value" => (decimal)(t.Time.Hour * 3600 + t.Time.Minute * 60 + t.Time.Second) + t.Time.Millisecond / 1000m,
                     "offset" => t.Offset,
-                    "timezone" => t.Offset,
+                    "time offset" => t.Offset,
+                    "timezone" => null,
                     _ => null
                 },
                 TimeSpan ts => member switch
@@ -203,16 +223,25 @@ namespace ScratchyDisk.DmnEngine.Feel.Eval
                     "hours" => (decimal)ts.Hours,
                     "minutes" => (decimal)ts.Minutes,
                     "seconds" => (decimal)ts.Seconds,
+                    "value" => (decimal)ts.TotalSeconds,
                     _ => null
                 },
                 FeelYmDuration ym => member switch
                 {
                     "years" => (decimal)ym.Years,
                     "months" => (decimal)ym.Months,
+                    "value" => (decimal)ym.TotalMonths,
                     _ => null
                 },
                 _ => null
             };
+        }
+        /// <summary>
+        /// ISO weekday: Monday = 1 ... Sunday = 7.
+        /// </summary>
+        private static decimal Weekday(DateOnly date)
+        {
+            return date.DayOfWeek == DayOfWeek.Sunday ? 7m : (decimal)date.DayOfWeek;
         }
 
         // ==================== Arithmetic ====================
@@ -743,6 +772,26 @@ namespace ScratchyDisk.DmnEngine.Feel.Eval
             var source = Evaluate(path.Source);
             return AccessMember(source, path.Member);
         }
+        private object EvalDescendant(DescendantNode descendant)
+        {
+            var source = Evaluate(descendant.Source);
+            if (source is not FeelContext context) return null;
+
+            var results = new List<object>();
+            CollectDescendant(context, descendant.Name, results);
+            return results;
+        }
+        private static void CollectDescendant(FeelContext context, string name, List<object> results)
+        {
+            foreach (var entry in context.Entries)
+            {
+                if (entry.Key == name)
+                    results.Add(entry.Value);
+
+                if (entry.Value is FeelContext child)
+                    CollectDescendant(child, name, results);
+            }
+        }
 
         // ==================== Functions ====================
 
@@ -906,7 +955,7 @@ namespace ScratchyDisk.DmnEngine.Feel.Eval
             result = default;
 
             // Match time patterns: HH:mm, HH:mm:ss, HH:mm:ss.fff, with optional offset
-            var match = Regex.Match(raw, @"^(\d{1,2}):(\d{2})(?::(\d{2})(?:\.(\d+))?)?(?:(Z)|([+-]\d{2}:\d{2}))?$");
+            var match = Regex.Match(raw, @"^(\d{1,2}):(\d{2})(?::(\d{2})(?:\.(\d+))?)?(?:(Z)|([+-]\d{2}:\d{2}))?$", RegexOptions.None, RegexDefaults.Timeout);
             if (!match.Success) return false;
 
             var hour = int.Parse(match.Groups[1].Value);
@@ -929,9 +978,9 @@ namespace ScratchyDisk.DmnEngine.Feel.Eval
             duration = null;
             if (string.IsNullOrEmpty(raw)) return false;
 
-            var negative = raw.StartsWith("-");
+            var negative = raw.StartsWith('-');
             var s = negative ? raw.Substring(1) : raw;
-            if (!s.StartsWith("P")) return false;
+            if (!s.StartsWith('P')) return false;
             s = s.Substring(1); // Remove P
 
             // Check if it's a years-and-months duration (no T, only Y and M)
@@ -939,9 +988,9 @@ namespace ScratchyDisk.DmnEngine.Feel.Eval
             {
                 var years = 0;
                 var months = 0;
-                var yMatch = Regex.Match(s, @"(\d+)Y");
+                var yMatch = Regex.Match(s, @"(\d+)Y", RegexOptions.None, RegexDefaults.Timeout);
                 if (yMatch.Success) years = int.Parse(yMatch.Groups[1].Value);
-                var mMatch = Regex.Match(s, @"(\d+)M");
+                var mMatch = Regex.Match(s, @"(\d+)M", RegexOptions.None, RegexDefaults.Timeout);
                 if (mMatch.Success) months = int.Parse(mMatch.Groups[1].Value);
                 var total = years * 12 + months;
                 if (negative) total = -total;
@@ -955,18 +1004,18 @@ namespace ScratchyDisk.DmnEngine.Feel.Eval
             var minutes = 0;
             var seconds = 0;
 
-            var dMatch = Regex.Match(s, @"(\d+)D");
+            var dMatch = Regex.Match(s, @"(\d+)D", RegexOptions.None, RegexDefaults.Timeout);
             if (dMatch.Success) days = int.Parse(dMatch.Groups[1].Value);
 
             var tIdx = s.IndexOf('T');
             if (tIdx >= 0)
             {
                 var timePart = s.Substring(tIdx + 1);
-                var hMatch = Regex.Match(timePart, @"(\d+)H");
+                var hMatch = Regex.Match(timePart, @"(\d+)H", RegexOptions.None, RegexDefaults.Timeout);
                 if (hMatch.Success) hours = int.Parse(hMatch.Groups[1].Value);
-                var minMatch = Regex.Match(timePart, @"(\d+)M");
+                var minMatch = Regex.Match(timePart, @"(\d+)M", RegexOptions.None, RegexDefaults.Timeout);
                 if (minMatch.Success) minutes = int.Parse(minMatch.Groups[1].Value);
-                var sMatch = Regex.Match(timePart, @"(\d+)S");
+                var sMatch = Regex.Match(timePart, @"(\d+)S", RegexOptions.None, RegexDefaults.Timeout);
                 if (sMatch.Success) seconds = int.Parse(sMatch.Groups[1].Value);
             }
 

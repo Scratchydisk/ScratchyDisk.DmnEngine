@@ -1,0 +1,12 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<definitions xmlns="https://www.omg.org/spec/DMN/20240513/MODEL/"
+             id="literal_def"
+             name="Literal fixture"
+             namespace="http://example.com/dmn16/literal">
+  <decision id="greeting" name="Greeting">
+    <literalExpression id="greeting_expression">
+      <text>"hello"</text>
+    </literalExpression>
+    <variable id="greeting_variable" name="Greeting" typeRef="string" />
+  </decision>
+</definitions>

@@ -1,0 +1,25 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<definitions xmlns="https://www.omg.org/spec/DMN/20240513/MODEL/"
+             id="drd_def"
+             name="DRD fixture"
+             namespace="http://example.com/dmn16/drd">
+  <inputData id="age_input" name="Age" />
+  <decision id="double_age_decision" name="DoubleAge">
+    <informationRequirement id="double_age_requirement">
+      <requiredInput href="#age_input" />
+    </informationRequirement>
+    <literalExpression id="double_age_expression">
+      <text>Age * 2</text>
+    </literalExpression>
+    <variable id="double_age_variable" name="DoubleAge" typeRef="number" />
+  </decision>
+  <decision id="eligible_decision" name="Eligible">
+    <informationRequirement id="eligible_requirement">
+      <requiredDecision href="#double_age_decision" />
+    </informationRequirement>
+    <literalExpression id="eligible_expression">
+      <text>DoubleAge &gt;= 36</text>
+    </literalExpression>
+    <variable id="eligible_variable" name="Eligible" typeRef="boolean" />
+  </decision>
+</definitions>

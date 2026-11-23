@@ -8,12 +8,15 @@ NLog.LogManager.Configuration = new NLog.Config.LoggingConfiguration();
 
 // Parse --dmn-dir from args
 var dmnDir = Directory.GetCurrentDirectory();
-for (var i = 0; i < args.Length; i++)
+var argIndex = 0;
+while (argIndex < args.Length)
 {
-    if (args[i].StartsWith("--dmn-dir="))
-        dmnDir = args[i]["--dmn-dir=".Length..];
-    else if (args[i] == "--dmn-dir" && i + 1 < args.Length)
-        dmnDir = args[++i];
+    if (args[argIndex].StartsWith("--dmn-dir="))
+        dmnDir = args[argIndex]["--dmn-dir=".Length..];
+    else if (args[argIndex] == "--dmn-dir" && argIndex + 1 < args.Length)
+        dmnDir = args[++argIndex];
+
+    argIndex++;
 }
 
 var builder = WebApplication.CreateBuilder(args);

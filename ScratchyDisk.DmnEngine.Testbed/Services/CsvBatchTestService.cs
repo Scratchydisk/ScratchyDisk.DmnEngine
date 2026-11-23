@@ -515,11 +515,8 @@ public class CsvBatchTestService
         }
 
         // Boolean comparison
-        if (bool.TryParse(expected, out var expectedBool))
-        {
-            if (actual is bool actualBool)
-                return expectedBool == actualBool;
-        }
+        if (bool.TryParse(expected, out var expectedBool) && actual is bool actualBool)
+            return expectedBool == actualBool;
 
         return false;
     }

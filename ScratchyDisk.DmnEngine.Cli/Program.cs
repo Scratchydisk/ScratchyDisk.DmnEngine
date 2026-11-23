@@ -40,7 +40,8 @@ try
             "1.3ext" or "1.3-ext" => DmnParser.DmnVersionEnum.V1_3ext,
             "1.4" => DmnParser.DmnVersionEnum.V1_4,
             "1.5" => DmnParser.DmnVersionEnum.V1_5,
-            _ => throw new ArgumentException($"Unknown DMN version: {versionOverride}. Supported: 1.1, 1.3, 1.3ext, 1.4, 1.5")
+            "1.6" => DmnParser.DmnVersionEnum.V1_6,
+            _ => throw new ArgumentException($"Unknown DMN version: {versionOverride}. Supported: 1.1, 1.3, 1.3ext, 1.4, 1.5, 1.6")
         };
     }
 
@@ -56,20 +57,19 @@ try
         return 0;
     }
 
-    var definition1 = DmnDefinitionFactory.CreateDmnDefinition(dmnModel);
-    var versionLabel = dmnModel.DmnVersion switch
+    var language = DmnExpressionLanguageInspector.Detect(File.ReadAllText(filePath));
+    if (!language.IsSupported)
     {
-        DmnParser.DmnVersionEnum.V1_1 => "DMN 1.1",
-        DmnParser.DmnVersionEnum.V1_3 => "DMN 1.3",
-        DmnParser.DmnVersionEnum.V1_3ext => "DMN 1.3ext",
-        DmnParser.DmnVersionEnum.V1_4 => "DMN 1.4",
-        DmnParser.DmnVersionEnum.V1_5 => "DMN 1.5",
-        _ => "DMN"
-    };
+        Console.Error.WriteLine($"Error: {language.ExpressionLanguage} expression language is not supported.");
+        return 1;
+    }
+
+    var definition1 = DmnDefinitionFactory.CreateDmnDefinition(dmnModel);
+    var versionLabel = DmnVersionInfo.GetDisplayName(dmnModel.DmnVersion);
 
     Console.WriteLine();
     Console.WriteLine($"=== DMN Smoke Test ===");
-    Console.WriteLine($"File: {Path.GetFileName(filePath)} ({versionLabel})");
+    Console.WriteLine($"File: {Path.GetFileName(filePath)} ({versionLabel}, {language.ExpressionLanguage})");
 
     // Print definition summary
     PrintDefinition(definition1);
@@ -188,7 +188,8 @@ static (string filePath, string csvPath, List<(string name, object value)> input
     string versionOverride = null;
     var inputs = new List<(string name, object value)>();
 
-    for (int i = 0; i < args.Length; i++)
+    var i = 0;
+    while (i < args.Length)
     {
         var arg = args[i];
 
@@ -223,7 +224,7 @@ static (string filePath, string csvPath, List<(string name, object value)> input
             if (parsed == null) { Console.Error.WriteLine($"Error: Invalid input format: {args[i]}. Expected Name=Value or Name:Type=Value."); return (null, null, inputs, null, null, null); }
             inputs.Add(parsed.Value);
         }
-        else if (!arg.StartsWith("-"))
+        else if (!arg.StartsWith('-'))
         {
             filePath = arg;
         }
@@ -232,6 +233,8 @@ static (string filePath, string csvPath, List<(string name, object value)> input
             Console.Error.WriteLine($"Error: Unknown option: {arg}");
             return (null, null, inputs, null, null, null);
         }
+
+        i++;
     }
 
     return (filePath, csvPath, inputs, decisionName, templatePath, versionOverride);
@@ -491,7 +494,8 @@ static List<string> SplitCsvLine(string line)
     var current = new System.Text.StringBuilder();
     bool inQuotes = false;
 
-    for (int i = 0; i < line.Length; i++)
+    var i = 0;
+    while (i < line.Length)
     {
         var ch = line[i];
         if (ch == '"')
@@ -515,6 +519,7 @@ static List<string> SplitCsvLine(string line)
         {
             current.Append(ch);
         }
+        i++;
     }
     result.Add(current.ToString());
     return result;
@@ -556,9 +561,12 @@ static void PrintDefinition(DmnDefinition definition)
         var deps = decision.RequiredDecisions.Count > 0
             ? "  requires: " + string.Join(", ", decision.RequiredDecisions.Select(d => d.Name))
             : "";
-        var inputDeps = decision.RequiredInputs.Count > 0
-            ? (deps.Length > 0 ? ", " : "  requires: ") + string.Join(", ", decision.RequiredInputs.Select(v => v.Name))
-            : "";
+        var inputDeps = "";
+        if (decision.RequiredInputs.Count > 0)
+        {
+            var separator = deps.Length > 0 ? ", " : "  requires: ";
+            inputDeps = separator + string.Join(", ", decision.RequiredInputs.Select(v => v.Name));
+        }
         var rootMarker = rootDecisions.Contains(decision) ? "  <- ROOT" : "";
         Console.WriteLine($"  {decision.Name,-30} {info}{deps}{inputDeps}{rootMarker}");
     }

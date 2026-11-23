@@ -32,5 +32,10 @@
         /// (common in Camunda exports), this ensures the values flow through correctly.
         /// </summary>
         public bool ResolveInputAliases { get; set; } = true;
+
+        /// <summary>
+        /// DMN 1.6 error handling mode (lenient by default).
+        /// </summary>
+        public DmnErrorHandlingMode ErrorHandlingMode { get; set; } = DmnErrorHandlingMode.Lenient;
     }
 }
