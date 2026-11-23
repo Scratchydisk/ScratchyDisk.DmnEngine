@@ -120,6 +120,16 @@ namespace ScratchyDisk.DmnEngine.Feel.Ast
         }
     }
 
+    public sealed class UnaryRangeNode : FeelAstNode
+    {
+        public ComparisonOperator Op { get; }
+        public FeelAstNode Value { get; }
+        public UnaryRangeNode(ComparisonOperator op, FeelAstNode value)
+        {
+            Op = op; Value = value;
+        }
+    }
+
     public sealed class InNode : FeelAstNode
     {
         public FeelAstNode Value { get; }

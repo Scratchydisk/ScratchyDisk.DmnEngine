@@ -302,6 +302,11 @@ namespace ScratchyDisk.DmnEngine.Feel.Parsing
             return new FunctionInvocation(fn, Array.Empty<FeelAstNode>());
         }
 
+        public override FeelAstNode VisitPrimaryUnaryRange(FeelParser.PrimaryUnaryRangeContext context)
+        {
+            return new UnaryRangeNode(GetComparisonOp(context.compOp()), Visit(context.additiveExpression()));
+        }
+
         public override FeelAstNode VisitPostfixPrimary(FeelParser.PostfixPrimaryContext context)
         {
             return Visit(context.primary());

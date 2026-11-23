@@ -62,6 +62,7 @@ namespace ScratchyDisk.DmnEngine.Feel.Eval
                 Comparison cmp => EvalComparison(cmp),
                 Between bet => EvalBetween(bet),
                 InNode inNode => EvalIn(inNode),
+                UnaryRangeNode unaryRange => EvalUnaryRange(unaryRange),
                 InstanceOf io => EvalInstanceOf(io),
 
                 // Logic
@@ -223,6 +224,8 @@ namespace ScratchyDisk.DmnEngine.Feel.Eval
                 FeelDateTime zdt => member switch
                 {
                     "timezone" => zdt.ZoneId,
+                    "offset" => string.IsNullOrEmpty(zdt.ZoneId) ? null : zdt.Value.Offset,
+                    "time offset" => string.IsNullOrEmpty(zdt.ZoneId) ? null : zdt.Value.Offset,
                     _ => AccessDateTimeComponent(zdt.Value, member)
                 },
                 DateTimeOffset dt => member switch
@@ -700,6 +703,20 @@ namespace ScratchyDisk.DmnEngine.Feel.Eval
             if (value is FeelFunction) return "function";
             if (value is List<object>) return "list";
             return FeelValueComparer.IsNumeric(value) ? "number" : null;
+        }
+
+        private object EvalUnaryRange(UnaryRangeNode node)
+        {
+            var value = Evaluate(node.Value);
+            return node.Op switch
+            {
+                ComparisonOperator.Lt => new FeelRange(null, false, value, false, true),
+                ComparisonOperator.Lte => new FeelRange(null, false, value, true, true),
+                ComparisonOperator.Gt => new FeelRange(value, false, null, false, true),
+                ComparisonOperator.Gte => new FeelRange(value, true, null, false, true),
+                ComparisonOperator.Eq => new FeelRange(value, true, value, true, true),
+                _ => new FeelRange(value, true, value, true, true)
+            };
         }
 
         private object EvalInstanceOf(InstanceOf io)

@@ -156,6 +156,7 @@ primary
     | rangeLiteral                                          # primaryRange
     | list                                                  # primaryList
     | context                                               # primaryContext
+    | compOp additiveExpression                             # primaryUnaryRange
     ;
 
 rangeLiteral

@@ -1774,7 +1774,7 @@ namespace ScratchyDisk.DmnEngine.Feel.Functions
                 var point = Arg(args, 0);
                 var range = Arg(args, 1) as FeelRange;
                 if (range == null) return null;
-                return FeelValueComparer.FeelEqual(point, range.LowEndpoint);
+                return range.LowInclusive && FeelValueComparer.FeelEqual(point, range.LowEndpoint) == true;
             });
 
             Register("started by", new[] { "range", "point" }, args =>
@@ -1782,7 +1782,7 @@ namespace ScratchyDisk.DmnEngine.Feel.Functions
                 var range = Arg(args, 0) as FeelRange;
                 var point = Arg(args, 1);
                 if (range == null) return null;
-                return FeelValueComparer.FeelEqual(range.LowEndpoint, point);
+                return range.LowInclusive && FeelValueComparer.FeelEqual(range.LowEndpoint, point) == true;
             });
 
             Register("finishes", new[] { "point", "range" }, args =>
@@ -1790,7 +1790,7 @@ namespace ScratchyDisk.DmnEngine.Feel.Functions
                 var point = Arg(args, 0);
                 var range = Arg(args, 1) as FeelRange;
                 if (range == null) return null;
-                return FeelValueComparer.FeelEqual(point, range.HighEndpoint);
+                return range.HighInclusive && FeelValueComparer.FeelEqual(point, range.HighEndpoint) == true;
             });
 
             Register("finished by", new[] { "range", "point" }, args =>
@@ -1798,7 +1798,7 @@ namespace ScratchyDisk.DmnEngine.Feel.Functions
                 var range = Arg(args, 0) as FeelRange;
                 var point = Arg(args, 1);
                 if (range == null) return null;
-                return FeelValueComparer.FeelEqual(range.HighEndpoint, point);
+                return range.HighInclusive && FeelValueComparer.FeelEqual(range.HighEndpoint, point) == true;
             });
 
             Register("coincides", new[] { "point1", "point2" }, args =>

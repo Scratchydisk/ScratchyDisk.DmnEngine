@@ -28,12 +28,17 @@ namespace ScratchyDisk.DmnEngine.Feel.Types
         /// </summary>
         public bool HighInclusive { get; }
 
-        public FeelRange(object lowEndpoint, bool lowInclusive, object highEndpoint, bool highInclusive)
+        /// <summary>True when created from a unary test such as &lt;10 rather than a range literal.</summary>
+        public bool IsUnaryTest { get; }
+
+        public FeelRange(object lowEndpoint, bool lowInclusive, object highEndpoint, bool highInclusive,
+            bool isUnaryTest = false)
         {
             LowEndpoint = lowEndpoint;
             HighEndpoint = highEndpoint;
             LowInclusive = lowInclusive;
             HighInclusive = highInclusive;
+            IsUnaryTest = isUnaryTest;
         }
 
         /// <summary>
@@ -81,6 +86,7 @@ namespace ScratchyDisk.DmnEngine.Feel.Types
         public override bool Equals(object obj)
         {
             if (obj is not FeelRange other) return false;
+            if (IsUnaryTest != other.IsUnaryTest) return false;
             return LowInclusive == other.LowInclusive &&
                    HighInclusive == other.HighInclusive &&
                    FeelValueComparer.FeelEqual(LowEndpoint, other.LowEndpoint) == true &&

@@ -1,25 +1,25 @@
 {
   "schemaVersion": 1,
-  "generatedUtc": "2026-11-23T15:13:08.9797073Z",
+  "generatedUtc": "2026-11-23T15:17:56.4097283Z",
   "tck": {
     "root": "artifacts/tck/TestCases",
     "commit": "a428da2f9c5ff2a4b8566ab511144e9022d743fe"
   },
   "engine": {
-    "version": "2.0.1\u002B0462129f9a3f54471f65b63e3390f672dcb1fa7b"
+    "version": "2.0.1\u002Bbc7455bec2418428c5d3729ca6d447a413478431"
   },
   "totals": {
     "total": 3437,
-    "pass": 3277,
-    "fail": 130,
+    "pass": 3290,
+    "fail": 117,
     "parseFail": 0,
     "notFound": 19,
     "unsupported": 11,
     "fixtureError": 0,
     "blocked": 30,
     "executed": 3407,
-    "passRate": 0.953447774221705,
-    "executedPassRate": 0.961843263868506
+    "passRate": 0.9572301425661914,
+    "executedPassRate": 0.9656589374816554
   },
   "cases": {
     "compliance-level-3/0004-lending/0004-lending-test-01.xml/001": {
@@ -162,38 +162,6 @@
       "status": "FAIL",
       "reason": "list size 2 vs 1"
     },
-    "compliance-level-3/0068-feel-equality/0068-feel-equality-test-01.xml/range_006": {
-      "status": "FAIL",
-      "reason": "expected a value, got null"
-    },
-    "compliance-level-3/0068-feel-equality/0068-feel-equality-test-01.xml/range_006_a": {
-      "status": "FAIL",
-      "reason": "expected a value, got null"
-    },
-    "compliance-level-3/0068-feel-equality/0068-feel-equality-test-01.xml/range_007": {
-      "status": "FAIL",
-      "reason": "expected a value, got null"
-    },
-    "compliance-level-3/0068-feel-equality/0068-feel-equality-test-01.xml/range_008": {
-      "status": "FAIL",
-      "reason": "expected a value, got null"
-    },
-    "compliance-level-3/0068-feel-equality/0068-feel-equality-test-01.xml/range_009": {
-      "status": "FAIL",
-      "reason": "expected a value, got null"
-    },
-    "compliance-level-3/0068-feel-equality/0068-feel-equality-test-01.xml/range_010": {
-      "status": "FAIL",
-      "reason": "expected a value, got null"
-    },
-    "compliance-level-3/0068-feel-equality/0068-feel-equality-test-01.xml/range_011": {
-      "status": "FAIL",
-      "reason": "expected a value, got null"
-    },
-    "compliance-level-3/0068-feel-equality/0068-feel-equality-test-01.xml/range_012": {
-      "status": "FAIL",
-      "reason": "expected a value, got null"
-    },
     "compliance-level-3/0072-feel-in/0072-feel-in-test-01.xml/boolean_001_a": {
       "status": "FAIL",
       "reason": "expected a value, got null"
@@ -201,26 +169,6 @@
     "compliance-level-3/0074-feel-properties/0074-feel-properties-test-01.xml/dateTime_008_a": {
       "status": "FAIL",
       "reason": "expected null, got a value"
-    },
-    "compliance-level-3/0074-feel-properties/0074-feel-properties-test-01.xml/range_006": {
-      "status": "FAIL",
-      "reason": "expected a value, got null"
-    },
-    "compliance-level-3/0074-feel-properties/0074-feel-properties-test-01.xml/range_007": {
-      "status": "FAIL",
-      "reason": "expected a value, got null"
-    },
-    "compliance-level-3/0074-feel-properties/0074-feel-properties-test-01.xml/range_009": {
-      "status": "FAIL",
-      "reason": "expected a value, got null"
-    },
-    "compliance-level-3/0074-feel-properties/0074-feel-properties-test-01.xml/range_010": {
-      "status": "FAIL",
-      "reason": "expected a value, got null"
-    },
-    "compliance-level-3/0074-feel-properties/0074-feel-properties-test-01.xml/range_011": {
-      "status": "FAIL",
-      "reason": "expected a value, got null"
     },
     "compliance-level-3/0076-feel-external-java/0076-feel-external-java-test-01.xml/boxed_001": {
       "status": "FAIL",
@@ -504,19 +452,19 @@
     },
     "compliance-level-3/1130-feel-interval/1130-feel-interval-test-01.xml/started by": {
       "status": "FAIL",
-      "reason": "entry \u0027startedbyRPF\u0027: false vs true"
+      "reason": "entry \u0027startedbyRRT\u0027: true vs false"
     },
     "compliance-level-3/1130-feel-interval/1130-feel-interval-test-01.xml/finishes": {
       "status": "FAIL",
-      "reason": "entry \u0027finishesPRF\u0027: false vs true"
+      "reason": "entry \u0027finishesRRT\u0027: true vs false"
     },
     "compliance-level-3/1130-feel-interval/1130-feel-interval-test-01.xml/finished by": {
       "status": "FAIL",
-      "reason": "entry \u0027finishedbyRPF\u0027: false vs true"
+      "reason": "entry \u0027finishedbyRRT\u0027: true vs false"
     },
     "compliance-level-3/1130-feel-interval/1130-feel-interval-test-01.xml/starts": {
       "status": "FAIL",
-      "reason": "entry \u0027startsPRF\u0027: false vs true"
+      "reason": "entry \u0027startsRRT\u0027: true vs false"
     },
     "compliance-level-3/1146-feel-context-put-function/1146-feel-context-put-function-test-01.xml/nested010": {
       "status": "FAIL",
