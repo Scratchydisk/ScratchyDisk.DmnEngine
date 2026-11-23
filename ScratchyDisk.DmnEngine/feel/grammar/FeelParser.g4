@@ -228,9 +228,18 @@ contextEntry
     : (key COLON)? expression
     ;
 
+// A context entry key is anything between the opening brace (or the previous
+// comma) and the colon: a quoted string, or a run of name and operator tokens.
+// The specification allows spaces in names ("foo bar") and the TCK also allows
+// operator characters ("foo+bar"); the colon is the only terminator, so the key
+// accepts every token that is not list/context punctuation.
 key
-    : simpleName
-    | StringLiteral
+    : StringLiteral
+    | keyToken+
+    ;
+
+keyToken
+    : ~(COLON | COMMA | LBRACE | RBRACE | EOF)
     ;
 
 // ===================== Type =====================

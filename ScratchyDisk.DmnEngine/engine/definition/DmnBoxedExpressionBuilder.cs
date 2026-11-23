@@ -19,7 +19,8 @@ namespace ScratchyDisk.DmnEngine.Engine.Definition
         /// Builds the body of a function definition (a business knowledge model body or a
         /// function-definition decision). Returns null when the definition has no body.
         /// </summary>
-        public static DmnBoxedExpression BuildFunctionBody(FunctionDefinition logic)
+        public static DmnBoxedExpression BuildFunctionBody(FunctionDefinition logic,
+            Func<string, string> resolveType = null)
         {
             if (logic == null) return null;
             if (logic.Expression != null && !string.IsNullOrWhiteSpace(logic.Expression.Text))
@@ -29,24 +30,26 @@ namespace ScratchyDisk.DmnEngine.Engine.Definition
             // to a function that returns another function.
             if (logic.Body != null)
             {
-                var nested = BuildFunctionBody(logic.Body);
+                var nested = BuildFunctionBody(logic.Body, resolveType);
                 return nested == null
                     ? null
                     : new DmnFunctionDefinitionBoxedExpression(ParameterNames(logic.Body), nested);
             }
 
-            return BuildConstruct(logic.Conditional, logic.For, logic.Some, logic.Every, logic.Filter)
+            return BuildConstruct(logic.Conditional, logic.For, logic.Some, logic.Every, logic.Filter,
+                    resolveType)
                 ?? BuildBody(logic.Context, logic.Relation, logic.List, logic.Invocation,
-                    logic.DecisionTable);
+                    logic.DecisionTable, resolveType);
         }
 
         /// <summary>
         /// Builds the boxed expression body of a decision, or null when the decision has no
         /// boxed expression body.
         /// </summary>
-        public static DmnBoxedExpression BuildDecisionBody(Decision decision)
+        public static DmnBoxedExpression BuildDecisionBody(Decision decision,
+            Func<string, string> resolveType = null)
         {
-            return BuildBody(decision);
+            return BuildBody(decision, resolveType);
         }
 
         private static DmnBoxedExpression BuildLiteral(Expression expression)
@@ -60,21 +63,24 @@ namespace ScratchyDisk.DmnEngine.Engine.Definition
         /// Builds the boxed expression kind that provides the value of
         /// <paramref name="body"/>, or null when it holds no expression.
         /// </summary>
-        private static DmnBoxedExpression BuildBody(IBoxedExpressionContainer body)
+        private static DmnBoxedExpression BuildBody(IBoxedExpressionContainer body,
+            Func<string, string> resolveType = null)
         {
             if (body == null) return null;
 
             if (body.FunctionDefinition != null)
             {
-                var functionBody = BuildFunctionBody(body.FunctionDefinition);
+                var functionBody = BuildFunctionBody(body.FunctionDefinition, resolveType);
                 if (functionBody == null) return null;
                 return new DmnFunctionDefinitionBoxedExpression(
                     ParameterNames(body.FunctionDefinition), functionBody);
             }
 
-            return BuildConstruct(body.Conditional, body.For, body.Some, body.Every, body.Filter)
-                ?? BuildBody(body.Context, body.Relation, body.List, body.Invocation, body.DecisionTable)
-                ?? BuildLiteral(body.Expression);
+            return BuildConstruct(body.Conditional, body.For, body.Some, body.Every, body.Filter,
+                       resolveType)
+                   ?? BuildBody(body.Context, body.Relation, body.List, body.Invocation,
+                       body.DecisionTable, resolveType)
+                   ?? BuildLiteral(body.Expression);
         }
 
         private static DmnBoxedExpression BuildConstruct(
@@ -82,13 +88,14 @@ namespace ScratchyDisk.DmnEngine.Engine.Definition
             ForExpression forExpression,
             QuantifiedExpression some,
             QuantifiedExpression every,
-            FilterExpression filter)
+            FilterExpression filter,
+            Func<string, string> resolveType = null)
         {
-            if (conditional != null) return BuildConditional(conditional);
-            if (forExpression != null) return BuildFor(forExpression);
-            if (some != null) return BuildQuantified(some, isSome: true);
-            if (every != null) return BuildQuantified(every, isSome: false);
-            if (filter != null) return BuildFilter(filter);
+            if (conditional != null) return BuildConditional(conditional, resolveType);
+            if (forExpression != null) return BuildFor(forExpression, resolveType);
+            if (some != null) return BuildQuantified(some, isSome: true, resolveType);
+            if (every != null) return BuildQuantified(every, isSome: false, resolveType);
+            if (filter != null) return BuildFilter(filter, resolveType);
             return null;
         }
 
@@ -97,9 +104,10 @@ namespace ScratchyDisk.DmnEngine.Engine.Definition
             RelationExpression relation,
             ListExpression list,
             InvocationExpression invocation,
-            DecisionTable decisionTable)
+            DecisionTable decisionTable,
+            Func<string, string> resolveType = null)
         {
-            if (context != null) return BuildContext(context);
+            if (context != null) return BuildContext(context, resolveType);
             if (relation != null) return BuildRelation(relation);
             if (list != null) return BuildList(list);
             if (invocation != null) return BuildInvocation(invocation);
@@ -107,58 +115,89 @@ namespace ScratchyDisk.DmnEngine.Engine.Definition
             return null;
         }
 
-        private static DmnBoxedExpression BuildChild(BoxedExpressionBody body)
+        private static DmnBoxedExpression BuildChild(BoxedExpressionBody body,
+            Func<string, string> resolveType = null)
         {
-            return BuildBody(body) ?? new DmnLiteralBoxedExpression(null);
+            return BuildBody(body, resolveType) ?? new DmnLiteralBoxedExpression(null);
         }
 
-        private static DmnBoxedExpression BuildConditional(ConditionalExpression conditional)
+        private static DmnBoxedExpression BuildConditional(ConditionalExpression conditional,
+            Func<string, string> resolveType)
         {
             return new DmnConditionalBoxedExpression(
-                BuildChild(conditional.If),
-                BuildChild(conditional.Then),
-                BuildChild(conditional.Else));
+                BuildChild(conditional.If, resolveType),
+                BuildChild(conditional.Then, resolveType),
+                BuildChild(conditional.Else, resolveType));
         }
 
-        private static DmnBoxedExpression BuildFor(ForExpression forExpression)
+        private static DmnBoxedExpression BuildFor(ForExpression forExpression,
+            Func<string, string> resolveType)
         {
             return new DmnForBoxedExpression(
                 forExpression.IteratorVariable,
-                BuildChild(forExpression.In),
-                BuildChild(forExpression.Return));
+                BuildChild(forExpression.In, resolveType),
+                BuildChild(forExpression.Return, resolveType));
         }
 
-        private static DmnBoxedExpression BuildQuantified(QuantifiedExpression quantified, bool isSome)
+        private static DmnBoxedExpression BuildQuantified(QuantifiedExpression quantified, bool isSome,
+            Func<string, string> resolveType)
         {
             return isSome
                 ? new DmnSomeBoxedExpression(quantified.IteratorVariable,
-                    BuildChild(quantified.In), BuildChild(quantified.Satisfies))
+                    BuildChild(quantified.In, resolveType), BuildChild(quantified.Satisfies, resolveType))
                 : new DmnEveryBoxedExpression(quantified.IteratorVariable,
-                    BuildChild(quantified.In), BuildChild(quantified.Satisfies));
+                    BuildChild(quantified.In, resolveType), BuildChild(quantified.Satisfies, resolveType));
         }
 
-        private static DmnBoxedExpression BuildFilter(FilterExpression filter)
+        private static DmnBoxedExpression BuildFilter(FilterExpression filter,
+            Func<string, string> resolveType)
         {
             return new DmnFilterBoxedExpression(
-                BuildChild(filter.In),
-                BuildChild(filter.Match));
+                BuildChild(filter.In, resolveType),
+                BuildChild(filter.Match, resolveType));
         }
 
-        private static DmnContextBoxedExpression BuildContext(ContextExpression context)
+        private static DmnContextBoxedExpression BuildContext(ContextExpression context,
+            Func<string, string> resolveType = null)
         {
             var entries = new List<DmnContextEntryExpression>();
             foreach (var entry in context?.Entries ?? Enumerable.Empty<ContextEntry>())
             {
-                var value = BuildEntryValue(entry);
+                var value = BuildEntryValue(entry, resolveType);
                 if (value == null) continue;
-                entries.Add(new DmnContextEntryExpression(entry.Variable?.Name, value));
+                entries.Add(new DmnContextEntryExpression(entry.Variable?.Name, value,
+                    DeclaredConvertibleType(entry.Variable?.TypeRef, resolveType)));
             }
             return new DmnContextBoxedExpression(entries);
         }
 
-        private static DmnBoxedExpression BuildEntryValue(ContextEntry entry)
+        /// <summary>
+        /// Resolves the declared type of a context entry to a FEEL type name when the
+        /// type takes part in the implicit conversions (a base scalar type, or a list
+        /// of those). Structure types and custom item definitions need no conversion,
+        /// and their FEEL type text is not a plain scalar type, so they are left alone.
+        /// </summary>
+        private static string DeclaredConvertibleType(string typeRef, Func<string, string> resolveType)
         {
-            return BuildBody(entry);
+            if (string.IsNullOrWhiteSpace(typeRef) || resolveType == null) return null;
+            var typeName = resolveType(typeRef.Trim());
+            return IsImplicitlyConvertibleTypeName(typeName) ? typeName : null;
+        }
+
+        private static bool IsImplicitlyConvertibleTypeName(string typeName)
+        {
+            if (string.IsNullOrWhiteSpace(typeName)) return false;
+            var name = typeName.Trim();
+            if (name.StartsWith("list<", StringComparison.Ordinal) && name.EndsWith(">", StringComparison.Ordinal))
+                return IsImplicitlyConvertibleTypeName(name[5..^1]);
+            return name.ToLowerInvariant() is "number" or "string" or "boolean" or "date" or "date and time"
+                or "time" or "days and time duration" or "years and months duration";
+        }
+
+        private static DmnBoxedExpression BuildEntryValue(ContextEntry entry,
+            Func<string, string> resolveType = null)
+        {
+            return BuildBody(entry, resolveType);
         }
 
         private static DmnListBoxedExpression BuildList(ListExpression list)

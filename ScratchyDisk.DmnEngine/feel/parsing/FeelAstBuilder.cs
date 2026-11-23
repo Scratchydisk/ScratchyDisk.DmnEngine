@@ -491,16 +491,42 @@ namespace ScratchyDisk.DmnEngine.Feel.Parsing
             {
                 // A context entry without a name is a result expression: the
                 // value of the context is the value of that entry.
-                string key = null;
-                if (e.key() != null)
-                {
-                    key = e.key().simpleName()?.GetText() ?? UnescapeString(
-                        e.key().StringLiteral().GetText().Trim('"'));
-                }
+                var key = e.key() == null ? null : ContextKey(e.key());
                 var value = Visit(e.expression());
                 return new ContextEntryNode(key, value);
             }).ToList() ?? new List<ContextEntryNode>();
             return new ContextNode(entries);
+        }
+
+        /// <summary>
+        /// Returns the context entry key as written in the model. Quoted keys are
+        /// unescaped; bare keys keep their source text so that names containing
+        /// spaces ("foo bar") or operator characters ("foo+bar") survive intact.
+        /// </summary>
+        private static string ContextKey(FeelParser.KeyContext keyContext)
+        {
+            var literal = keyContext.StringLiteral();
+            if (literal != null)
+                return UnescapeString(literal.GetText().Trim('"'));
+
+            return SourceText(keyContext) ?? keyContext.GetText();
+        }
+
+        /// <summary>
+        /// Returns the source text spanned by a parse tree node. Unlike GetText()
+        /// this keeps the original whitespace, so multi-word names ("foo bar")
+        /// round-trip exactly as written.
+        /// </summary>
+        private static string SourceText(ParserRuleContext node)
+        {
+            var startToken = node?.Start;
+            var stopToken = node?.Stop;
+            var input = startToken?.InputStream;
+            if (input == null || stopToken == null) return null;
+            if (startToken.StartIndex < 0 || stopToken.StopIndex < startToken.StartIndex) return null;
+
+            var text = input.GetText(Antlr4.Runtime.Misc.Interval.Of(startToken.StartIndex, stopToken.StopIndex));
+            return string.IsNullOrWhiteSpace(text) ? null : text.Trim();
         }
 
         // ==================== Names ====================

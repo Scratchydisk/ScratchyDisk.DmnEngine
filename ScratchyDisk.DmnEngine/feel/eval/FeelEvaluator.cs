@@ -124,11 +124,27 @@ namespace ScratchyDisk.DmnEngine.Feel.Eval
         {
             // For explicit null literal tests, check if inputValue is null
             if (testNode is NullLiteral) return inputValue == null;
+            // The dash in a decision table input entry matches any value.
+            if (testNode is Dash) return true;
             // For bool literals, compare with input value (not treat as test outcome)
             // A unary test of "true" means "input == true", not "this test passes"
             if (testNode is BoolLiteral) return FeelValueComparer.FeelEqual(inputValue, result) == true;
+            // A boolean-valued expression written with boolean syntax (a comparison,
+            // a conjunction, "not(...)", ...) is the test outcome. Any other test
+            // that happens to evaluate to a boolean is a value test: "A.b" means
+            // "input = A.b", not "A.b is true".
+            if (result is bool && !IsBooleanTestSyntax(testNode))
+                return FeelValueComparer.FeelEqual(inputValue, result) == true;
             return CoerceUnaryTestResult(result, inputValue);
         }
+
+        /// <summary>
+        /// True when the node is a boolean construct of the unary test syntax, i.e.
+        /// the node's own value is the test outcome rather than a value to compare.
+        /// </summary>
+        private static bool IsBooleanTestSyntax(FeelAstNode testNode) =>
+            testNode is Comparison or Between or InNode or InstanceOf
+                or Conjunction or Disjunction or UnaryNot or IfNode or UnaryTests;
 
         // ==================== Variable Resolution ====================
 
@@ -229,7 +245,7 @@ namespace ScratchyDisk.DmnEngine.Feel.Eval
                 },
                 FeelDateTime zdt => member switch
                 {
-                    "timezone" => zdt.ZoneId,
+                    "timezone" => string.IsNullOrEmpty(zdt.ZoneId) ? null : zdt.ZoneId,
                     "offset" => string.IsNullOrEmpty(zdt.ZoneId) ? null : zdt.Value.Offset,
                     "time offset" => string.IsNullOrEmpty(zdt.ZoneId) ? null : zdt.Value.Offset,
                     _ => AccessDateTimeComponent(zdt.Value, member)

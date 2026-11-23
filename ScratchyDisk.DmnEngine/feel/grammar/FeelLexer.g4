@@ -113,6 +113,14 @@ fragment NameStartChar
     | '\u3001'..'\uD7FF'
     | '\uF900'..'\uFDCF'
     | '\uFDF0'..'\uFFFD'
+    | SurrogatePair
+    ;
+
+// Supplementary-plane characters (emoji, historic scripts, ...). The input is a
+// UTF-16 stream, so such a character arrives as a high/low surrogate pair and has
+// to be accepted as a single name character.
+fragment SurrogatePair
+    : [\uD800-\uDBFF] [\uDC00-\uDFFF]
     ;
 
 fragment NameChar

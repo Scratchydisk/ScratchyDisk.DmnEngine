@@ -137,10 +137,19 @@ namespace ScratchyDisk.DmnEngine.Engine.Decisions.Expression
         /// <summary>Entry value.</summary>
         public DmnBoxedExpression Expression { get; }
 
-        public DmnContextEntryExpression(string name, DmnBoxedExpression expression)
+        /// <summary>
+        /// Declared FEEL type of the entry, or null when the entry is untyped or its
+        /// type takes no part in the implicit conversions. A declared type converts
+        /// the value at this boundary: a single value becomes a one-item list (and
+        /// back) and a date becomes a date and time.
+        /// </summary>
+        public string DeclaredType { get; }
+
+        public DmnContextEntryExpression(string name, DmnBoxedExpression expression, string declaredType = null)
         {
             Name = string.IsNullOrWhiteSpace(name) ? null : name;
             Expression = expression ?? new DmnLiteralBoxedExpression(null);
+            DeclaredType = string.IsNullOrWhiteSpace(declaredType) ? null : declaredType.Trim();
         }
     }
 
@@ -171,13 +180,26 @@ namespace ScratchyDisk.DmnEngine.Engine.Decisions.Expression
             var result = new FeelContext();
             foreach (var entry in Entries)
             {
-                var value = child.Evaluate(entry.Expression);
+                var value = CoerceToDeclaredType(child.Evaluate(entry.Expression), entry.DeclaredType, child);
                 if (entry.Name == null) return value;
                 result[entry.Name] = value;
                 // Context entries are visible to the entries that follow them.
                 childScope.SetVariable(entry.Name, value);
             }
             return result;
+        }
+
+        /// <summary>
+        /// Applies the FEEL implicit conversions at the context entry boundary. An
+        /// untyped entry keeps its value; a value that does not convert becomes null.
+        /// </summary>
+        private static object CoerceToDeclaredType(object value, string declaredType,
+            DmnBoxedExpressionRuntime runtime)
+        {
+            if (declaredType == null) return value;
+            return FeelTypeConformance.TryCoerce(value, declaredType, runtime.Scope.TypeAliases, out var converted)
+                ? converted
+                : null;
         }
     }
 

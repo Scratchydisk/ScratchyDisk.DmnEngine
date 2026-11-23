@@ -433,7 +433,7 @@ namespace ScratchyDisk.DmnEngine.Engine.Definition
                 if (string.IsNullOrWhiteSpace(name)) continue;
 
                 var logic = source.EncapsulatedLogic;
-                var body = DmnBoxedExpressionBuilder.BuildFunctionBody(logic);
+                var body = DmnBoxedExpressionBuilder.BuildFunctionBody(logic, ResolveFeelTypeName);
                 if (body == null) continue;
 
                 var parameters = logic.FormalParameters?
@@ -896,7 +896,7 @@ namespace ScratchyDisk.DmnEngine.Engine.Definition
             if (requiredInputs == null) throw Logger.Fatal<ArgumentNullException>($"{nameof(requiredInputs)} is null");
             if (requiredDecisions == null) throw Logger.Fatal<ArgumentNullException>($"{nameof(requiredDecisions)} is null");
 
-            var body = DmnBoxedExpressionBuilder.BuildDecisionBody(sourceDecision);
+            var body = DmnBoxedExpressionBuilder.BuildDecisionBody(sourceDecision, ResolveFeelTypeName);
             if (body == null)
                 throw Logger.Fatal<DmnParserException>($"Missing boxed expression body for decision {decisionName}");
 

@@ -1221,6 +1221,12 @@ namespace ScratchyDisk.DmnEngine.Feel.Functions
                     }
 
                     var localOffset = new DateTime(year, month, day, 0, 0, 0, DateTimeKind.Unspecified).Add(time.ToTimeSpan());
+                    if (!match.Groups["z"].Success && !match.Groups["off"].Success)
+                    {
+                        // No timezone in the text: the result is a local date-time
+                        // (no zone id), matching the @"..." literal representation.
+                        return new FeelDateTime(new DateTimeOffset(localOffset), "", fractionText);
+                    }
                     return new DateTimeOffset(localOffset, offset);
                 }
                 if (val is DateTimeOffset) return val;
@@ -1488,7 +1494,8 @@ namespace ScratchyDisk.DmnEngine.Feel.Functions
             Register("string", new[] { "from" }, args =>
             {
                 var val = Arg(args, 0);
-                if (val == null) return "null";
+                // FEEL functions propagate null: string(null) is null, not "null".
+                if (val == null) return null;
                 if (val is string s) return s;
                 if (val is bool b) return b ? "true" : "false";
                 if (FeelValueComparer.IsNumeric(val))
@@ -1520,13 +1527,22 @@ namespace ScratchyDisk.DmnEngine.Feel.Functions
                 var lowText = body[..separator].Trim();
                 var highText = body[(separator + 2)..].Trim();
                 if (lowText.Length == 0 && highText.Length == 0) return null;
+
+                // An endpoint written with a closed bracket must have a value:
+                // "[..2]" and "[1..]" are not valid intervals.
+                if (lowText.Length == 0 && lowInclusive) return null;
+                if (highText.Length == 0 && highInclusive) return null;
+
                 if (lowText.Contains("string(") || highText.Contains("string(")) return null;
 
                 try
                 {
                     var engine = new FeelEngine();
-                    var low = lowText.Length == 0 ? null : engine.EvaluateExpression(lowText, new FeelEvaluationContext());
-                    var high = highText.Length == 0 ? null : engine.EvaluateExpression(highText, new FeelEvaluationContext());
+                    // Endpoint text is FEEL: resolve multi-word function names such
+                    // as "date and time" the same way the expression evaluator does.
+                    var endpointScope = new Parsing.FeelScope();
+                    var low = lowText.Length == 0 ? null : engine.EvaluateExpression(lowText, new FeelEvaluationContext(), endpointScope);
+                    var high = highText.Length == 0 ? null : engine.EvaluateExpression(highText, new FeelEvaluationContext(), endpointScope);
                     if ((lowText.Length > 0 && low == null) || (highText.Length > 0 && high == null)) return null;
 
                     if (low != null && high != null)

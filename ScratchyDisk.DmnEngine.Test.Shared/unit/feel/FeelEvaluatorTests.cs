@@ -340,6 +340,39 @@ namespace ScratchyDisk.DmnEngine.Test.Unit.Feel
         }
 
         [TestMethod]
+        public void EvalContextKeyWithSpaces()
+        {
+            var context = Eval("{foo bar: 1}") as FeelContext;
+            context.Should().NotBeNull();
+            context["foo bar"].Should().Be(1m);
+        }
+
+        [TestMethod]
+        public void EvalContextKeyWithOperatorCharacter()
+        {
+            var context = Eval("{foo+bar: 2}") as FeelContext;
+            context.Should().NotBeNull();
+            context["foo+bar"].Should().Be(2m);
+        }
+
+        [TestMethod]
+        public void EvalContextKeyWithEmoji()
+        {
+            // An emoji is a supplementary-plane character: a surrogate pair in UTF-16.
+            var context = Eval("{🐎: \"bar\"}") as FeelContext;
+            context.Should().NotBeNull();
+            context["🐎"].Should().Be("bar");
+        }
+
+        [TestMethod]
+        public void EvalContextQuotedKeyWithSpaces()
+        {
+            var context = Eval("{\"foo bar\": 3}") as FeelContext;
+            context.Should().NotBeNull();
+            context["foo bar"].Should().Be(3m);
+        }
+
+        [TestMethod]
         public void EvalFunctionReturningFunction()
         {
             Eval("(function(a) function(b) a + b)(2)(3)").Should().Be(5m);
@@ -792,7 +825,7 @@ namespace ScratchyDisk.DmnEngine.Test.Unit.Feel
         public void EvalStringOfBoolean() => Eval("string(true)").Should().Be("true");
 
         [TestMethod]
-        public void EvalStringOfNull() => Eval("string(null)").Should().Be("null");
+        public void EvalStringOfNull() => Eval("string(null)").Should().BeNull();
 
         [TestMethod]
         public void EvalStringPlusNumberIsNull() => Eval("\"a\" + 1").Should().BeNull();
@@ -982,6 +1015,90 @@ namespace ScratchyDisk.DmnEngine.Test.Unit.Feel
 
         [TestMethod]
         public void EvalInNullRangeEndpoint() => Eval("5 in (null..10]").Should().BeNull();
+
+        [TestMethod]
+        public void EvalUnaryTestValueInScopeComparedWithInput()
+        {
+            // A plain value expression that evaluates to a boolean is a value test:
+            // "A.b" means "input = A.b", not "A.b is true".
+            var truthy = CreateContext(("b", true));
+            EvalUnary("A.b", false, ctx => ctx.SetVariable("A", truthy)).Should().BeFalse();
+            EvalUnary("A.b", true, ctx => ctx.SetVariable("A", truthy)).Should().BeTrue();
+        }
+
+        [TestMethod]
+        public void EvalUnaryTestBooleanSyntaxIsTheOutcome()
+        {
+            // "not(...)" is boolean syntax: its own value is the test outcome.
+            var truthy = CreateContext(("b", true));
+            EvalUnary("not(A.b)", true, ctx => ctx.SetVariable("A", truthy)).Should().BeFalse();
+            EvalUnary("not(A.b)", false, ctx => ctx.SetVariable("A", truthy)).Should().BeTrue();
+        }
+
+        [TestMethod]
+        public void EvalUnaryTestDashMatchesAnything() => EvalUnary("-", 42m).Should().BeTrue();
+
+        [TestMethod]
+        public void EvalRangeClosedBracketWithoutEndpointIsNull()
+        {
+            Eval("range(\"[..2]\")").Should().BeNull();
+            Eval("range(\"[1..]\")").Should().BeNull();
+        }
+
+        [TestMethod]
+        public void EvalRangeOpenBracketWithoutEndpointIsAllowed()
+        {
+            var range = Eval("range(\"(..2]\")") as FeelRange;
+            range.Should().NotBeNull();
+            range.HighEndpoint.Should().Be(2m);
+        }
+
+        [TestMethod]
+        public void EvalRangeEndpointWithMultiWordFunction()
+        {
+            // The endpoint text is FEEL: "date and time" is a multi-word function name.
+            Eval("range(\"[date and time(\\\"1970-01-01T00:00:00\\\")..date and time(\\\"1970-01-02T00:00:00\\\")]\")")
+                .Should().BeOfType<FeelRange>();
+        }
+
+        [TestMethod]
+        public void EvalDateTimeWithoutTimezoneIsLocal()
+        {
+            // A date and time written without a timezone is a local date-time.
+            var scope = new FeelScope();
+            var value = Eval("date and time(\"1970-01-01T00:00:00\")", scope: scope);
+            value.Should().BeOfType<FeelDateTime>();
+            ((FeelDateTime)value).ZoneId.Should().BeEmpty();
+            Eval("date and time(\"1970-01-01T00:00:00\").timezone", scope: scope).Should().BeNull();
+        }
+
+        // ==================== Typed parameters (implicit conversions) ====================
+
+        [TestMethod]
+        public void EvalTypedParameterWrapsScalarInSingletonList()
+        {
+            var result = Eval("(function(x: list<number>) x)(1)") as List<object>;
+            result.Should().BeEquivalentTo(new object[] { 1m });
+        }
+
+        [TestMethod]
+        public void EvalTypedParameterUnwrapsSingletonList()
+        {
+            Eval("(function(x: number) x)([2])").Should().Be(2m);
+        }
+
+        [TestMethod]
+        public void EvalTypedParameterConvertsDateToDateTime()
+        {
+            var result = Eval("(function(x: date and time) x)(date(\"2000-12-01\"))", scope: new FeelScope());
+            result.Should().Be(new DateTimeOffset(2000, 12, 1, 0, 0, 0, TimeSpan.Zero));
+        }
+
+        [TestMethod]
+        public void EvalTypedParameterRejectsIncompatibleType()
+        {
+            Eval("(function(x: string) x)(10)").Should().BeNull();
+        }
 
         // ==================== Helpers ====================
 
