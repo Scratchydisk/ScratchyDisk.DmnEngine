@@ -11,6 +11,15 @@ updates:
     open-pull-requests-limit: 5
     commit-message:
       prefix: "chore(deps)"
+    ignore:
+      # FluentAssertions 8 moved to a paid licence (Xceed); this repository stays on
+      # the Apache-2.0 7.x line. Revisit if the licence situation changes.
+      - dependency-name: "FluentAssertions"
+        versions: [ ">=8.0.0" ]
+      # CsvHelper 34 reshapes CsvHelper.Configuration; the testbed's CSV import
+      # needs a migration before the major can be taken.
+      - dependency-name: "CsvHelper"
+        update-types: [ "version-update:semver-major" ]
     groups:
       runtime:
         patterns:
