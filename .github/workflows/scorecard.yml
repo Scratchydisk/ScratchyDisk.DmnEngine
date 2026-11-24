@@ -30,7 +30,7 @@ jobs:
       # publish_results requires a public repository; on a private repository set
       # it to false and keep the SARIF upload only.
       - name: Run analysis
-        uses: ossf/scorecard-action@v2.4.0
+        uses: ossf/scorecard-action@v2.6.0
         with:
           results_file: results.sarif
           results_format: sarif
