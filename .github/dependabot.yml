@@ -47,6 +47,12 @@ updates:
     open-pull-requests-limit: 5
     commit-message:
       prefix: "chore(ci)"
+    ignore:
+      # v2.6.0 publishes an OCI image index whose child manifests are missing, so the
+      # runner cannot pull it. Ignore that release only; a fixed 2.6.1 will still be
+      # proposed.
+      - dependency-name: "ossf/scorecard-action"
+        versions: [ "2.6.0" ]
     groups:
       actions:
         patterns:
