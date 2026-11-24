@@ -19,7 +19,7 @@
     <PackageReference Include="Antlr4.Runtime.Standard" Version="4.13.1" />
     <PackageReference Include="Antlr4BuildTasks" Version="13.0.0" PrivateAssets="all" />
     <!-- Pin transitive dep from Antlr4BuildTasks to fix GHSA-w3q9-fxm7-j8fq -->
-    <PackageReference Include="Microsoft.Build.Utilities.Core" Version="18.12.2" PrivateAssets="all" ExcludeAssets="runtime" />
+    <PackageReference Include="Microsoft.Build.Utilities.Core" Version="18.0.2" PrivateAssets="all" ExcludeAssets="runtime" />
 
     <PackageReference Include="NLog" Version="6.2.2" />
   </ItemGroup>
