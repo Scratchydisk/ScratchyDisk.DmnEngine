@@ -3,6 +3,8 @@ All notable changes to this project will be documented in this file.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 ## [Unreleased] ##
+
+## [2.1.0] - 2026-11-24 ##
 ### Added ###
 - **DMN TCK conformance runner** — the repository now carries a local runner (`ScratchyDisk.DmnEngine.Tck`) that executes the OMG DMN TCK at a pinned commit, writes the published result CSV plus a per-node triage report, and compares against a committed ratchet baseline (`docs/tck-baseline.json`). `scripts/fetch-tck.sh` fetches the suite and `docs/tck.md` documents the workflow.
 - **Model sets** — `DmnModelSet` indexes a folder of DMN files by namespace and model name so `import` elements resolve across files, and `CreateDefinition` builds a definition from a model namespace or name. Documented in `docs/model-sets.md`.
@@ -211,6 +213,7 @@ As this is a major update, it's recommended to go through the [documentation](re
 ### Added ###
 - Initial release
 
+[2.1.0]: https://github.com/Scratchydisk/ScratchyDisk.DmnEngine/compare/v2.0.1...v2.1.0
 [2.0.1]: https://github.com/Scratchydisk/ScratchyDisk.DmnEngine/compare/v2.0.0...v2.0.1
 [2.0.0]: https://github.com/Scratchydisk/ScratchyDisk.DmnEngine/compare/v1.1.1...v2.0.0
 [1.1.1]: https://github.com/adamecr/Common.DMN.Engine/compare/v1.1.0...v1.1.1

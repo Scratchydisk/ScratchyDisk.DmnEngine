@@ -8,7 +8,7 @@ ScratchyDisk.DmnEngine is a .NET rule engine that executes decisions defined in 
 
 **NuGet package:** `ScratchyDisk.DmnEngine`
 **Target framework:** .NET 10.0
-**Current version:** 2.0.1
+**Current version:** 2.1.0
 
 ## Build and Test Commands
 

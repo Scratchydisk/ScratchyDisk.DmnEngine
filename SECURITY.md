@@ -7,7 +7,7 @@ Security fixes are applied to the latest release line.
 | Version | Supported |
 | --- | --- |
 | 2.1.x | Yes |
-| 2.0.x | Until 2.1 is released |
+| 2.0.x | No (upgrade to 2.1) |
 | 1.x | No |
 
 ## Reporting a vulnerability

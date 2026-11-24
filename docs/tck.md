@@ -148,7 +148,7 @@ committed, so the committed baseline always describes a reachable tree state.
 
 ## Current baseline
 
-Captured 2026-11-23 against TCK `a428da2`, engine `2.0.1`.
+Captured 2026-11-24 against TCK `a428da2`, engine `2.1.0`.
 
 | Level | Cases | PASS | FAIL | PARSE-FAIL | NOT-FOUND | BLOCKED | Executed pass rate |
 | --- | ---: | ---: | ---: | ---: | ---: | ---: | ---: |
