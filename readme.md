@@ -75,7 +75,7 @@ The canonical sources are:
 - [DMN 1.4 specification](https://www.omg.org/spec/DMN/1.4)
 - [B-FEEL language URI](https://www.omg.org/spec/DMN/20240513/B-FEEL/)
 
-The full policy and required evidence are in [docs/conformance-test-policy.md](docs/conformance-test-policy.md). CI runs the DMN 1.5/1.6 conformance subset and then the full regression suite via `.github/workflows/conformance.yml`.
+The full policy and required evidence are in [docs/conformance-test-policy.md](docs/conformance-test-policy.md). Security reporting and the threat model are in [SECURITY.md](SECURITY.md). CI runs the DMN 1.5/1.6 conformance subset and then the full regression suite via `.github/workflows/conformance.yml`.
 
 ### OMG DMN TCK
 

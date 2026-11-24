@@ -18,7 +18,12 @@ jobs:
           dotnet-version: '10.0.x'
 
       - name: Restore
-        run: dotnet restore ScratchyDisk.DmnEngine.Tests/ScratchyDisk.DmnEngine.Tests.csproj
+        # The whole solution is restored so the vulnerability scan covers every project.
+        run: dotnet restore ScratchyDisk.DmnEngine.sln
+
+      - name: Known vulnerable packages
+        run: >
+          dotnet list ScratchyDisk.DmnEngine.sln package --vulnerable --include-transitive
 
       - name: DMN 1.5 and 1.6 conformance
         run: >

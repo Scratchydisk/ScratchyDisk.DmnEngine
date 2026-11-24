@@ -1,0 +1,44 @@
+version: 2
+
+updates:
+  # Runtime and test NuGet dependencies. Grouped so a routine round of updates is
+  # one reviewable pull request rather than a dozen.
+  - package-ecosystem: nuget
+    directory: "/"
+    schedule:
+      interval: weekly
+      day: monday
+    open-pull-requests-limit: 5
+    commit-message:
+      prefix: "chore(deps)"
+    groups:
+      runtime:
+        patterns:
+          - "NLog"
+          - "Antlr4.Runtime.Standard"
+          - "CsvHelper"
+      test:
+        patterns:
+          - "MSTest.*"
+          - "Microsoft.NET.Test.Sdk"
+          - "coverlet.collector"
+          - "FluentAssertions"
+      # Build-time only. Kept in its own group because it drives grammar generation
+      # and must be reviewed together with the ANTLR grammar files.
+      build-tooling:
+        patterns:
+          - "Antlr4BuildTasks"
+          - "Microsoft.Build.*"
+
+  - package-ecosystem: github-actions
+    directory: "/"
+    schedule:
+      interval: weekly
+      day: monday
+    open-pull-requests-limit: 5
+    commit-message:
+      prefix: "chore(ci)"
+    groups:
+      actions:
+        patterns:
+          - "*"
