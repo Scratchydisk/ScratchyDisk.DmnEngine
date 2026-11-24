@@ -235,6 +235,62 @@ namespace ScratchyDisk.DmnEngine.Test.Unit.Feel
             Eval("every x in [1, 2, 3] satisfies x > 1").Should().Be(false);
         }
 
+        [TestMethod]
+        public void EvalQuantifiersIterateRanges()
+        {
+            // DMN 1.5 clause 10.3.2.14: an iteration may be a range, not only a list.
+            Eval("some i in (1..5) satisfies i > 3").Should().Be(true);
+            Eval("some i in (1..5) satisfies i > 9").Should().Be(false);
+            Eval("every i in (1..5) satisfies i > 0").Should().Be(true);
+            Eval("every i in (1..5) satisfies i > 2").Should().Be(false);
+        }
+
+        [TestMethod]
+        public void EvalForRangeWithFractionalEndpointIsAnError()
+        {
+            var act = () => Eval("for i in 1.5..3.7 return i");
+
+            act.Should().Throw<FeelEvaluationException>()
+                .WithMessage("*whole numbers*");
+        }
+
+        [TestMethod]
+        public void EvalForRangeIsBoundedByTheIterationLimit()
+        {
+            var previous = FeelEvaluationLimits.MaxIterationItems;
+            FeelEvaluationLimits.MaxIterationItems = 10;
+            try
+            {
+                var act = () => Eval("for i in 1..11 return i");
+
+                act.Should().Throw<FeelEvaluationException>()
+                    .WithMessage("*iteration limit*");
+            }
+            finally
+            {
+                FeelEvaluationLimits.MaxIterationItems = previous;
+            }
+        }
+
+        [TestMethod]
+        public void EvalNestedIterationIsBoundedByTheIterationLimit()
+        {
+            var previous = FeelEvaluationLimits.MaxIterationItems;
+            FeelEvaluationLimits.MaxIterationItems = 20;
+            try
+            {
+                // Each range is small; the product is what has to be bounded.
+                var act = () => Eval("for i in 1..5, j in 1..6 return i * j");
+
+                act.Should().Throw<FeelEvaluationException>()
+                    .WithMessage("*iteration limit*");
+            }
+            finally
+            {
+                FeelEvaluationLimits.MaxIterationItems = previous;
+            }
+        }
+
         // ==================== Collections ====================
 
         [TestMethod]

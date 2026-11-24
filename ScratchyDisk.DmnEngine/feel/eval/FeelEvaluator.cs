@@ -866,6 +866,10 @@ namespace ScratchyDisk.DmnEngine.Feel.Eval
         {
             if (iterationIndex >= iterations.Count)
             {
+                // A nested iteration multiplies the item counts, so the collected
+                // results are bounded too, not just each individual range.
+                FeelIteration.EnsureWithinLimit(results.Count + 1, "iteration result");
+
                 // FEEL exposes the results accumulated so far as "partial".
                 scope.SetVariable("partial", new List<object>(results));
                 results.Add(new FeelEvaluator(scope, functionResolver).Evaluate(returnExpr));
@@ -885,12 +889,11 @@ namespace ScratchyDisk.DmnEngine.Feel.Eval
 
                 if (FeelValueComparer.IsNumeric(startVal) && FeelValueComparer.IsNumeric(endVal))
                 {
-                    var start = (int)FeelValueComparer.ToDecimal(startVal);
-                    var end = (int)FeelValueComparer.ToDecimal(endVal);
-                    var step = start <= end ? 1 : -1;
-                    for (var i = start; step > 0 ? i <= end : i >= end; i += step)
+                    var start = FeelValueComparer.ToDecimal(startVal);
+                    var end = FeelValueComparer.ToDecimal(endVal);
+                    foreach (var value in FeelIteration.Numbers(start, end))
                     {
-                        childScope.SetVariable(iteration.VariableName, (decimal)i);
+                        childScope.SetVariable(iteration.VariableName, value);
                         if (!EvalForIterations(iterations, iterationIndex + 1, returnExpr, childScope, results)) return false;
                     }
                     return true;
@@ -898,8 +901,7 @@ namespace ScratchyDisk.DmnEngine.Feel.Eval
 
                 if (startVal is DateOnly startDate && endVal is DateOnly endDate)
                 {
-                    var step = startDate <= endDate ? 1 : -1;
-                    for (var date = startDate; step > 0 ? date <= endDate : date >= endDate; date = date.AddDays(step))
+                    foreach (var date in FeelIteration.Dates(startDate, endDate))
                     {
                         childScope.SetVariable(iteration.VariableName, date);
                         if (!EvalForIterations(iterations, iterationIndex + 1, returnExpr, childScope, results)) return false;
@@ -942,6 +944,7 @@ namespace ScratchyDisk.DmnEngine.Feel.Eval
                 var childEval = new FeelEvaluator(scope, functionResolver);
                 var result = childEval.Evaluate(satisfies);
                 var b = FeelValueComparer.ToBool(result);
+                FeelIteration.EnsureWithinLimit(results.Count + 1, "quantified result");
                 results.Add(b == true);
                 return;
             }
@@ -951,6 +954,22 @@ namespace ScratchyDisk.DmnEngine.Feel.Eval
             var childEval2 = new FeelEvaluator(childScope, functionResolver);
 
             var listVal = childEval2.Evaluate(iteration.ListExpression);
+
+            // A quantified expression iterates a range exactly like "for" does.
+            if (listVal is FeelRange range && !range.IsUnaryTest)
+            {
+                var rangeItems = FeelIteration.Items(range);
+                if (rangeItems != null)
+                {
+                    foreach (var item in rangeItems)
+                    {
+                        childScope.SetVariable(iteration.VariableName, item);
+                        EvalQuantifiedIterations(iterations, iterationIndex + 1, satisfies, childScope, results);
+                    }
+                    return;
+                }
+            }
+
             var items = CoerceToList(listVal);
             foreach (var item in items)
             {

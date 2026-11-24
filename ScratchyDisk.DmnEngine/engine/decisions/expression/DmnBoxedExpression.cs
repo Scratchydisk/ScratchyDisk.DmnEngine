@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using System.Globalization;
 using System.Linq;
 using ScratchyDisk.DmnEngine.Engine.Execution;
 using ScratchyDisk.DmnEngine.Feel;
@@ -514,7 +515,22 @@ namespace ScratchyDisk.DmnEngine.Engine.Decisions.Expression
                     return BuildResult(outputsByRule[0]);
 
                 case HitPolicyEnum.Any:
+                {
+                    // Any number of rules may match, but all of them must agree on
+                    // every output; otherwise the hit policy is violated.
+                    for (var rule = 1; rule < outputsByRule.Count; rule++)
+                    {
+                        for (var output = 0; output < Outputs.Count; output++)
+                        {
+                            if (FeelValueComparer.Equals(outputsByRule[0][output], outputsByRule[rule][output]) == true)
+                                continue;
+
+                            throw new DmnEvaluationException(
+                                $"ANY hit policy violation - rule outputs disagree on output {output + 1}");
+                        }
+                    }
                     return BuildResult(outputsByRule[0]);
+                }
 
                 case HitPolicyEnum.Priority:
                     return BuildResult(outputsByRule[PriorityOrder(outputsByRule)[0]]);
@@ -681,7 +697,8 @@ namespace ScratchyDisk.DmnEngine.Engine.Decisions.Expression
                     System.Globalization.CultureInfo.InvariantCulture, out var number))
                 return FeelValueComparer.ToDecimal(value) == number;
 
-            return string.Equals(text, value.ToString(), StringComparison.Ordinal);
+            return string.Equals(text, Convert.ToString(value, CultureInfo.InvariantCulture),
+                StringComparison.Ordinal);
         }
 
         private static decimal ToNumber(object value)
@@ -906,34 +923,7 @@ namespace ScratchyDisk.DmnEngine.Engine.Decisions.Expression
 
         private static IReadOnlyList<object> RangeItems(FeelRange range)
         {
-            if (range.IsUnaryTest) return null;
-
-            // Numeric range: step 1 in the direction of the range.
-            if (FeelValueComparer.IsNumeric(range.LowEndpoint) && FeelValueComparer.IsNumeric(range.HighEndpoint))
-            {
-                var items = new List<object>();
-                var start = (int)FeelValueComparer.ToDecimal(range.LowEndpoint);
-                var end = (int)FeelValueComparer.ToDecimal(range.HighEndpoint);
-                if (!range.LowInclusive && start < end) start++;
-                if (!range.HighInclusive && end > start) end--;
-
-                for (var value = start; value <= end; value++)
-                    items.Add((decimal)value);
-                return items;
-            }
-
-            // Date range: step one day.
-            if (range.LowEndpoint is DateOnly startDate && range.HighEndpoint is DateOnly endDate)
-            {
-                var items = new List<object>();
-                if (!range.LowInclusive) startDate = startDate.AddDays(1);
-                if (!range.HighInclusive) endDate = endDate.AddDays(-1);
-                for (var date = startDate; date <= endDate; date = date.AddDays(1))
-                    items.Add(date);
-                return items;
-            }
-
-            return null;
+            return FeelIteration.Items(range);
         }
     }
 }

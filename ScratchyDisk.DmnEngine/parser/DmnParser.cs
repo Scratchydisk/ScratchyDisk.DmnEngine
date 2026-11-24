@@ -87,6 +87,16 @@ namespace ScratchyDisk.DmnEngine.Parser
         /// <summary>
         /// DMN Model XML serializer for DMN v1.1
         /// </summary>
+        /// <summary>
+        /// Reader settings for DMN XML: DTD processing is prohibited and no resolver is
+        /// used, so a document cannot pull in external entities or files.
+        /// </summary>
+        private static readonly XmlReaderSettings ReaderSettings = new XmlReaderSettings
+        {
+            DtdProcessing = DtdProcessing.Prohibit,
+            XmlResolver = null
+        };
+
         protected static readonly XmlSerializer DmnDefinitionsSerializer = new XmlSerializer(
             typeof(DmnModel), null, new Type[] { },
             defaultNamespace: XmlNamespaceDmn11, root: new XmlRootAttribute(DefinitionsElement) { Namespace = XmlNamespaceDmn11 }
@@ -327,7 +337,7 @@ namespace ScratchyDisk.DmnEngine.Parser
 
             DmnModel def;
             // ReSharper disable once AssignNullToNotNullAttribute
-            using (var rdr = new StreamReader(filePath))
+            using (var rdr = XmlReader.Create(new StreamReader(filePath), ReaderSettings))
             {
                 try
                 {
@@ -438,7 +448,7 @@ namespace ScratchyDisk.DmnEngine.Parser
 
             DmnModel def;
             // ReSharper disable once AssignNullToNotNullAttribute
-            using (var rdr = new StringReader(dmnDefinition))
+            using (var rdr = XmlReader.Create(new StringReader(dmnDefinition), ReaderSettings))
             {
                 try
                 {

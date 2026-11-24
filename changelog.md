@@ -26,6 +26,11 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 - FEEL context keys may be quoted or contain spaces, operators and non-BMP characters (emoji), and `string(null)` propagates null instead of producing `"null"`.
 - FEEL tail cases: range-to-range relations (`starts`, `finishes`, `started by`, `finished by`), `in` over lists with incomparable items, implicit singleton-list conversion in scalar builtin arguments, `split()` with a regex delimiter and trailing empty items, `all()`/`any()` with no arguments, `list replace()` with unknown named arguments, `.time offset` on local date-times, and `COLLECT LIST` results visible to dependent decisions under the decision name.
 - The TCK runner treats `<inputNode>` namespaces and `<resultNode>` types (`decisionService`, `bkm`) as direct invocations, and preserves whitespace in expected string values.
+- FEEL quantifiers (`some`, `every`) iterate ranges, not only lists, as DMN 1.5 clause 10.3.2.14 requires.
+- Range iteration is bounded: a range with fractional endpoints is an evaluation error instead of being silently truncated, and `for`/`some`/`every`/boxed iteration stop with a clear error at `FeelEvaluationLimits.MaxIterationItems` (default 1,000,000) instead of exhausting memory. A large endpoint also no longer overflows an `int` cast.
+- A nested decision table with the `ANY` hit policy rejects rules whose outputs disagree, matching the engine's top-level decision table behaviour.
+- Allowed output values are compared with invariant formatting, so `PRIORITY`/`OUTPUT ORDER` results no longer depend on the machine culture.
+- DMN XML is read with DTD processing prohibited and no external resolver, so a document cannot pull in entities or files.
 ## [2.0.1] - 2026-02-23 ##
 
 ### Added ###

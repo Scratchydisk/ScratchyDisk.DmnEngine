@@ -2,7 +2,9 @@ using System.Collections.Generic;
 using FluentAssertions;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 using ScratchyDisk.DmnEngine.Engine.Definition;
+using ScratchyDisk.DmnEngine.Engine.Execution;
 using ScratchyDisk.DmnEngine.Engine.Execution.Context;
+using ScratchyDisk.DmnEngine.Feel;
 using ScratchyDisk.DmnEngine.Feel.Types;
 using ScratchyDisk.DmnEngine.Parser;
 
@@ -398,6 +400,79 @@ namespace ScratchyDisk.DmnEngine.Test.Unit
             value.Should().Be("HIGH");
         }
 
+        [TestMethod]
+        public void NestedTableAnyHitPolicyRejectsDisagreeingOutputs()
+        {
+            // DMN: ANY allows overlapping rules only when they agree on every output.
+            var act = () => EvaluateStrict(@"
+  <decision name=""d"" id=""d1"">
+    <variable name=""d"" typeRef=""string""/>
+    <context>
+      <contextEntry>
+        <variable name=""pick"" id=""v1"" typeRef=""string""/>
+        <decisionTable hitPolicy=""ANY"" id=""t1"">
+          <input id=""in1""><inputExpression typeRef=""number""><text>1</text></inputExpression></input>
+          <output id=""out1"" name=""pick"" typeRef=""string""/>
+          <rule id=""r1""><inputEntry><text>-</text></inputEntry><outputEntry><text>""a""</text></outputEntry></rule>
+          <rule id=""r2""><inputEntry><text>-</text></inputEntry><outputEntry><text>""b""</text></outputEntry></rule>
+        </decisionTable>
+      </contextEntry>
+    </context>
+  </decision>");
+
+            act.Should().Throw<DmnEvaluationException>().WithMessage("*ANY hit policy*");
+        }
+
+        [TestMethod]
+        public void NestedTableAnyHitPolicyAcceptsAgreeingOutputs()
+        {
+            var value = Evaluate(@"
+  <decision name=""d"" id=""d1"">
+    <variable name=""d"" typeRef=""string""/>
+    <context>
+      <contextEntry>
+        <variable name=""pick"" id=""v1"" typeRef=""string""/>
+        <decisionTable hitPolicy=""ANY"" id=""t1"">
+          <input id=""in1""><inputExpression typeRef=""number""><text>1</text></inputExpression></input>
+          <output id=""out1"" name=""pick"" typeRef=""string""/>
+          <rule id=""r1""><inputEntry><text>-</text></inputEntry><outputEntry><text>""same""</text></outputEntry></rule>
+          <rule id=""r2""><inputEntry><text>-</text></inputEntry><outputEntry><text>""same""</text></outputEntry></rule>
+        </decisionTable>
+      </contextEntry>
+      <contextEntry>
+        <literalExpression><text>pick</text></literalExpression>
+      </contextEntry>
+    </context>
+  </decision>");
+
+            value.Should().Be("same");
+        }
+
+        [TestMethod]
+        public void BoxedForOverHugeRangeIsBounded()
+        {
+            var previous = FeelEvaluationLimits.MaxIterationItems;
+            FeelEvaluationLimits.MaxIterationItems = 10;
+            try
+            {
+                var act = () => EvaluateStrict(@"
+  <decision name=""d"" id=""d1"">
+    <variable name=""d""/>
+    <for>
+      <in><literalExpression><text>range(""[1..100]"")</text></literalExpression></in>
+      <return><literalExpression><text>i</text></literalExpression></return>
+    </for>
+  </decision>");
+
+                act.Should().Throw<DmnEvaluationException>()
+                    .WithMessage("*iteration limit*");
+            }
+            finally
+            {
+                FeelEvaluationLimits.MaxIterationItems = previous;
+            }
+        }
+
         private static IReadOnlyList<object> AsList(object value)
         {
             value.Should().BeAssignableTo<IReadOnlyList<object>>();
@@ -406,13 +481,31 @@ namespace ScratchyDisk.DmnEngine.Test.Unit
 
         private static object Evaluate(string decisionXml, params (string Name, object Value)[] inputs)
         {
+            return EvaluateCore(decisionXml, strict: false, inputs);
+        }
+
+        /// <summary>
+        /// Evaluates with strict error handling, so a DMN evaluation error is thrown
+        /// instead of being recorded as a lenient diagnostic.
+        /// </summary>
+        private static object EvaluateStrict(string decisionXml, params (string Name, object Value)[] inputs)
+        {
+            return EvaluateCore(decisionXml, strict: true, inputs);
+        }
+
+        private static object EvaluateCore(string decisionXml, bool strict,
+            (string Name, object Value)[] inputs)
+        {
             var xml = $@"
 <definitions xmlns=""{Dmn15}"" id=""def"" name=""def"" namespace=""http://example.com"">
 {decisionXml}
 </definitions>";
 
             var definition = DmnDefinitionFactory.CreateDmnDefinition(DmnParser.ParseString15(xml));
-            var context = DmnExecutionContextFactory.CreateExecutionContext(definition);
+            var context = strict
+                ? DmnExecutionContextFactory.CreateExecutionContext(definition,
+                    options => options.ErrorHandlingMode = DmnErrorHandlingMode.Strict)
+                : DmnExecutionContextFactory.CreateExecutionContext(definition);
             foreach (var input in inputs)
                 context = context.WithInputParameter(input.Name, input.Value);
 
