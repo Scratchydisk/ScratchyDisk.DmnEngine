@@ -15,7 +15,7 @@
     <Content Remove="client/**" />
   </ItemGroup>
   <ItemGroup>
-    <PackageReference Include="CsvHelper" Version="33.1.0" />
+    <PackageReference Include="CsvHelper" Version="34.1.0" />
   </ItemGroup>
 
   <!-- Build the Nuxt client into wwwroot/ before the .NET build -->
