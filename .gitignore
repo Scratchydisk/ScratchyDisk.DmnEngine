@@ -275,6 +275,9 @@ ScratchyDisk.DmnEngine.Testbed/client/.nuxt/
 ScratchyDisk.DmnEngine.Testbed/client/.output/
 ScratchyDisk.DmnEngine.Testbed/client/node_modules/
 ScratchyDisk.DmnEngine.Testbed/client/dist/
+# "nuxt generate" also creates "dist" as a symlink to .output/public, which the
+# directory pattern above does not match.
+ScratchyDisk.DmnEngine.Testbed/client/dist
 
 # User DMN files and test data (not part of the project)
 OneOps Work Baskets*.dmn
