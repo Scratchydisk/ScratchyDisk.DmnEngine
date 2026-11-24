@@ -44,8 +44,9 @@ namespace ScratchyDisk.DmnEngine.Test.Unit
         {
             var text = File.ReadAllText(ReadmePath());
 
-            text.Should().Contain("https://www.omg.org/spec/DMN/1.6/PDF");
-            text.Should().Contain("https://www.omg.org/spec/DMN/1.5/PDF");
+            text.Should().Contain("https://www.omg.org/spec/DMN/1.6");
+            text.Should().Contain("https://www.omg.org/spec/DMN/1.5");
+            text.Should().Contain("https://www.omg.org/spec/DMN/1.4");
             text.Should().Contain("conformance-test-policy.md");
         }
     }

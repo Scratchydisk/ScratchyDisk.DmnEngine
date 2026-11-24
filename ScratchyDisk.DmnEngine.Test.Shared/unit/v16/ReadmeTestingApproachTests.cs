@@ -43,7 +43,8 @@ namespace ScratchyDisk.DmnEngine.Test.Unit
             var text = File.ReadAllText(ReadmePath());
 
             text.Should().Contain("formal/25-12-02");
-            text.Should().Contain("https://www.omg.org/spec/DMN/1.5/PDF");
+            text.Should().Contain("https://www.omg.org/spec/DMN/1.5");
+            text.Should().Contain("https://www.omg.org/spec/DMN/1.4");
             text.Should().Contain("https://www.omg.org/spec/DMN/20240513/DMN16.xsd");
             text.Should().Contain("https://www.omg.org/spec/DMN/20240513/B-FEEL/");
         }

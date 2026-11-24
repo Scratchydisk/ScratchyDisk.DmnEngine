@@ -64,6 +64,18 @@ namespace ScratchyDisk.DmnEngine.Test.Unit
         }
 
         [TestMethod]
+        public void Dmn16_Conformance_ManifestSourcesUseCanonicalSpecUrls()
+        {
+            var canonical = new[] { CanonicalSources.Dmn14, CanonicalSources.Dmn15, CanonicalSources.Dmn16 };
+
+            foreach (var source in ConformanceManifest.Sources)
+            {
+                canonical.Any(url => source.Value.Contains(url, StringComparison.Ordinal))
+                    .Should().BeTrue($"{source.Key} must cite DMN 1.4, 1.5 or 1.6 at {string.Join(" / ", canonical)}");
+            }
+        }
+
+        [TestMethod]
         public void Dmn16_Conformance_ManifestCoversRequiredAreas()
         {
             var required = new Dictionary<string, string>
