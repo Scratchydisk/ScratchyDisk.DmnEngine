@@ -157,7 +157,6 @@ namespace ScratchyDisk.DmnEngine.Test.Complex
 
         [DataRow(null, "dt1", "2018-01-22 00:00", "<date(2018-01-23)")]
         [DataRow(null, "dt1", "2018-01-23 00:00", null)]
-        [DataRow(null, "dt1", "2018-01-23 00:00", null)]
 
         [DataRow(null, "dt2", "2018-01-24 00:00", ">=date and time(2018-01-23T15:30)")]
         [DataRow(null, "dt2", "2018-01-23 15:30", ">=date and time(2018-01-23T15:30)")]

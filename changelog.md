@@ -3,6 +3,8 @@ All notable changes to this project will be documented in this file.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 ## [Unreleased] ##
+### Changed ###
+- Dependencies updated: NLog 6, Antlr4BuildTasks 13 (with MSBuild 18 build utilities), MSTest 4, Microsoft.NET.Test.Sdk 18 and coverlet 10. Duplicate `DataRow` attributes that MSTest 4 now reports were removed.
 
 ## [2.1.0] - 2026-11-24 ##
 ### Added ###

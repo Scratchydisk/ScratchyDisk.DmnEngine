@@ -50,7 +50,6 @@ namespace ScratchyDisk.DmnEngine.Test.Unit
         [TestMethod]
         [DataRow("")]
         [DataRow("href=\"\"")]
-        [DataRow("href=\"\"")]
         [DataRow("href=\" \"")]
         public void MissingInformationRequirementReferenceTest(string hrefAttr)
         {
