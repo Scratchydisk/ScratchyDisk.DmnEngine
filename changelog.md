@@ -3,6 +3,8 @@ All notable changes to this project will be documented in this file.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 ## [Unreleased] ##
+
+## [2.2.0] - 2026-11-25 ##
 ### Changed ###
 - **Testbed client upgraded to Nuxt 4** — the client uses the Nuxt 4 `app/` layout, Nuxt 4.7 and Vue 3.5, which clears the Nuxt 3 security advisories (`@nuxt/schema`, `@nuxt/vite-builder`, `@nuxt/nitro-server`). The static build and the ASP.NET-hosted testbed are unchanged from a user's point of view.
 - Dependencies updated: NLog 6, Antlr4BuildTasks 13 (with MSBuild 18 build utilities), MSTest 4, Microsoft.NET.Test.Sdk 18 and coverlet 10. Duplicate `DataRow` attributes that MSTest 4 now reports were removed.
@@ -216,6 +218,7 @@ As this is a major update, it's recommended to go through the [documentation](re
 ### Added ###
 - Initial release
 
+[2.2.0]: https://github.com/Scratchydisk/ScratchyDisk.DmnEngine/compare/v2.1.0...v2.2.0
 [2.1.0]: https://github.com/Scratchydisk/ScratchyDisk.DmnEngine/compare/v2.0.1...v2.1.0
 [2.0.1]: https://github.com/Scratchydisk/ScratchyDisk.DmnEngine/compare/v2.0.0...v2.0.1
 [2.0.0]: https://github.com/Scratchydisk/ScratchyDisk.DmnEngine/compare/v1.1.1...v2.0.0

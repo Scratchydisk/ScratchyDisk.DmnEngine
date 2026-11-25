@@ -8,7 +8,7 @@ ScratchyDisk.DmnEngine is a .NET rule engine that executes decisions defined in 
 
 **NuGet package:** `ScratchyDisk.DmnEngine`
 **Target framework:** .NET 10.0
-**Current version:** 2.1.0
+**Current version:** 2.2.0
 
 ## Build and Test Commands
 
@@ -111,8 +111,8 @@ Unique, First, Priority, Any, Collect (with aggregations: List, Sum, Min, Max, C
 ### Dependencies
 
 - **Antlr4.Runtime.Standard** 4.13.1 — ANTLR4 runtime for FEEL parser
-- **Antlr4BuildTasks** 12.8 — Build-time grammar compilation (private asset)
-- **NLog** 5.3.4 — Logging
+- **Antlr4BuildTasks** 13.0.0 — Build-time grammar compilation (private asset)
+- **NLog** 6.2.2 — Logging
 
 ## Test Architecture
 

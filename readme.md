@@ -180,8 +180,8 @@ Unique, First, Priority, Any, Collect (with aggregations: List, Sum, Min, Max, C
 ### Dependencies
 
 - **Antlr4.Runtime.Standard** 4.13.1 — ANTLR4 runtime for FEEL parser
-- **Antlr4BuildTasks** 12.8 — Build-time grammar compilation (private asset)
-- **NLog** 5.3.4 — Logging
+- **Antlr4BuildTasks** 13.0.0 — Build-time grammar compilation (private asset)
+- **NLog** 6.2.2 — Logging
 
 ## Build and Test
 
