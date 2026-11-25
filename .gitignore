@@ -282,3 +282,7 @@ ScratchyDisk.DmnEngine.Testbed/client/dist
 # User DMN files and test data (not part of the project)
 OneOps Work Baskets*.dmn
 *.tests.json
+# Local secrets
+.env
+.env.*
+!.env.example
