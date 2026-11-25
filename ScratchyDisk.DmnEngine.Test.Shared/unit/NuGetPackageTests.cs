@@ -112,6 +112,32 @@ namespace ScratchyDisk.DmnEngine.Test.Unit
         }
 
         [TestMethod]
+        public void PackageCarriesReleaseNotesFromFile()
+        {
+            var notesPath = Path.Combine(_repositoryRoot, "release-notes.md");
+            File.Exists(notesPath).Should().BeTrue(
+                "the package release notes must be maintained alongside the release");
+
+            var expected = Normalise(File.ReadAllText(notesPath));
+            var actual = Normalise(MetadataValue(ReadNuspec(), "releaseNotes"));
+
+            actual.Should().Be(expected, "the package release notes must come from release-notes.md");
+        }
+
+        [TestMethod]
+        public void ReleaseNotesNameTheCurrentVersion()
+        {
+            var version = XDocument
+                .Load(Path.Combine(_repositoryRoot, "Version.props"))
+                .Descendants()
+                .First(element => element.Name.LocalName == "Version")
+                .Value;
+
+            File.ReadAllText(Path.Combine(_repositoryRoot, "release-notes.md"))
+                .Should().Contain(version, "the release notes must be refreshed for every published version");
+        }
+
+        [TestMethod]
         public void PackageExposesOnlyThePublicRuntimeDependencies()
         {
             // The dependency surface of the public package is a contract: change this list
@@ -134,6 +160,11 @@ namespace ScratchyDisk.DmnEngine.Test.Unit
             actual.Should().BeEquivalentTo(
                 expected,
                 "the package dependencies must be pinned to the csproj versions");
+        }
+
+        private static string Normalise(string text)
+        {
+            return text.Replace("\r\n", "\n").Trim();
         }
 
         private static string CurrentConfiguration()

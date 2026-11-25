@@ -8,6 +8,7 @@
     <Product>ScratchyDisk.DmnEngine</Product>
     <PackageTags>ScratchyDisk DmnEngine dmn dmn-engine rule-engine decision-engine feel</PackageTags>
     <PackageReadmeFile>nuget.md</PackageReadmeFile>
+    <PackageReleaseNotes>$([System.IO.File]::ReadAllText('$(MSBuildProjectDirectory)/../release-notes.md'))</PackageReleaseNotes>
     <IsPackable>true</IsPackable>
   </PropertyGroup>
 
